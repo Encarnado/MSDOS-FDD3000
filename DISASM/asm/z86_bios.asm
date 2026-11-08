@@ -628,7 +628,8 @@ ERRTAB:
 	defb	6		; 80h SEEK gave up (10 tries): seek error
 	defb	0		; 40h FDC write protect
 	defb	2		; 20h SELECT's restore found no track 0 (no
-				;     drive): not ready
+				;     drive), or a floppy wait timed out
+				;     (FDTOUT: no disk / no drive): not ready
 	defb	8		; 10h FDC record not found (or DX past 719)
 	defb	4		; 08h FDC CRC error: data error
 	defb	0Ch		; none of the above (04h lost data, 01h bad
@@ -638,97 +639,61 @@ ERRTAB:
 ; SECTIO - transfer one sector: DSEC of track DTRK on DDRIVE, at DADDR
 ; ---------------------------------------------------------------------
 ; Entry:  DDRIVE, DTRK, DSEC, DADDR, DWRITE set; 0038h hooked (HOOK38).
-; Exit:   Z: done.  NZ: A = status bits as ERRTAB reads them.
-; Corrupts: A, BC, DE, HL; DTRY, DSTAT.
+; Exit:   Z: done.  NZ: A = status bits as ERRTAB reads them (20h = timed
+;         out, no disk or no drive).
+; Corrupts: A, BC, DE, HL; DTRY, DSTAT; patches XFI.
 ; Callers: DISKIO only.
 ;
 ; RETRIES (10) attempts per sector, as CBIOS A1.1's RD256 / WR256 (its
-; NTENT).  A retry calls SEEK again, but SEEK does nothing when the FDC's
-; track register already reads DTRK, so the head is not moved: a sector
-; missed because head and track register are out of step is not
-; recovered here.  Write protect returns at once, to let DOS ask Abort /
-; Retry / Ignore - CBIOS's WR256 instead asked on the console itself.
-; DSTAT is written and read only here, and redundantly: A still holds
-; the same status when the count runs out.
+; NTENT).  Write protect and a timeout return at once: DOS asks Abort /
+; Retry / Ignore itself, and ten timeouts would mean 30 s of silence.
+; Half-way through the retries FHOME restores to track 0: SEEK skips a
+; seek to the track the FDC already reads, so without this a sector
+; missed with head and track register out of step was never recovered
+; (the 2026-11-08 change; before it, retries never moved the head).
+; One routine, XFER (EALO page), now serves both directions: SECTIO
+; patches its transfer instruction (INI / OUTI) and passes the command.
 ; =====================================================================
 SECTIO:
 	ld	a,(DDRIVE)	; the drive
 	call	SELECT		; drive on, FDC track register for that drive
-	ret	nz		; A = 20h: the drive is not there
+	ret	nz		; A = 20h: the drive is not there (or timed out)
 	ld	a,RETRIES	; 10 transfer attempts
 	ld	(DTRY),a
 SECTIO_TRY:				; (src: SIO1)
 	call	SEEK		; to DTRK, verified (no-op when already there)
-	ret	nz		; A = 80h: seek failed after its own retries
+	ret	nz		; A = 80h seek failed, or 20h timed out
 	ld	a,(DSEC)	; the sector ID ...
 	out	(FDCSEC),a	; ... for the FDC to look for
 	ld	hl,(DADDR)	; buffer, for INI / OUTI
-	ld	a,(DWRITE)	; which way?
-	or	a
-	jr	nz,SECTIO_WRITE	; 1: write
-	call	RDSEC		; returns through FDCINT: A = status AND 5Ch
-	jr	SECTIO_CHECK	; judge the status
-SECTIO_WRITE:				; (src: SIO2)
-	call	WRSEC		; the same, outbound
-SECTIO_CHECK:				; (src: SIO3)
+	ld	a,(DWRITE)	; 0 read / 1 write ...
+	add	a,0A2h		; ... -> A2h (INI) / A3h (OUTI), the second byte
+	ld	(XFI+1),a	;   of XFER's transfer instruction
+	ld	a,(DWRITE)	; and the command: 0 -> 80h RDSCMD, 1 -> A0h WRSCMD
+	rrca			; bit 0 -> bit 5
+	rrca
+	rrca
+	add	a,RDSCMD
+	call	XFER		; returns via FDCINT (status) or FDTOUT (20h)
 	or	a		; any error bit?
 	ret	z		; clean status: done
 	bit	6,a		; write protected: no point retrying
 	ret	nz		; (A = 40h+ -> DOS 0)
+	bit	5,a		; timed out (only FDTOUT sets 20h): give up now
+	ret	nz		;   (-> DOS 2, not ready)
 	ld	(DSTAT),a	; keep the error for the last try
 	ld	hl,DTRY		; one attempt used
 	dec	(hl)
-	jr	nz,SECTIO_TRY	; tries left: again
+	jr	z,SECTIO_FAIL	; none left
+	ld	a,(hl)		; half the tries gone?
+	cp	RETRIES/2
+	call	z,FHOME		; then restore, so the next SEEK really moves
+	jr	SECTIO_TRY	; again
+SECTIO_FAIL:
 	ld	a,(DSTAT)	; out of tries (A held it anyway)
 	or	a		; NZ: failed
 	ret
 
-; =====================================================================
-; RDSEC / WRSEC - move one sector between HL and the WD177x
-; ---------------------------------------------------------------------
-; Entry:  HL = buffer; FDCTRK / FDCSEC set; 0038h = JP FDCINT.
-; Exit:   (through FDCINT, not through these RETs - they have none)
-;         A = status AND 5Ch, interrupts off, at the caller's next
-;         instruction.  Corrupts: A, BC, HL.
-;
-; CBIOS A1.1's RDDSK / WRDSK (F8ECh / F934h per BIOS.ASM): EI, issue the
-; command, then pass bytes on DRQ (bit 7 of COM, `IN / RLA` puts it in
-; carry) for ever.  The loop never ends by itself: B is not set and INI
-; / OUTI's count is ignored.  The FDC's end-of-command INTRQ, taken in IM
-; 1 at 0038h, goes to FDCINT, which drops the interrupted loop's address
-; and returns on RDSEC's own return address with the status.  Changed
-; from CBIOS: C = FDCDAT is set here (RDDSK relied on PREPARA's), and
-; WRSEC sets IM 1 too.  About 50 T per byte, well inside MFM's 32 us.
-; Consequence (provisional, untested): the length transferred is the
-; FDC's, from the sector's ID field - a 512-byte sector carrying a
-; matching ID (a PC disk numbers sectors 1-9) would deposit 512 bytes
-; at HL, past DISKIO's 256-byte buffer check.
-; =====================================================================
-RDSEC:
-	ld	c,FDCDAT	; INI's port
-	im	1		; INTRQ -> RST 38h -> JP FDCINT
-	ei			; from here the FDC can end us at any moment
-	ld	a,RDSCMD	; read sector
-	out	(FDCMD),a	; go
-RDSEC_LOOP:				; (src: RD1)
-	in	a,(COM)		; DRQ (bit 7) ...
-	rla			; ... into carry
-	jr	nc,RDSEC_LOOP	; no byte yet
-	ini			; (HL) <- data, HL+1 (B ignored)
-	jr	RDSEC_LOOP	; until INTRQ breaks in
-
-WRSEC:
-	ld	c,FDCDAT	; OUTI's port
-	im	1		; INTRQ -> RST 38h -> JP FDCINT
-	ei			; from here the FDC can end us at any moment
-	ld	a,WRSCMD	; write sector
-	out	(FDCMD),a	; go
-WRSEC_LOOP:				; (src: WR1)
-	in	a,(COM)		; DRQ: the FDC wants the next byte ...
-	rla			; ... into carry
-	jr	nc,WRSEC_LOOP	; not yet
-	outi			; data <- (HL), HL+1
-	jr	WRSEC_LOOP	; until INTRQ breaks in
 ; =====================================================================
 ;                    WD177x COMMAND BYTES AND STATUS MASKS
 ; =====================================================================
@@ -742,7 +707,7 @@ WRSEC_LOOP:				; (src: WR1)
 ;            r1r0 step rate (01 = 12 ms; boot.asm reads it the same way).
 ;   Type III (Write Track 1111): bit 3 h, bit 2 E (30 ms settle before
 ;            writing), bit 1 P (1 = write precompensation off), bit 0 = 0.
-; The Read / Write Sector bytes (80h, A0h) are part 07's RDSEC / WRSEC.
+; The Read / Write Sector bytes (80h, A0h) are part 07's RDSCMD / WRSCMD (XFER).
 RSTCMD:		equ	05h		; Restore, h=0 V=1 r=01: FHOME's normal
 					;   byte (RESCMD).  Same value as CBIOS.
 RSTCMD_NOVFY:	equ	01h		; Restore, V=0: for FORMAT TRACK, whose disk
@@ -764,40 +729,47 @@ FDC_SEEKERR:	equ	10h		; Type I bit 4: Restore never saw track 0
 FDC_WPROT:	equ	40h		; Type II/III bit 6: write protect
 
 ; =====================================================================
-; FDCCMD - issue a WD177x command and sleep until its INTRQ
+; FDCCMD - issue a WD177x command and wait for its INTRQ, ~3.4 s at most
 ; ---------------------------------------------------------------------
 ; Entry:  A = command; for a Seek, the target track already in FDCDAT;
 ;         0038h hooked to FDCINT (HOOK38).
 ; Exit:   A = status AND FDC_STAT_MASK, interrupts OFF (the RST 38h that
-;         ended the wait left them off).  Flags from the AND.
-; Corrupts A.  Callers: SEEK, T_FMT.
+;         ended the wait left them off).  Or, if no INTRQ came: A = 20h,
+;         NZ, through FDTOUT (no disk / no drive: a spin-up or a verify
+;         needs index pulses, and the WD1770 would wait for ever).
+; Corrupts A, B, DE.  Callers: SEEK, T_FMT.
 ;
 ; Lineage: CBIOS A1.1 SEKINT (`ld a,SEKCMD / im 1 / ei / out (FDCMD),a /
-; jr $`), made generic.  The order EI, OUT matters: EI holds interrupts
-; off for one more instruction, so the command is written - and writing
-; the command register clears any INTRQ left from before - before an
-; interrupt can be taken.  The JR to itself is never left by its own
-; hand: INTRQ arrives as RST 38h, FDCINT throws the loop's address away
-; and RETs to our caller.  A command that never ends (no INTRQ ever)
-; would hang here for good; nothing times it out (provisional: whether a
-; WD177x with no disk in the drive always ends a Type I command was not
-; tested).
+; jr $`), made generic and, since 2026-11-08, timed: the `jr $` became
+; 8 x 65536 turns of FDCW at 26 T (~3.4 s at 4 MHz; a seek across all
+; 40 tracks with spin-up and verify takes under 2 s).  The order EI,
+; OUT matters: EI holds interrupts off for one more instruction, so the
+; command is written - clearing any stale INTRQ - before an interrupt can
+; be taken.  INTRQ arrives as RST 38h: FDCINT throws the loop's address
+; away and RETs to our caller, wherever in the loop it struck.
 ; =====================================================================
 FDCCMD:
 	im	1		; INTRQ is a plain RST 38h: no vector byte needed
 	ei			; takes effect after the OUT below
 	out	(FDCMD),a	; go (also clears a stale INTRQ)
+	ld	b,8		; timeout: 8 x 65536 turns
+	ld	de,0
 FDCW:
-	jr	FDCW		; wait here; FDCINT unwinds this loop
+	dec	de		; FDCINT unwinds this loop when INTRQ comes
+	ld	a,d
+	or	e
+	jr	nz,FDCW
+	djnz	FDCW
+	jp	FDTOUT		; ~3.4 s and no INTRQ: "not ready"
 
 ; =====================================================================
 ; FDCINT - the RST 38h handler for the WD177x INTRQ        (EDE3h)
 ; ---------------------------------------------------------------------
 ; Reached only through the JP FDCINT that HOOK38 writes at 0038h, while
-; a disk call runs (FDCCMD, or part 07's RDSEC / WRSEC transfer loops).
-; Entry:  top of stack = the address in the waiting loop (FDCW, RD1, WR1)
-;         the interrupt pushed; under it, the caller's return address.
-; Exit:   RET to the caller of FDCCMD / RDSEC / WRSEC with A = status
+; a disk call runs (FDCCMD, or XFER's wait and transfer loops).
+; Entry:  top of stack = the address in the waiting loop (FDCW, XFER_WAIT,
+;         XFER_LOOP) the interrupt pushed; under it, the caller's return.
+; Exit:   RET to the caller of FDCCMD / XFER with A = status
 ;         AND FDC_STAT_MASK, interrupts left OFF (accepting the interrupt
 ;         reset IFF1/IFF2, and no EI follows): the rest of the BIOS and
 ;         the 8086 interpreter always run with interrupts disabled.
@@ -807,8 +779,8 @@ FDCW:
 ; so this BIOS keeps write protect (bit 6) in its place - which
 ; SECTIO's "write protected: don't retry" test needs (provisional as to
 ; what CBIOS's bit 7 did on a real drive).
-; The interrupt is how the transfer loops end at all: RD1 / WR1 only
-; poll DRQ, and the last byte of a sector is followed by INTRQ, not by
+; The interrupt is how the transfer loop ends at all: XFER_LOOP only
+; polls DRQ, and the last byte of a sector is followed by INTRQ, not by
 ; anything the loop could test.
 ; =====================================================================
 FDCINT:
@@ -824,74 +796,48 @@ FDCINT:
 ; Entry:  DTRK = wanted track; the drive selected and the FDC track
 ;         register valid for it (SELECT); 0038h hooked.
 ; Exit:   Z, A = 0: on the track.  NZ, A = 80h: RETRIES seeks failed
-;         (ERRTAB's first entry: DOS error 6, seek error).
-; Corrupts A, B, HL.  Caller: SECTIO (part 07).
+;         (ERRTAB's first entry: DOS error 6, seek error).  NZ, A = 20h:
+;         the seek or its recovery restore timed out (DOS 2, not ready).
+; Corrupts A, B, DE, HL.  Caller: SECTIO (part 07).
 ;
 ; No command at all when the FDC already thinks it is there: the track
 ; register is trusted, and the Read / Write Sector that follows checks
-; the ID field's track number anyway.  Otherwise Seek with verify; a
-; verify failure (seek error or ID CRC) restores to track 0 and tries
-; again from there, RETRIES (10) times - the CBIOS SEEKLP pattern,
-; whose own retry count is also ten.  STRY is this loop's own counter,
-; separate from SECTIO's DTRY, so the worst case is 10 x 10 seeks.
+; the ID field's track number anyway (SECTIO's half-way FHOME is what
+; breaks that trust when sectors keep failing).  Otherwise Seek with
+; verify; a verify failure (seek error or ID CRC) restores to track 0
+; and tries again from there, RETRIES (10) times - the CBIOS SEEKLP
+; pattern.  A timeout ends it at once.  The target is re-read from DTRK
+; each time: FDCCMD's timer uses B, where it used to be kept.
+; FHOME and FDTOUT live in the EAHI page's free end (z86_interp.asm).
 ; =====================================================================
 SEEK:
 	ld	a,(DTRK)	; the track this call wants
-	ld	b,a		; B = target, kept across FHOME (it saves BC)
+	ld	b,a
 	in	a,(FDCTRK)	; where the FDC believes the head is
-	cp	b	; FDC already there?
+	cp	b		; FDC already there?
 	jr	z,SKOK		; already there: no seek, no verify
 	ld	a,RETRIES	; a fresh seek budget
 	ld	(STRY),a
 SEEK_RETRY:				; (src: SK1)
-	ld	a,b		; the Seek target goes in the data register
-	out	(FDCDAT),a	; (the Seek target)
+	ld	a,(DTRK)	; the Seek target goes in the data register
+	out	(FDCDAT),a
 	ld	a,SEKCMD	; Seek with verify (15h, as CBIOS)
-	call	FDCCMD		; sleep until INTRQ
+	call	FDCCMD		; wait for INTRQ (or the timeout)
+	bit	5,a		; timed out: no disk / no drive -
+	ret	nz		;   give up now (A = 20h, NZ)
 	and	FDC_SKERR_MASK	; seek error or ID CRC?
 	ret	z		; no: Z, A = 0
-	call	FHOME		; lost: back to track 0 (track register = 0) and
-				;   seek again from a known place; FHOME's own
-				;   result is not checked - the next seek tells
-	ld	hl,STRY	; one try fewer
+	call	FHOME		; lost: back to track 0 (track register = 0)
+	bit	5,a		; that timed out too: give up
+	ret	nz
+	ld	hl,STRY		; one try fewer
 	dec	(hl)
 	jr	nz,SEEK_RETRY
 	ld	a,80h		; out of tries: "seek failed" (ERRTAB 80h -> 6)
 	or	a		; NZ
-	ret	; (A = 80h, NZ)
+	ret
 SKOK:
 	xor	a		; Z: on the track
-	ret
-
-; =====================================================================
-; FHOME - Restore to track 0, polled                    (CBIOS F7B5h)
-; ---------------------------------------------------------------------
-; Entry:  drive selected.  RESCMD = the Restore byte (RSTCMD, or
-;         RSTCMD_NOVFY while T_FMT runs).
-; Exit:   Z: at track 0, FDC track register = 0.  NZ, A = 10h: the drive
-;         never showed track 0 (no drive, or no disk) - the WD177x gives
-;         up after 255 step pulses with Seek Error set.
-; Corrupts A.  Preserves BC.  Callers: SEEK, SELECT.
-;
-; Polled with interrupts off, as CBIOS HOME is, so it needs no hook; the
-; final status read also clears the INTRQ the command raised, so the next
-; EI in FDCCMD / RDSEC is not hit by a stale one.  The DJNZ pause is
-; boot.asm CMD's: ~57 us at 4 MHz for the controller to raise BUSY.
-; =====================================================================
-FHOME:
-	ld	a,(RESCMD)	; Restore, verify or not (T_FMT changes RESCMD)
-	out	(FDCMD),a	; Restore
-	push	bc
-	ld	b,12h		; let the FDC raise BUSY before polling it
-FHOME_DELAY:				; (src: FH0)
-	djnz	FHOME_DELAY
-	pop	bc	; (B is SEEK's target)
-FHOME_WAIT:				; (src: FH1)
-	in	a,(FDCSTS)	; BUSY (bit 0) -> carry
-	rra
-	jr	c,FHOME_WAIT	; until the command ends
-	rla			; the status back (carry was 0: bit 0 = 0)
-	and	FDC_SEEKERR	; bit 4: seek error = track 0 never found
 	ret
 
 ; =====================================================================
@@ -1105,8 +1051,12 @@ T_FMT:
 	ld	a,(DTRK)	; seek without verify too: nothing to verify
 	out	(FDCDAT),a	; (the Seek target)
 	ld	a,SEKCMD_NOVFY	; Seek, V=0
-	call	FDCCMD		; result ignored (cannot fail without verify);
-				;   returns with interrupts off: the rest is polled
+	call	FDCCMD		; no verify, so no seek error - but it can time
+				;   out: an empty drive with its motor off never
+				;   finishes the spin-up (no index pulses)
+	bit	5,a		; timed out (A = 20h): "not ready"
+	jp	nz,DFAIL	;   (the write track below is not timed: a disk
+				;   pulled with the motor running still hangs it)
 	ld	hl,(DADDR)	; HL = the image
 	ld	de,FMTLEN	; DE counts the image (OUTI's B is ignored)
 	ld	c,FDCDAT	; C = data port for OUTI
@@ -1559,6 +1509,15 @@ T_RET:
 CPMSYM:
 	defw	NEXT, JPHL, PEEKEY, GETKEY, CONOUT, DCSP, ENDBIOS	; D83B EB60 EBF6 EC13 EC21 F12A F12C
 CPMSYE:
+
+; Free bytes (14 in the 2026-11-08 build).  The floppy timeouts made the
+; BIOS shorter - RDSEC / WRSEC / FHOME moved to the EA table pages - and
+; this padding keeps SKEW, the variables and ENDBIOS where the version
+; that ran on a real FDD3000 had them (SKEW at F0F8h): CPMZ80, assembled
+; for those addresses and checked by trap 1Ch, is then byte-identical
+; and CPM.COM needs no rebuild.  z86.py asserts SKEW == SKEWAT.
+SKEWAT:	equ	0F0F8h
+	defs	SKEWAT-$
 
 ; =====================================================================
 ;                    BIOS DATA (F0F8h-F12Bh)

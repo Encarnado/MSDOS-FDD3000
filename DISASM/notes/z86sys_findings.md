@@ -18,3 +18,14 @@ Cross-region items settled at the join:
 - LED polarity: boot_findings item 7 (bit 7 active low), agreeing with part 08.
 - Shift groups D0h-D3h live in part 05 (brief misplaced them in 06); narrated there.
 - Corrections for the package docs: OVERVIEW 2.2 AF sentence (INC/DEC -> AF = 0; AF also read by PUSHF/LAHF/INT); DISASSEMBLY_GUIDE seeds (G3BT/G3WT/G5T, LD IX targets); fdd86.py bad-opcode address off by one (part 02).
+
+## Fixed 2026-11-08 (floppy robustness; git: "BIOS: floppy timeouts")
+- No timeout on FDC waits (part 08: FDCCMD; part 07: transfer loops) - fixed:
+  FDCCMD, FHOME and XFER's first-byte wait time out after ~3 s -> FDTOUT
+  (Force Interrupt, A = 20h -> DOS "Not ready").  test_fdtimeout.py with the
+  new realistic `machine.FDC.no_index` model: before, DOS hung on DIR B:; now
+  "Not ready error reading drive B" after ~9.7 s of Z80 time (DOS 1.25 tries
+  FAT 1, FAT 2, FAT 1).
+- Retries never moved the head (part 07) - fixed: SECTIO restores half-way.
+- Residual (documented): FORMAT TRACK's write-track loop is not timed; a disk
+  pulled while the motor runs still hangs it.  The seek before it is timed.

@@ -456,7 +456,8 @@ OPHI:
 ; HL = host address = segment base + effective address (16-bit sum).
 ; C0h-FFh (mod 11, a register) never reach this table - every decoder
 ; tests CP 0C0h first and indexes REGS instead - so the rest of each
-; page is zero padding.  O_LEA reuses the table for the bare offset: it
+; page is free: since 2026-11-08 it holds BIOS floppy code (XFER in
+; EALO's end, FHOME and FDTOUT in EAHI's), zero fill after it.  O_LEA reuses the table for the bare offset: it
 ; zeroes EADS / EASS around its CALL EAMEM, then restores them.
 ; =====================================================================
 EALO:
@@ -484,14 +485,53 @@ EALO:
 	defb	EA20&0FFh, EA21&0FFh, EA22&0FFh, EA23&0FFh, EA24&0FFh, EA25&0FFh, EA26&0FFh, EA27&0FFh	; A8-AF  EA20-EA27, reg 5
 	defb	EA20&0FFh, EA21&0FFh, EA22&0FFh, EA23&0FFh, EA24&0FFh, EA25&0FFh, EA26&0FFh, EA27&0FFh	; B0-B7  EA20-EA27, reg 6
 	defb	EA20&0FFh, EA21&0FFh, EA22&0FFh, EA23&0FFh, EA24&0FFh, EA25&0FFh, EA26&0FFh, EA27&0FFh	; B8-BF  EA20-EA27, reg 7
-	defb	0, 0, 0, 0, 0, 0, 0, 0	; C0-C7  mod 11: register operand, never indexed (pad)
-	defb	0, 0, 0, 0, 0, 0, 0, 0	; C8-CF  mod 11: register operand, never indexed (pad)
-	defb	0, 0, 0, 0, 0, 0, 0, 0	; D0-D7  mod 11: register operand, never indexed (pad)
-	defb	0, 0, 0, 0, 0, 0, 0, 0	; D8-DF  mod 11: register operand, never indexed (pad)
-	defb	0, 0, 0, 0, 0, 0, 0, 0	; E0-E7  mod 11: register operand, never indexed (pad)
-	defb	0, 0, 0, 0, 0, 0, 0, 0	; E8-EF  mod 11: register operand, never indexed (pad)
-	defb	0, 0, 0, 0, 0, 0, 0, 0	; F0-F7  mod 11: register operand, never indexed (pad)
-	defb	0, 0, 0, 0, 0, 0, 0, 0	; F8-FF  mod 11: register operand, never indexed (pad)
+; ---------------------------------------------------------------------
+; XFER - one sector through the WD177x  (C0h-FFh of this page: BIOS code)
+;   >>> BIOS CODE IN AN INTERPRETER PAGE: the free end of EALO, placed by
+;   >>> z86.py's ;@SLACK block in BIOS.ASM (added 2026-11-08)
+; ---------------------------------------------------------------------
+; Entry:  A = command (RDSCMD 80h read / WRSCMD A0h write), HL = buffer,
+;         XFI's second byte patched by SECTIO: A2h INI (read) / A3h OUTI
+;         (write); HOOK38 active (0038h -> FDCINT).
+; Exit:   through FDCINT when INTRQ ends the command: A = status AND 5Ch
+;         (Z = sector done); or through FDTOUT, A = 20h (NZ), if no first
+;         byte came in ~3.1 s (no disk / no drive: the WD1770 sees no
+;         index pulses, and its sector search would never end).
+; Corrupts: A, B, C, DE, HL, F.
+;
+; The byte loop XF1/XFI is CBIOS A1.1's (F8ECh read, F934h write) and
+; the old RDSEC / WRSEC, unchanged: the timing that ran on a real
+; FDD3000.  Only the wait for the FIRST byte is timed, 4 x 65536 turns
+; of XFW at 48 T (~3.1 s at 4 MHz); once data flows the sector ends on
+; its own.  The wait cannot be a subroutine: FDCINT discards exactly one
+; return address (the interrupted loop's) and returns to XFER's caller.
+; =====================================================================
+XFER:
+	ld	c,FDCDAT	; INI / OUTI work through the data register
+	im	1		; INTRQ ends the command through 0038h
+	ei
+	out	(FDCMD),a	; start the read or write
+	ld	b,4		; first-byte timeout: 4 x 65536 polls
+	ld	de,0
+XFER_WAIT:				; (src: XFW)
+	in	a,(COM)		; DRQ (bit 7) -> carry: first byte ready?
+	rla
+	jr	c,XFI		; yes: straight into the transfer
+	dec	de		; no: count down
+	ld	a,d
+	or	e
+	jr	nz,XFER_WAIT
+	djnz	XFER_WAIT
+	jp	FDTOUT		; ~3.1 s and nothing: stop the FDC, "not ready"
+XFER_LOOP:				; (src: XF1) CBIOS's byte loop
+	in	a,(COM)		; wait for DRQ - INTRQ at the end leaves via FDCINT
+	rla
+	jr	nc,XFER_LOOP
+XFI:
+	ini			; PATCHED by SECTIO: ED A2 INI / ED A3 OUTI
+	jr	XFER_LOOP
+EALOEND:
+	defs	EALO+256-$	; the rest of the page: zero fill
 EAHI:
 	defb	EA00>>8, EA01>>8, EA02>>8, EA03>>8, EA04>>8, EA05>>8, EA06>>8, EA07>>8	; 00-07  EA00-EA07, reg 0  [mod 00, no displacement (rm 6: disp16 alone)]
 	defb	EA00>>8, EA01>>8, EA02>>8, EA03>>8, EA04>>8, EA05>>8, EA06>>8, EA07>>8	; 08-0F  EA00-EA07, reg 1
@@ -517,14 +557,60 @@ EAHI:
 	defb	EA20>>8, EA21>>8, EA22>>8, EA23>>8, EA24>>8, EA25>>8, EA26>>8, EA27>>8	; A8-AF  EA20-EA27, reg 5
 	defb	EA20>>8, EA21>>8, EA22>>8, EA23>>8, EA24>>8, EA25>>8, EA26>>8, EA27>>8	; B0-B7  EA20-EA27, reg 6
 	defb	EA20>>8, EA21>>8, EA22>>8, EA23>>8, EA24>>8, EA25>>8, EA26>>8, EA27>>8	; B8-BF  EA20-EA27, reg 7
-	defb	0, 0, 0, 0, 0, 0, 0, 0	; C0-C7  mod 11: register operand, never indexed (pad)
-	defb	0, 0, 0, 0, 0, 0, 0, 0	; C8-CF  mod 11: register operand, never indexed (pad)
-	defb	0, 0, 0, 0, 0, 0, 0, 0	; D0-D7  mod 11: register operand, never indexed (pad)
-	defb	0, 0, 0, 0, 0, 0, 0, 0	; D8-DF  mod 11: register operand, never indexed (pad)
-	defb	0, 0, 0, 0, 0, 0, 0, 0	; E0-E7  mod 11: register operand, never indexed (pad)
-	defb	0, 0, 0, 0, 0, 0, 0, 0	; E8-EF  mod 11: register operand, never indexed (pad)
-	defb	0, 0, 0, 0, 0, 0, 0, 0	; F0-F7  mod 11: register operand, never indexed (pad)
-	defb	0, 0, 0, 0, 0, 0, 0, 0	; F8-FF  mod 11: register operand, never indexed (pad)
+; ---------------------------------------------------------------------
+; FHOME / FDTOUT  (C0h-FFh of this page: BIOS code)
+;   >>> BIOS CODE IN AN INTERPRETER PAGE: the free end of EAHI (;@SLACK)
+; ---------------------------------------------------------------------
+; FHOME - restore the selected drive to track 0, polled (CBIOS F7B5h).
+; Entry:  RESCMD = the restore command (05h: with verify; T_FMT sets 01h).
+; Exit:   Z, A = 0: at track 0.  NZ, A = 10h: seek error (no track 0
+;         seen).  NZ, A = 20h: timed out (~3.1 s: no index pulses, so the
+;         spin-up or the verify never ends) - FDTOUT.
+; Keeps BC; corrupts A, DE, F.  Callers: SELECT (a drive not used
+; yet), SEEK (after a failed seek), SECTIO (re-seek half-way through
+; the retries).  Before 2026-11-08 it sat in the BIOS and waited for
+; ever (z86 part 08 findings).
+FHOME:
+	ld	a,(RESCMD)	; restore, verify unless FORMAT asked otherwise
+	out	(FDCMD),a
+	push	bc		; SEEK keeps its counters in B
+	ld	b,12h		; ~57 us: let the FDC raise BUSY before polling
+FHOME_SETTLE:				; (src: FH0)
+	djnz	FHOME_SETTLE
+	ld	b,4		; timeout: 4 x 65536 polls of 48 T, ~3.1 s
+	ld	de,0
+FHOME_WAIT:				; (src: FH1)
+	in	a,(FDCSTS)	; BUSY (bit 0) -> carry
+	rra
+	jr	nc,FHOME_DONE	; finished
+	dec	de
+	ld	a,d
+	or	e
+	jr	nz,FHOME_WAIT
+	djnz	FHOME_WAIT
+	pop	bc		; timed out: balance the stack, then
+	jp	FDTOUT		;   leave as "not ready" (A = 20h)
+FHOME_DONE:				; (src: FH2)
+	pop	bc
+	rla			; status back as it was read
+	and	10h		; seek error bit: NZ = no track 0
+	ret
+
+; FDTOUT - a floppy wait timed out (FDCCMD, FHOME, XFER, FMT's seek).
+; Force Interrupt with no condition (D0h) stops the command and raises no
+; INTRQ; DI because the hook at 0038h must not fire any more.  Returns
+; NZ, A = 20h: never a WD177x status here (those leave ANDed with 5Ch),
+; and DFAIL's ERRTAB maps it to DOS error 2, "Not ready".  Reached by JP
+; from the waits, so the RET goes straight to their caller.
+FDTOUT:
+	di
+	ld	a,0D0h		; Force Interrupt, no condition
+	out	(FDCMD),a
+	ld	a,20h		; "not ready"
+	or	a		; NZ
+	ret
+EAHIEND:
+	defs	EAHI+256-$	; the rest of the page: zero fill
 
 ; =====================================================================
 ; BCORE - 8-bit ALU cores in 16-byte slots (D500h)

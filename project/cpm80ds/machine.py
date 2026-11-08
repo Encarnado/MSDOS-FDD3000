@@ -43,6 +43,9 @@ class Drive:
 class FDC:
     T_TYPE1 = 300            # instructions a seek / restore takes
     T_FIND = 120             # until the first data byte of a sector
+    no_index = False         # True: an empty drive behaves as on the real
+                             # WD1770 (commands needing index pulses hang);
+                             # False (default): they end at once with an error
 
     def __init__(self, m):
         self.m = m
@@ -107,6 +110,15 @@ class FDC:
                 self.intrq = True
             return
         self.status = 0x01
+        if self.no_index and (d is None or d.disk is None) and (c & 0x80 or not c & 0x08 or c & 0x04):
+            # a real WD1770 with no disk (or no drive) sees no index pulses:
+            # a spin-up (h=0), a verify, a sector search never end - BUSY
+            # stays up, no INTRQ, until a Force Interrupt.  (Motor state is
+            # not modelled: a type I with h=0 always waits here.)
+            self.busy_until = None
+            self.drq = False
+            self.buf = self.writing = self.wtrack = None
+            return
         if c & 0x80 == 0:                       # type I
             if d is None:
                 self.finish(0x10, self.T_TYPE1)

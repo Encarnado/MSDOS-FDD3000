@@ -299,14 +299,37 @@ D3A0  BF D1 DB ED F7 FC 01 06           DB EA20&0FFh, EA21&0FFh, EA22&0FFh, EA23
 D3A8  BF D1 DB ED F7 FC 01 06           DB EA20&0FFh, EA21&0FFh, EA22&0FFh, EA23&0FFh, EA24&0FFh, EA25&0FFh, EA26&0FFh, EA27&0FFh
 D3B0  BF D1 DB ED F7 FC 01 06           DB EA20&0FFh, EA21&0FFh, EA22&0FFh, EA23&0FFh, EA24&0FFh, EA25&0FFh, EA26&0FFh, EA27&0FFh
 D3B8  BF D1 DB ED F7 FC 01 06           DB EA20&0FFh, EA21&0FFh, EA22&0FFh, EA23&0FFh, EA24&0FFh, EA25&0FFh, EA26&0FFh, EA27&0FFh
-D3C0  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
-D3C8  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
-D3D0  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
-D3D8  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
-D3E0  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
-D3E8  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
-D3F0  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
-D3F8  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
+                                ; XFER: one sector at HL, command A (80h read / A0h write), the transfer
+                                ; instruction at XFI patched by SECTIO (INI / OUTI).  CBIOS A1.1's loop
+                                ; (F8ECh / F934h): it ends when INTRQ goes through 0038h to FDCINT, A =
+                                ; status AND 5Ch.  Only the wait for the first byte is timed (4 x 65536
+                                ; turns of 48 T: ~3.1 s): once data flows, the sector ends by itself.
+                                ; Lives in the free end of the EALO page (BIOS code, z86.py ;@SLACK).
+D3C0  0E C3                     XFER:   LD C,0C3h
+D3C2  ED 56                             IM 1
+D3C4  FB                                EI
+D3C5  D3 C0                             OUT (0C0h),A
+D3C7  06 04                             LD B,4
+D3C9  11 00 00                          LD DE,0
+D3CC  DB 2F                     XFW:    IN A,(2Fh)              ; bit 7 = DRQ: the first byte is there
+D3CE  17                                RLA
+D3CF  38 0F                             JR C,XFI
+D3D1  1B                                DEC DE
+D3D2  7A                                LD A,D
+D3D3  B3                                OR E
+D3D4  20 F6                             JR NZ,XFW
+D3D6  10 F4                             DJNZ XFW
+D3D8  C3 E4 D4                          JP FDTOUT
+D3DB  DB 2F                     XF1:    IN A,(2Fh)              ; bit 7 = DRQ
+D3DD  17                                RLA
+D3DE  30 FB                             JR NC,XF1
+D3E0  ED A2                     XFI:    INI                     ; patched: INI (read) or OUTI (write)
+D3E2  18 F7                             JR XF1
+D3E4                            EALOEND:
+D3E4  00 00 00 00 00 00 00 00           DS EALO+256-$
+D3E4  00 00 00 00 00 00 00 00   
+D3E4  00 00 00 00 00 00 00 00   
+D3E4  00 00 00 00               
 D400                            EAHI:
 D400  D9 D9 D9 D9 D9 D9 D9 D9           DB EA00>>8, EA01>>8, EA02>>8, EA03>>8, EA04>>8, EA05>>8, EA06>>8, EA07>>8
 D408  D9 D9 D9 D9 D9 D9 D9 D9           DB EA00>>8, EA01>>8, EA02>>8, EA03>>8, EA04>>8, EA05>>8, EA06>>8, EA07>>8
@@ -332,14 +355,44 @@ D4A0  D9 D9 D9 D9 D9 D9 DA DA           DB EA20>>8, EA21>>8, EA22>>8, EA23>>8, E
 D4A8  D9 D9 D9 D9 D9 D9 DA DA           DB EA20>>8, EA21>>8, EA22>>8, EA23>>8, EA24>>8, EA25>>8, EA26>>8, EA27>>8
 D4B0  D9 D9 D9 D9 D9 D9 DA DA           DB EA20>>8, EA21>>8, EA22>>8, EA23>>8, EA24>>8, EA25>>8, EA26>>8, EA27>>8
 D4B8  D9 D9 D9 D9 D9 D9 DA DA           DB EA20>>8, EA21>>8, EA22>>8, EA23>>8, EA24>>8, EA25>>8, EA26>>8, EA27>>8
-D4C0  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
-D4C8  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
-D4D0  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
-D4D8  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
-D4E0  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
-D4E8  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
-D4F0  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
-D4F8  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
+                                ; FHOME: restore to track 0, polled (CBIOS F7B5h). NZ: seek error, the
+                                ; drive never showed track 0 (A = 10h), or the restore timed out (A =
+                                ; 20h, ~3.1 s).  Keeps BC; corrupts DE.  In the EAHI page's free end.
+D4C0  3A 0A F1                  FHOME:  LD A,(RESCMD)
+D4C3  D3 C0                             OUT (0C0h),A
+D4C5  C5                                PUSH BC
+D4C6  06 12                             LD B,12h                ; let the FDC raise BUSY
+D4C8  10 FE                     FH0:    DJNZ FH0
+D4CA  06 04                             LD B,4
+D4CC  11 00 00                          LD DE,0
+D4CF  DB C0                     FH1:    IN A,(0C0h)
+D4D1  1F                                RRA
+D4D2  30 0B                             JR NC,FH2
+D4D4  1B                                DEC DE
+D4D5  7A                                LD A,D
+D4D6  B3                                OR E
+D4D7  20 F6                             JR NZ,FH1
+D4D9  10 F4                             DJNZ FH1
+D4DB  C1                                POP BC
+D4DC  C3 E4 D4                          JP FDTOUT
+D4DF  C1                        FH2:    POP BC
+D4E0  17                                RLA
+D4E1  E6 10                             AND 10h
+D4E3  C9                                RET
+                                
+                                ; FDTOUT: a floppy wait timed out.  Stop the command (Force Interrupt with
+                                ; no condition raises no INTRQ) and return NZ, A = 20h ("not ready").
+                                ; Reached by JP from the waits, so its RET goes to their caller.
+D4E4  F3                        FDTOUT: DI
+D4E5  3E D0                             LD A,0D0h
+D4E7  D3 C0                             OUT (0C0h),A
+D4E9  3E 20                             LD A,20h
+D4EB  B7                                OR A
+D4EC  C9                                RET
+D4ED                            EAHIEND:
+D4ED  00 00 00 00 00 00 00 00           DS EAHI+256-$
+D4ED  00 00 00 00 00 00 00 00   
+D4ED  00 00 00                  
                                 
                                 ; ------------------------------------------------- ALU cores, 16-byte slots
                                 ; In: HL = destination operand, E = source. Index: (op >> 3) & 7.
@@ -3905,12 +3958,12 @@ EB60  E9                        JPHL:   JP (HL)
                                 
 EB61  5F EB BA EB C6 EB CD EB   TTAB:   DW TNONE, T_STAT, T_INP, T_OUTP         ; 0-3
 EB69  D3 EB DF EB D9 EB DC EC           DW T_PRINT, T_AUXIN, T_AUXOUT, T_READ   ; 4-7
-EB71  DF EC 2D EF 34 EF 3B EF           DW T_WRITE, T_DSKCHG, T_SDATE, T_STIME  ; 8-11
-EB79  48 EF E6 EB 5F EB 5F EB           DW T_GTIME, T_FLUSH, TNONE, TNONE       ; 12, 13, 14 MAPDEV, 15
-EB81  5B EF EB EF F2 EF 5F EB           DW T_I10, T_I11, T_I12, TNONE           ; 10h-13h: IBM PC ROM BIOS
-EB89  20 F0 5F EB F9 EF 6C F0           DW T_I14, TNONE, T_I16, T_I17           ; 14h-17h
-EB91  5F EB 5F EB 92 F0                 DW TNONE, TNONE, T_I1A                  ; 18h-1Ah
-EB97  A4 EE B5 F0 DC F0                 DW T_FMT, T_CPML, T_RET                 ; 1Bh: FORMAT.COM, 1Ch-1Dh: CPM.COM
+EB71  DF EC 1F EF 26 EF 2D EF           DW T_WRITE, T_DSKCHG, T_SDATE, T_STIME  ; 8-11
+EB79  3A EF E6 EB 5F EB 5F EB           DW T_GTIME, T_FLUSH, TNONE, TNONE       ; 12, 13, 14 MAPDEV, 15
+EB81  4D EF DD EF E4 EF 5F EB           DW T_I10, T_I11, T_I12, TNONE           ; 10h-13h: IBM PC ROM BIOS
+EB89  12 F0 5F EB EB EF 5E F0           DW T_I14, TNONE, T_I16, T_I17           ; 14h-17h
+EB91  5F EB 5F EB 84 F0                 DW TNONE, TNONE, T_I1A                  ; 18h-1Ah
+EB97  91 EE A7 F0 CE F0                 DW T_FMT, T_CPML, T_RET                 ; 1Bh: FORMAT.COM, 1Ch-1Dh: CPM.COM
 EB9D                            TTEND:
                                 
                                 ; 8086 flags in F': F' = F' AND D OR E
@@ -4134,7 +4187,7 @@ ECEF  2A 1E D0                          LD HL,(B_DS)
 ECF2  ED 5B 06 D0                       LD DE,(R_BX)
 ECF6  19                                ADD HL,DE
 ECF7  22 1B F1                          LD (DADDR),HL
-ECFA  CD 76 EE                          CALL HOOK38
+ECFA  CD 63 EE                          CALL HOOK38
 ECFD  2A 02 D0                  DLOOP:  LD HL,(R_CX)
 ED00  7C                                LD A,H
 ED01  B5                                OR L
@@ -4179,10 +4232,10 @@ ED4F  2A 02 D0                          LD HL,(R_CX)
 ED52  2B                                DEC HL
 ED53  22 02 D0                          LD (R_CX),HL
 ED56  18 A5                             JR DLOOP
-ED58  CD 8D EE                  DDONE:  CALL UNHOOK
+ED58  CD 7A EE                  DDONE:  CALL UNHOOK
 ED5B  C3 AC EB                          JP CF0
 ED5E  F5                        DFAIL:  PUSH AF
-ED5F  CD 8D EE                          CALL UNHOOK
+ED5F  CD 7A EE                          CALL UNHOOK
 ED62  F1                                POP AF
 ED63  21 79 ED                          LD HL,ERRTAB            ; the status's top bit -> DOS error code
 ED66  06 05                             LD B,5
@@ -4206,477 +4259,472 @@ ED7E  0C                                DB 0Ch                  ; lost data, bad
                                 ; SECTIO: one sector, DSEC of track DTRK, at DADDR. Z = done; else
                                 ; A = status (as ERRTAB).
 ED7F  3A 15 F1                  SECTIO: LD A,(DDRIVE)
-ED82  CD 25 EE                          CALL SELECT
+ED82  CD 12 EE                          CALL SELECT
 ED85  C0                                RET NZ
 ED86  3E 0A                             LD A,RETRIES
 ED88  32 18 F1                          LD (DTRY),A
-ED8B  CD E9 ED                  SIO1:   CALL SEEK
+ED8B  CD E2 ED                  SIO1:   CALL SEEK
 ED8E  C0                                RET NZ
 ED8F  3A 17 F1                          LD A,(DSEC)
 ED92  D3 C2                             OUT (0C2h),A
 ED94  2A 1B F1                          LD HL,(DADDR)
-ED97  3A 14 F1                          LD A,(DWRITE)
-ED9A  B7                                OR A
-ED9B  20 05                             JR NZ,SIO2
-ED9D  CD B8 ED                          CALL RDSEC
-EDA0  18 03                             JR SIO3
-EDA2  CD CA ED                  SIO2:   CALL WRSEC
-EDA5  B7                        SIO3:   OR A
-EDA6  C8                                RET Z
-EDA7  CB 77                             BIT 6,A                 ; write protected: no point retrying
-EDA9  C0                                RET NZ
-EDAA  32 1A F1                          LD (DSTAT),A
-EDAD  21 18 F1                          LD HL,DTRY
-EDB0  35                                DEC (HL)
-EDB1  20 D8                             JR NZ,SIO1
-EDB3  3A 1A F1                          LD A,(DSTAT)
-EDB6  B7                                OR A
-EDB7  C9                                RET
+ED97  3A 14 F1                          LD A,(DWRITE)           ; XFER's transfer instruction: INI (ED A2)
+ED9A  C6 A2                             ADD A,0A2h              ; to read, OUTI (ED A3) to write
+ED9C  32 E1 D3                          LD (XFI+1),A
+ED9F  3A 14 F1                          LD A,(DWRITE)           ; and the command: 80h read sector,
+EDA2  0F                                RRCA                    ; A0h write sector
+EDA3  0F                                RRCA
+EDA4  0F                                RRCA
+EDA5  C6 80                             ADD A,80h
+EDA7  CD C0 D3                          CALL XFER
+EDAA  B7                                OR A
+EDAB  C8                                RET Z
+EDAC  CB 77                             BIT 6,A                 ; write protected: no point retrying
+EDAE  C0                                RET NZ
+EDAF  CB 6F                             BIT 5,A                 ; timed out (no disk, no drive): nor here,
+EDB1  C0                                RET NZ                  ; or DOS would wait 10 x 3 s
+EDB2  32 1A F1                          LD (DSTAT),A
+EDB5  21 18 F1                          LD HL,DTRY
+EDB8  35                                DEC (HL)
+EDB9  28 08                             JR Z,SIO4
+EDBB  7E                                LD A,(HL)               ; half the tries gone: back to track 0, so
+EDBC  FE 05                             CP RETRIES/2            ; that SEEK really moves the head again
+EDBE  CC C0 D4                          CALL Z,FHOME            ; (it skips a seek to the track it is on)
+EDC1  18 C8                             JR SIO1
+EDC3  3A 1A F1                  SIO4:   LD A,(DSTAT)
+EDC6  B7                                OR A
+EDC7  C9                                RET
                                 
-                                ; RDSEC / WRSEC: 256 bytes at HL (CBIOS F8ECh / F934h). They end when
-                                ; INTRQ goes through 0038h to FDCINT: A = status AND 5Ch.
-EDB8  0E C3                     RDSEC:  LD C,0C3h
-EDBA  ED 56                             IM 1
-EDBC  FB                                EI
-EDBD  3E 80                             LD A,80h                ; read sector
-EDBF  D3 C0                             OUT (0C0h),A
-EDC1  DB 2F                     RD1:    IN A,(2Fh)              ; bit 7 = DRQ
-EDC3  17                                RLA
-EDC4  30 FB                             JR NC,RD1
-EDC6  ED A2                             INI
-EDC8  18 F7                             JR RD1
+                                ; Floppy waits time out after about 3 s at 4 MHz: a drive with no disk
+                                ; (or no drive) gives the WD177x no index pulses, so a spin-up, a sector
+                                ; search or a verify would never end.  FDTOUT then stops the command and
+                                ; returns A = 20h (NZ), which DFAIL's ERRTAB turns into DOS's "not ready"
+                                ; (error 2).  20h never comes from the FDC itself: its status is ANDed
+                                ; with 5Ch on the way out.  The waits that time out: FDCCMD's, FHOME's,
+                                ; and XFER's wait for the FIRST data byte; the byte loop itself is CBIOS
+                                ; A1.1's, unchanged (the timing that ran on a real FDD3000).
                                 
-EDCA  0E C3                     WRSEC:  LD C,0C3h
-EDCC  ED 56                             IM 1
-EDCE  FB                                EI
-EDCF  3E A0                             LD A,0A0h               ; write sector
-EDD1  D3 C0                             OUT (0C0h),A
-EDD3  DB 2F                     WR1:    IN A,(2Fh)
-EDD5  17                                RLA
-EDD6  30 FB                             JR NC,WR1
-EDD8  ED A3                             OUTI
-EDDA  18 F7                             JR WR1
+                                ; FDCCMD: command A, wait for INTRQ: A = status AND 5Ch, or A = 20h after
+                                ; the timeout.  Corrupts B, DE (8 x 65536 turns of 26 T: ~3.4 s at 4 MHz).
+EDC8  ED 56                     FDCCMD: IM 1
+EDCA  FB                                EI
+EDCB  D3 C0                             OUT (0C0h),A
+EDCD  06 08                             LD B,8
+EDCF  11 00 00                          LD DE,0
+EDD2  1B                        FDCW:   DEC DE                  ; INTRQ ends this through FDCINT
+EDD3  7A                                LD A,D
+EDD4  B3                                OR E
+EDD5  20 FB                             JR NZ,FDCW
+EDD7  10 F9                             DJNZ FDCW
+EDD9  C3 E4 D4                          JP FDTOUT
                                 
-                                ; FDCCMD: command A, wait for INTRQ: A = status AND 5Ch.
-EDDC  ED 56                     FDCCMD: IM 1
-EDDE  FB                                EI
-EDDF  D3 C0                             OUT (0C0h),A
-EDE1  18 FE                     FDCW:   JR FDCW
-                                
-EDE3  F1                        FDCINT: POP AF                  ; drop the waiting loop's address
-EDE4  DB C0                             IN A,(0C0h)             ; status; clears INTRQ
-EDE6  E6 5C                             AND 5Ch
-EDE8  C9                                RET                     ; to whoever called the loop (DI stays)
+EDDC  F1                        FDCINT: POP AF                  ; drop the waiting loop's address
+EDDD  DB C0                             IN A,(0C0h)             ; status; clears INTRQ
+EDDF  E6 5C                             AND 5Ch
+EDE1  C9                                RET                     ; to whoever called the loop (DI stays)
                                 
                                 ; SEEK: to DTRK with verify (CBIOS FB7Ch). Z = there; NZ, A = 80h failed.
-EDE9  3A 16 F1                  SEEK:   LD A,(DTRK)
-EDEC  47                                LD B,A
-EDED  DB C1                             IN A,(0C1h)
-EDEF  B8                                CP B
-EDF0  28 1D                             JR Z,SKOK
-EDF2  3E 0A                             LD A,RETRIES
-EDF4  32 19 F1                          LD (STRY),A
-EDF7  78                        SK1:    LD A,B
-EDF8  D3 C3                             OUT (0C3h),A
-EDFA  3E 15                             LD A,15h                ; seek, verify
-EDFC  CD DC ED                          CALL FDCCMD
-EDFF  E6 18                             AND 18h                 ; seek error, CRC
-EE01  C8                                RET Z
-EE02  CD 11 EE                          CALL FHOME
-EE05  21 19 F1                          LD HL,STRY
-EE08  35                                DEC (HL)
-EE09  20 EC                             JR NZ,SK1
-EE0B  3E 80                             LD A,80h
-EE0D  B7                                OR A
-EE0E  C9                                RET
-EE0F  AF                        SKOK:   XOR A
-EE10  C9                                RET
+EDE2  3A 16 F1                  SEEK:   LD A,(DTRK)
+EDE5  47                                LD B,A
+EDE6  DB C1                             IN A,(0C1h)
+EDE8  B8                                CP B
+EDE9  28 25                             JR Z,SKOK
+EDEB  3E 0A                             LD A,RETRIES
+EDED  32 19 F1                          LD (STRY),A
+EDF0  3A 16 F1                  SK1:    LD A,(DTRK)             ; (from memory: FDCCMD's timer uses B)
+EDF3  D3 C3                             OUT (0C3h),A
+EDF5  3E 15                             LD A,15h                ; seek, verify
+EDF7  CD C8 ED                          CALL FDCCMD
+EDFA  CB 6F                             BIT 5,A                 ; timed out: give up at once (A = 20h)
+EDFC  C0                                RET NZ
+EDFD  E6 18                             AND 18h                 ; seek error, CRC
+EDFF  C8                                RET Z
+EE00  CD C0 D4                          CALL FHOME
+EE03  CB 6F                             BIT 5,A                 ; the restore timed out too
+EE05  C0                                RET NZ
+EE06  21 19 F1                          LD HL,STRY
+EE09  35                                DEC (HL)
+EE0A  20 E4                             JR NZ,SK1
+EE0C  3E 80                             LD A,80h
+EE0E  B7                                OR A
+EE0F  C9                                RET
+EE10  AF                        SKOK:   XOR A
+EE11  C9                                RET
                                 
-                                ; FHOME: restore to track 0, polled (CBIOS F7B5h). NZ: seek error, the
-                                ; drive never showed track 0.
-EE11  3A 0A F1                  FHOME:  LD A,(RESCMD)
-EE14  D3 C0                             OUT (0C0h),A
-EE16  C5                                PUSH BC
-EE17  06 12                             LD B,12h                ; let the FDC raise BUSY
-EE19  10 FE                     FH0:    DJNZ FH0
-EE1B  C1                                POP BC
-EE1C  DB C0                     FH1:    IN A,(0C0h)
-EE1E  1F                                RRA
-EE1F  38 FB                             JR C,FH1
-EE21  17                                RLA
-EE22  E6 10                             AND 10h
-EE24  C9                                RET
+                                
                                 
                                 ; SELECT: drive A on, head loaded; the FDC track register is set to
                                 ; where that drive's head is (CBIOS FA1Eh). A drive not used yet is
                                 ; restored first. Z = done; NZ, A = 20h: the restore failed (no drive).
-EE25  4F                        SELECT: LD C,A
-EE26  3A 0E F1                          LD A,(CURDRV)
-EE29  B9                                CP C
-EE2A  20 05                             JR NZ,SEL0
-EE2C  CD 5C EE                          CALL LATCHC
-EE2F  AF                                XOR A
-EE30  C9                                RET
-EE31  FE 04                     SEL0:   CP NDRIVE
-EE33  30 06                             JR NC,SEL1
-EE35  CD 6E EE                          CALL TRKPTR             ; keep the old drive's track
-EE38  DB C1                             IN A,(0C1h)
-EE3A  77                                LD (HL),A
-EE3B  79                        SEL1:   LD A,C
-EE3C  32 0E F1                          LD (CURDRV),A
-EE3F  CD 5C EE                          CALL LATCHC
-EE42  79                                LD A,C
-EE43  CD 6E EE                          CALL TRKPTR
-EE46  7E                                LD A,(HL)
-EE47  FE FF                             CP 0FFh
-EE49  28 04                             JR Z,SEL2
-EE4B  D3 C1                             OUT (0C1h),A
-EE4D  AF                                XOR A
-EE4E  C9                                RET
-EE4F  CD 11 EE                  SEL2:   CALL FHOME
-EE52  C8                                RET Z
-EE53  3E FF                             LD A,0FFh               ; restore it again next time
-EE55  32 0E F1                          LD (CURDRV),A
-EE58  3E 20                             LD A,20h
-EE5A  B7                                OR A
-EE5B  C9                                RET
+EE12  4F                        SELECT: LD C,A
+EE13  3A 0E F1                          LD A,(CURDRV)
+EE16  B9                                CP C
+EE17  20 05                             JR NZ,SEL0
+EE19  CD 49 EE                          CALL LATCHC
+EE1C  AF                                XOR A
+EE1D  C9                                RET
+EE1E  FE 04                     SEL0:   CP NDRIVE
+EE20  30 06                             JR NC,SEL1
+EE22  CD 5B EE                          CALL TRKPTR             ; keep the old drive's track
+EE25  DB C1                             IN A,(0C1h)
+EE27  77                                LD (HL),A
+EE28  79                        SEL1:   LD A,C
+EE29  32 0E F1                          LD (CURDRV),A
+EE2C  CD 49 EE                          CALL LATCHC
+EE2F  79                                LD A,C
+EE30  CD 5B EE                          CALL TRKPTR
+EE33  7E                                LD A,(HL)
+EE34  FE FF                             CP 0FFh
+EE36  28 04                             JR Z,SEL2
+EE38  D3 C1                             OUT (0C1h),A
+EE3A  AF                                XOR A
+EE3B  C9                                RET
+EE3C  CD C0 D4                  SEL2:   CALL FHOME
+EE3F  C8                                RET Z
+EE40  3E FF                             LD A,0FFh               ; restore it again next time
+EE42  32 0E F1                          LD (CURDRV),A
+EE45  3E 20                             LD A,20h
+EE47  B7                                OR A
+EE48  C9                                RET
                                 
                                 ; LATCHC: latch = drive C selected (bits 0-3 low active), side 0 (bit 4
                                 ; high), boot ROM off (bit 6 high), head loaded (bit 7 low)
-EE5C  41                        LATCHC: LD B,C
-EE5D  04                                INC B
-EE5E  3E FE                             LD A,0FEh
-EE60  05                        LC1:    DEC B
-EE61  28 03                             JR Z,LC2
-EE63  07                                RLCA
-EE64  18 FA                             JR LC1
-EE66  E6 5F                     LC2:    AND 5Fh
-EE68  D3 E0                             OUT (0E0h),A
-EE6A  32 13 F1                          LD (LATCH),A
-EE6D  C9                                RET
+EE49  41                        LATCHC: LD B,C
+EE4A  04                                INC B
+EE4B  3E FE                             LD A,0FEh
+EE4D  05                        LC1:    DEC B
+EE4E  28 03                             JR Z,LC2
+EE50  07                                RLCA
+EE51  18 FA                             JR LC1
+EE53  E6 5F                     LC2:    AND 5Fh
+EE55  D3 E0                             OUT (0E0h),A
+EE57  32 13 F1                          LD (LATCH),A
+EE5A  C9                                RET
                                 
-EE6E  21 0F F1                  TRKPTR: LD HL,TRKTAB
-EE71  85                                ADD A,L
-EE72  6F                                LD L,A
-EE73  D0                                RET NC
-EE74  24                                INC H
-EE75  C9                                RET
+EE5B  21 0F F1                  TRKPTR: LD HL,TRKTAB
+EE5E  85                                ADD A,L
+EE5F  6F                                LD L,A
+EE60  D0                                RET NC
+EE61  24                                INC H
+EE62  C9                                RET
                                 
                                 ; HOOK38 / UNHOOK: point 0038h (the 8086's INT 0Eh vector) at FDCINT for a
                                 ; disk call, then put the vector back and unload the head.
-EE76  21 38 00                  HOOK38: LD HL,0038h
-EE79  11 1D F1                          LD DE,SAV38
-EE7C  01 03 00                          LD BC,3
-EE7F  ED B0                             LDIR
-EE81  3E C3                             LD A,0C3h               ; JP FDCINT
-EE83  32 38 00                          LD (0038h),A
-EE86  21 E3 ED                          LD HL,FDCINT
-EE89  22 39 00                          LD (0039h),HL
-EE8C  C9                                RET
+EE63  21 38 00                  HOOK38: LD HL,0038h
+EE66  11 1D F1                          LD DE,SAV38
+EE69  01 03 00                          LD BC,3
+EE6C  ED B0                             LDIR
+EE6E  3E C3                             LD A,0C3h               ; JP FDCINT
+EE70  32 38 00                          LD (0038h),A
+EE73  21 DC ED                          LD HL,FDCINT
+EE76  22 39 00                          LD (0039h),HL
+EE79  C9                                RET
                                 
-EE8D  F3                        UNHOOK: DI
-EE8E  21 1D F1                          LD HL,SAV38
-EE91  11 38 00                          LD DE,0038h
-EE94  01 03 00                          LD BC,3
-EE97  ED B0                             LDIR
-EE99  3A 13 F1                          LD A,(LATCH)
-EE9C  F6 80                             OR 80h
-EE9E  D3 E0                             OUT (0E0h),A
-EEA0  32 13 F1                          LD (LATCH),A
-EEA3  C9                                RET
+EE7A  F3                        UNHOOK: DI
+EE7B  21 1D F1                          LD HL,SAV38
+EE7E  11 38 00                          LD DE,0038h
+EE81  01 03 00                          LD BC,3
+EE84  ED B0                             LDIR
+EE86  3A 13 F1                          LD A,(LATCH)
+EE89  F6 80                             OR 80h
+EE8B  D3 E0                             OUT (0E0h),A
+EE8D  32 13 F1                          LD (LATCH),A
+EE90  C9                                RET
                                 
                                 ; 1Bh FORMAT TRACK, for FORMAT.COM: AL = drive, DL = track, DS:BX = the
                                 ; track image, FMTLEN bytes as the WD177x write track takes them (F5h =
                                 ; sync, F7h = CRC; FORMAT.COM makes it as the CP/M FORMAT 2.0 does). The
                                 ; FDC then writes 4Eh until the index pulse. CF=1 on error, AL = DOS error
                                 ; code (0 write protect, 2 not ready, 8 no such track, 0Ch buffer).
-EEA4                            FMTLEN  EQU 32+SPT*332          ; FORMAT.ASM's image
-EEA4  3A 00 D0                  T_FMT:  LD A,(R_AL)
-EEA7  FE 04                             CP NDRIVE
-EEA9  D2 75 ED                          JR NC,DNRDY
-EEAC  32 15 F1                          LD (DDRIVE),A
-EEAF  CD 76 EE                          CALL HOOK38
-EEB2  3A 04 D0                          LD A,(R_DL)
-EEB5  32 16 F1                          LD (DTRK),A
-EEB8  FE 28                             CP NTRACK
-EEBA  3E 10                             LD A,10h
-EEBC  D2 5E ED                          JP NC,DFAIL
-EEBF  2A 1E D0                          LD HL,(B_DS)
-EEC2  ED 5B 06 D0                       LD DE,(R_BX)
-EEC6  19                                ADD HL,DE
-EEC7  22 1B F1                          LD (DADDR),HL
-EECA  11 89 B8                          LD DE,GTOP-FMTLEN+1
-EECD  B7                                OR A
-EECE  ED 52                             SBC HL,DE
-EED0  3E 01                             LD A,01h
-EED2  D2 5E ED                          JP NC,DFAIL
-EED5  3E 01                             LD A,01h                ; restore without verify: no IDs there yet
-EED7  32 0A F1                          LD (RESCMD),A
-EEDA  3A 15 F1                          LD A,(DDRIVE)
-EEDD  CD 25 EE                          CALL SELECT
-EEE0  47                                LD B,A
-EEE1  3E 05                             LD A,05h
-EEE3  32 0A F1                          LD (RESCMD),A
-EEE6  78                                LD A,B
-EEE7  C2 5E ED                          JP NZ,DFAIL
-EEEA  3A 16 F1                          LD A,(DTRK)             ; seek without verify too
-EEED  D3 C3                             OUT (0C3h),A
-EEEF  3E 11                             LD A,11h
-EEF1  CD DC ED                          CALL FDCCMD
-EEF4  2A 1B F1                          LD HL,(DADDR)
-EEF7  11 78 17                          LD DE,FMTLEN
-EEFA  0E C3                             LD C,0C3h
-EEFC  3E FE                             LD A,0FEh               ; write track, as FORMAT 2.0
-EEFE  D3 C0                             OUT (0C0h),A
-EF00  DB 2F                     FT1:    IN A,(2Fh)              ; bit 7 = DRQ
-EF02  87                                ADD A,A
-EF03  30 19                             JR NC,FT3
-EF05  ED A3                             OUTI
-EF07  1B                                DEC DE
-EF08  7A                                LD A,D
-EF09  B3                                OR E
-EF0A  20 F4                             JR NZ,FT1
-EF0C  DB 2F                     FT2:    IN A,(2Fh)              ; gap 4Eh until the index pulse ends it
-EF0E  87                                ADD A,A
-EF0F  30 06                             JR NC,FT4
-EF11  3E 4E                             LD A,4Eh
-EF13  D3 C3                             OUT (0C3h),A
-EF15  18 F5                             JR FT2
-EF17  DB C0                     FT4:    IN A,(0C0h)
-EF19  1F                                RRA
-EF1A  38 F0                             JR C,FT2
-EF1C  18 05                             JR FT5
-EF1E  DB C0                     FT3:    IN A,(0C0h)
-EF20  1F                                RRA
-EF21  38 DD                             JR C,FT1
-EF23  DB C0                     FT5:    IN A,(0C0h)
-EF25  E6 40                             AND 40h                 ; write protect
-EF27  C2 5E ED                          JP NZ,DFAIL
-EF2A  C3 58 ED                          JP DDONE
+EE91                            FMTLEN  EQU 32+SPT*332          ; FORMAT.ASM's image
+EE91  3A 00 D0                  T_FMT:  LD A,(R_AL)
+EE94  FE 04                             CP NDRIVE
+EE96  D2 75 ED                          JR NC,DNRDY
+EE99  32 15 F1                          LD (DDRIVE),A
+EE9C  CD 63 EE                          CALL HOOK38
+EE9F  3A 04 D0                          LD A,(R_DL)
+EEA2  32 16 F1                          LD (DTRK),A
+EEA5  FE 28                             CP NTRACK
+EEA7  3E 10                             LD A,10h
+EEA9  D2 5E ED                          JP NC,DFAIL
+EEAC  2A 1E D0                          LD HL,(B_DS)
+EEAF  ED 5B 06 D0                       LD DE,(R_BX)
+EEB3  19                                ADD HL,DE
+EEB4  22 1B F1                          LD (DADDR),HL
+EEB7  11 89 B8                          LD DE,GTOP-FMTLEN+1
+EEBA  B7                                OR A
+EEBB  ED 52                             SBC HL,DE
+EEBD  3E 01                             LD A,01h
+EEBF  D2 5E ED                          JP NC,DFAIL
+EEC2  3E 01                             LD A,01h                ; restore without verify: no IDs there yet
+EEC4  32 0A F1                          LD (RESCMD),A
+EEC7  3A 15 F1                          LD A,(DDRIVE)
+EECA  CD 12 EE                          CALL SELECT
+EECD  47                                LD B,A
+EECE  3E 05                             LD A,05h
+EED0  32 0A F1                          LD (RESCMD),A
+EED3  78                                LD A,B
+EED4  C2 5E ED                          JP NZ,DFAIL
+EED7  3A 16 F1                          LD A,(DTRK)             ; seek without verify too
+EEDA  D3 C3                             OUT (0C3h),A
+EEDC  3E 11                             LD A,11h
+EEDE  CD C8 ED                          CALL FDCCMD
+EEE1  CB 6F                             BIT 5,A                 ; the seek timed out (no disk): not ready.
+EEE3  C2 5E ED                          JP NZ,DFAIL             ; (The write track itself is not timed: a
+EEE6  2A 1B F1                          LD HL,(DADDR)           ; disk pulled with the motor running hangs it)
+EEE9  11 78 17                          LD DE,FMTLEN
+EEEC  0E C3                             LD C,0C3h
+EEEE  3E FE                             LD A,0FEh               ; write track, as FORMAT 2.0
+EEF0  D3 C0                             OUT (0C0h),A
+EEF2  DB 2F                     FT1:    IN A,(2Fh)              ; bit 7 = DRQ
+EEF4  87                                ADD A,A
+EEF5  30 19                             JR NC,FT3
+EEF7  ED A3                             OUTI
+EEF9  1B                                DEC DE
+EEFA  7A                                LD A,D
+EEFB  B3                                OR E
+EEFC  20 F4                             JR NZ,FT1
+EEFE  DB 2F                     FT2:    IN A,(2Fh)              ; gap 4Eh until the index pulse ends it
+EF00  87                                ADD A,A
+EF01  30 06                             JR NC,FT4
+EF03  3E 4E                             LD A,4Eh
+EF05  D3 C3                             OUT (0C3h),A
+EF07  18 F5                             JR FT2
+EF09  DB C0                     FT4:    IN A,(0C0h)
+EF0B  1F                                RRA
+EF0C  38 F0                             JR C,FT2
+EF0E  18 05                             JR FT5
+EF10  DB C0                     FT3:    IN A,(0C0h)
+EF12  1F                                RRA
+EF13  38 DD                             JR C,FT1
+EF15  DB C0                     FT5:    IN A,(0C0h)
+EF17  E6 40                             AND 40h                 ; write protect
+EF19  C2 5E ED                          JP NZ,DFAIL
+EF1C  C3 58 ED                          JP DDONE
                                 
                                 ; 9 DSKCHG: AH=0, don't know
-EF2D                            T_DSKCHG:
-EF2D  AF                                XOR A
-EF2E  32 01 D0                          LD (R_AH),A
-EF31  C3 AC EB                          JP CF0
+EF1F                            T_DSKCHG:
+EF1F  AF                                XOR A
+EF20  32 01 D0                          LD (R_AH),A
+EF23  C3 AC EB                          JP CF0
                                 
                                 ; ---------------------------------------------------------------- clock
                                 ; 10 SETDATE: AX = days since 1-1-80
-EF34                            T_SDATE:
-EF34  2A 00 D0                          LD HL,(R_AX)
-EF37  22 20 F1                          LD (DAYS),HL
-EF3A  C9                                RET
+EF26                            T_SDATE:
+EF26  2A 00 D0                          LD HL,(R_AX)
+EF29  22 20 F1                          LD (DAYS),HL
+EF2C  C9                                RET
                                 
                                 ; 11 SETTIME: CH hour, CL minute, DH second, DL 1/100
-EF3B                            T_STIME:
-EF3B  2A 02 D0                          LD HL,(R_CX)
-EF3E  22 22 F1                          LD (CLKCX),HL
-EF41  2A 04 D0                          LD HL,(R_DX)
-EF44  22 24 F1                          LD (CLKDX),HL
-EF47  C9                                RET
+EF2D                            T_STIME:
+EF2D  2A 02 D0                          LD HL,(R_CX)
+EF30  22 22 F1                          LD (CLKCX),HL
+EF33  2A 04 D0                          LD HL,(R_DX)
+EF36  22 24 F1                          LD (CLKDX),HL
+EF39  C9                                RET
                                 
                                 ; 12 GETTIME: AX = days, CX and DX as SETTIME
-EF48                            T_GTIME:
-EF48  2A 20 F1                          LD HL,(DAYS)
-EF4B  22 00 D0                          LD (R_AX),HL
-EF4E  2A 22 F1                          LD HL,(CLKCX)
-EF51  22 02 D0                          LD (R_CX),HL
-EF54  2A 24 F1                          LD HL,(CLKDX)
-EF57  22 04 D0                          LD (R_DX),HL
-EF5A  C9                                RET
+EF3A                            T_GTIME:
+EF3A  2A 20 F1                          LD HL,(DAYS)
+EF3D  22 00 D0                          LD (R_AX),HL
+EF40  2A 22 F1                          LD HL,(CLKCX)
+EF43  22 02 D0                          LD (R_CX),HL
+EF46  2A 24 F1                          LD HL,(CLKDX)
+EF49  22 04 D0                          LD (R_DX),HL
+EF4C  C9                                RET
                                 
                                 ; ---------------------------------------------------------------- PC ROM BIOS
                                 ; The parts PC-DOS programs (IBM's DEBUG, CHKDSK...) use, on the VT52
                                 ; terminal: as fddos.rom_bios.
                                 
                                 ; INT 10h video
-EF5B  3A 01 D0                  T_I10:  LD A,(R_AH)
-EF5E  FE 0E                             CP 0Eh                  ; teletype
-EF60  20 06                             JR NZ,I10A
-EF62  3A 00 D0                          LD A,(R_AL)
-EF65  C3 21 EC                          JP CONOUT
-EF68  FE 0F                     I10A:   CP 0Fh                  ; mode: 80 columns, mono
-EF6A  20 0B                             JR NZ,I10B
-EF6C  21 07 50                          LD HL,5007h
-EF6F  22 00 D0                          LD (R_AX),HL
-EF72  AF                                XOR A
-EF73  32 07 D0                          LD (R_BH),A
-EF76  C9                                RET
-EF77  FE 02                     I10B:   CP 02h                  ; cursor to DH, DL: ESC Y row col
-EF79  20 26                             JR NZ,I10C
-EF7B  3E 1B                             LD A,1Bh
-EF7D  CD 21 EC                          CALL CONOUT
-EF80  3E 59                             LD A,59h
+EF4D  3A 01 D0                  T_I10:  LD A,(R_AH)
+EF50  FE 0E                             CP 0Eh                  ; teletype
+EF52  20 06                             JR NZ,I10A
+EF54  3A 00 D0                          LD A,(R_AL)
+EF57  C3 21 EC                          JP CONOUT
+EF5A  FE 0F                     I10A:   CP 0Fh                  ; mode: 80 columns, mono
+EF5C  20 0B                             JR NZ,I10B
+EF5E  21 07 50                          LD HL,5007h
+EF61  22 00 D0                          LD (R_AX),HL
+EF64  AF                                XOR A
+EF65  32 07 D0                          LD (R_BH),A
+EF68  C9                                RET
+EF69  FE 02                     I10B:   CP 02h                  ; cursor to DH, DL: ESC Y row col
+EF6B  20 26                             JR NZ,I10C
+EF6D  3E 1B                             LD A,1Bh
+EF6F  CD 21 EC                          CALL CONOUT
+EF72  3E 59                             LD A,59h
+EF74  CD 21 EC                          CALL CONOUT
+EF77  3A 05 D0                          LD A,(R_DH)
+EF7A  FE 17                             CP 23
+EF7C  38 02                             JR C,I10B1
+EF7E  3E 17                             LD A,23
+EF80  C6 20                     I10B1:  ADD A,32
 EF82  CD 21 EC                          CALL CONOUT
-EF85  3A 05 D0                          LD A,(R_DH)
-EF88  FE 17                             CP 23
-EF8A  38 02                             JR C,I10B1
-EF8C  3E 17                             LD A,23
-EF8E  C6 20                     I10B1:  ADD A,32
-EF90  CD 21 EC                          CALL CONOUT
-EF93  3A 04 D0                          LD A,(R_DL)
-EF96  FE 4F                             CP 79
-EF98  38 02                             JR C,I10B2
-EF9A  3E 4F                             LD A,79
-EF9C  C6 20                     I10B2:  ADD A,32
-EF9E  C3 21 EC                          JP CONOUT
-EFA1  FE 03                     I10C:   CP 03h                  ; read cursor: not tracked
-EFA3  20 0D                             JR NZ,I10D
-EFA5  21 00 00                          LD HL,0
-EFA8  22 04 D0                          LD (R_DX),HL
-EFAB  21 07 06                          LD HL,0607h
-EFAE  22 02 D0                          LD (R_CX),HL
-EFB1  C9                                RET
-EFB2  FE 06                     I10D:   CP 06h                  ; scroll with AL=0: clear the screen
-EFB4  28 04                             JR Z,I10D1
-EFB6  FE 07                             CP 07h
-EFB8  20 19                             JR NZ,I10E
-EFBA  3A 00 D0                  I10D1:  LD A,(R_AL)
-EFBD  B7                                OR A
-EFBE  C0                                RET NZ
-EFBF  3E 1B                             LD A,1Bh
-EFC1  CD 21 EC                          CALL CONOUT
-EFC4  3E 48                             LD A,48h                ; ESC H
-EFC6  CD 21 EC                          CALL CONOUT
-EFC9  3E 1B                             LD A,1Bh
-EFCB  CD 21 EC                          CALL CONOUT
-EFCE  3E 4A                             LD A,4Ah                ; ESC J
-EFD0  C3 21 EC                          JP CONOUT
-EFD3  FE 09                     I10E:   CP 09h                  ; AL, CX times
-EFD5  28 03                             JR Z,I10E1
-EFD7  FE 0A                             CP 0Ah
-EFD9  C0                                RET NZ
-EFDA  2A 02 D0                  I10E1:  LD HL,(R_CX)
-EFDD  7C                        I10E2:  LD A,H
-EFDE  B5                                OR L
-EFDF  C8                                RET Z
-EFE0  E5                                PUSH HL
-EFE1  3A 00 D0                          LD A,(R_AL)
-EFE4  CD 21 EC                          CALL CONOUT
-EFE7  E1                                POP HL
-EFE8  2B                                DEC HL
-EFE9  18 F2                             JR I10E2
+EF85  3A 04 D0                          LD A,(R_DL)
+EF88  FE 4F                             CP 79
+EF8A  38 02                             JR C,I10B2
+EF8C  3E 4F                             LD A,79
+EF8E  C6 20                     I10B2:  ADD A,32
+EF90  C3 21 EC                          JP CONOUT
+EF93  FE 03                     I10C:   CP 03h                  ; read cursor: not tracked
+EF95  20 0D                             JR NZ,I10D
+EF97  21 00 00                          LD HL,0
+EF9A  22 04 D0                          LD (R_DX),HL
+EF9D  21 07 06                          LD HL,0607h
+EFA0  22 02 D0                          LD (R_CX),HL
+EFA3  C9                                RET
+EFA4  FE 06                     I10D:   CP 06h                  ; scroll with AL=0: clear the screen
+EFA6  28 04                             JR Z,I10D1
+EFA8  FE 07                             CP 07h
+EFAA  20 19                             JR NZ,I10E
+EFAC  3A 00 D0                  I10D1:  LD A,(R_AL)
+EFAF  B7                                OR A
+EFB0  C0                                RET NZ
+EFB1  3E 1B                             LD A,1Bh
+EFB3  CD 21 EC                          CALL CONOUT
+EFB6  3E 48                             LD A,48h                ; ESC H
+EFB8  CD 21 EC                          CALL CONOUT
+EFBB  3E 1B                             LD A,1Bh
+EFBD  CD 21 EC                          CALL CONOUT
+EFC0  3E 4A                             LD A,4Ah                ; ESC J
+EFC2  C3 21 EC                          JP CONOUT
+EFC5  FE 09                     I10E:   CP 09h                  ; AL, CX times
+EFC7  28 03                             JR Z,I10E1
+EFC9  FE 0A                             CP 0Ah
+EFCB  C0                                RET NZ
+EFCC  2A 02 D0                  I10E1:  LD HL,(R_CX)
+EFCF  7C                        I10E2:  LD A,H
+EFD0  B5                                OR L
+EFD1  C8                                RET Z
+EFD2  E5                                PUSH HL
+EFD3  3A 00 D0                          LD A,(R_AL)
+EFD6  CD 21 EC                          CALL CONOUT
+EFD9  E1                                POP HL
+EFDA  2B                                DEC HL
+EFDB  18 F2                             JR I10E2
                                 
                                 ; INT 11h equipment: 2 floppies, 80x25 mono
-EFEB  21 71 00                  T_I11:  LD HL,0071h
-EFEE  22 00 D0                          LD (R_AX),HL
-EFF1  C9                                RET
+EFDD  21 71 00                  T_I11:  LD HL,0071h
+EFE0  22 00 D0                          LD (R_AX),HL
+EFE3  C9                                RET
                                 
                                 ; INT 12h memory in KB
-EFF2  21 34 00                  T_I12:  LD HL,GTOP/1024
-EFF5  22 00 D0                          LD (R_AX),HL
-EFF8  C9                                RET
+EFE4  21 34 00                  T_I12:  LD HL,GTOP/1024
+EFE7  22 00 D0                          LD (R_AX),HL
+EFEA  C9                                RET
                                 
                                 ; INT 16h keyboard: AH=0 wait, AH=1 look (ZF=1 none)
-EFF9  3A 01 D0                  T_I16:  LD A,(R_AH)
-EFFC  B7                                OR A
-EFFD  20 0A                             JR NZ,I16A
-EFFF  CD 13 EC                          CALL GETKEY
-F002  6F                                LD L,A
-F003  26 00                             LD H,0
-F005  22 00 D0                          LD (R_AX),HL
-F008  C9                                RET
-F009  3D                        I16A:   DEC A
-F00A  20 0F                             JR NZ,I16B
-F00C  CD F6 EB                          CALL PEEKEY
-F00F  D2 9D EB                          JP NC,ZF1
-F012  6F                                LD L,A
-F013  26 00                             LD H,0
-F015  22 00 D0                          LD (R_AX),HL
-F018  C3 A2 EB                          JP ZF0
-F01B  AF                        I16B:   XOR A
-F01C  32 00 D0                          LD (R_AL),A
-F01F  C9                                RET
+EFEB  3A 01 D0                  T_I16:  LD A,(R_AH)
+EFEE  B7                                OR A
+EFEF  20 0A                             JR NZ,I16A
+EFF1  CD 13 EC                          CALL GETKEY
+EFF4  6F                                LD L,A
+EFF5  26 00                             LD H,0
+EFF7  22 00 D0                          LD (R_AX),HL
+EFFA  C9                                RET
+EFFB  3D                        I16A:   DEC A
+EFFC  20 0F                             JR NZ,I16B
+EFFE  CD F6 EB                          CALL PEEKEY
+F001  D2 9D EB                          JP NC,ZF1
+F004  6F                                LD L,A
+F005  26 00                             LD H,0
+F007  22 00 D0                          LD (R_AX),HL
+F00A  C3 A2 EB                          JP ZF0
+F00D  AF                        I16B:   XOR A
+F00E  32 00 D0                          LD (R_AL),A
+F011  C9                                RET
                                 
                                 ; INT 14h serial: DX = 0 channel A, 1 channel B. AH = 0 set up from AL
                                 ; (PC format), 1 send AL, 2 receive into AL, 3 status, 4 set up from BX
                                 ; and CX (PS/2 format). Returns AH = line status (bit 7: timed out) and
                                 ; AL = modem status (but the byte received, for AH = 2).
-F020  2A 04 D0                  T_I14:  LD HL,(R_DX)
-F023  0E 81                             LD C,81h
-F025  7C                                LD A,H
-F026  B7                                OR A
-F027  C0                                RET NZ
-F028  B5                                OR L
-F029  28 04                             JR Z,I14A
+F012  2A 04 D0                  T_I14:  LD HL,(R_DX)
+F015  0E 81                             LD C,81h
+F017  7C                                LD A,H
+F018  B7                                OR A
+F019  C0                                RET NZ
+F01A  B5                                OR L
+F01B  28 04                             JR Z,I14A
+F01D  3D                                DEC A
+F01E  C0                                RET NZ
+F01F  0E 41                             LD C,41h
+F021  3A 01 D0                  I14A:   LD A,(R_AH)
+F024  B7                                OR A
+F025  CA C9 D5                          JP Z,I14INI             ; (in I86.ASM)
+F028  3D                                DEC A
+F029  28 0C                             JR Z,I14PUT
 F02B  3D                                DEC A
-F02C  C0                                RET NZ
-F02D  0E 41                             LD C,41h
-F02F  3A 01 D0                  I14A:   LD A,(R_AH)
-F032  B7                                OR A
-F033  CA C9 D5                          JP Z,I14INI             ; (in I86.ASM)
-F036  3D                                DEC A
-F037  28 0C                             JR Z,I14PUT
-F039  3D                                DEC A
-F03A  28 15                             JR Z,I14GET
-F03C  3D                                DEC A
-F03D  CA BF D0                          JP Z,SSTAT
-F040  3D                                DEC A
-F041  C0                                RET NZ
-F042  C3 A2 D5                          JP I14EXT               ; 4 (in I86.ASM, with 0)
-F045  3A 00 D0                  I14PUT: LD A,(R_AL)
-F048  5F                                LD E,A
-F049  21 FF FF                          LD HL,0FFFFh            ; about 1.5 s
-F04C  CD 48 D0                          CALL SPUT
-F04F  18 07                             JR I14T
-F051  21 FF FF                  I14GET: LD HL,0FFFFh
-F054  CD 67 D0                          CALL SGET
-F057  5F                                LD E,A
-F058  9F                        I14T:   SBC A,A                 ; CF: timed out
-F059  E6 80                             AND 80h
-F05B  57                                LD D,A
-F05C  D5                                PUSH DE
-F05D  CD BF D0                          CALL SSTAT
-F060  D1                                POP DE
-F061  7B                                LD A,E
-F062  32 00 D0                          LD (R_AL),A
-F065  21 01 D0                          LD HL,R_AH
-F068  7A                                LD A,D
-F069  B6                                OR (HL)
-F06A  77                                LD (HL),A
-F06B  C9                                RET
+F02C  28 15                             JR Z,I14GET
+F02E  3D                                DEC A
+F02F  CA BF D0                          JP Z,SSTAT
+F032  3D                                DEC A
+F033  C0                                RET NZ
+F034  C3 A2 D5                          JP I14EXT               ; 4 (in I86.ASM, with 0)
+F037  3A 00 D0                  I14PUT: LD A,(R_AL)
+F03A  5F                                LD E,A
+F03B  21 FF FF                          LD HL,0FFFFh            ; about 1.5 s
+F03E  CD 48 D0                          CALL SPUT
+F041  18 07                             JR I14T
+F043  21 FF FF                  I14GET: LD HL,0FFFFh
+F046  CD 67 D0                          CALL SGET
+F049  5F                                LD E,A
+F04A  9F                        I14T:   SBC A,A                 ; CF: timed out
+F04B  E6 80                             AND 80h
+F04D  57                                LD D,A
+F04E  D5                                PUSH DE
+F04F  CD BF D0                          CALL SSTAT
+F052  D1                                POP DE
+F053  7B                                LD A,E
+F054  32 00 D0                          LD (R_AL),A
+F057  21 01 D0                          LD HL,R_AH
+F05A  7A                                LD A,D
+F05B  B6                                OR (HL)
+F05C  77                                LD (HL),A
+F05D  C9                                RET
                                 
                                 ; INT 17h printer (channel A, whatever DX is): AH = 0 print AL, 1 set up
                                 ; (nothing to do), 2 status. AH = 90h ready, 10h busy (no DSR), +1 timed out.
-F06C  0E 81                     T_I17:  LD C,81h
-F06E  1E 00                             LD E,0
-F070  3A 01 D0                          LD A,(R_AH)
-F073  B7                                OR A
-F074  20 0E                             JR NZ,I17A
-F076  3A 00 D0                          LD A,(R_AL)
-F079  5F                                LD E,A
-F07A  21 FF FF                          LD HL,0FFFFh
-F07D  CD 48 D0                          CALL SPUT
-F080  9F                                SBC A,A
-F081  E6 01                             AND 1
-F083  5F                                LD E,A
-F084  ED 78                     I17A:   IN A,(C)
-F086  17                                RLA
-F087  3E 10                             LD A,10h
-F089  30 02                             JR NC,I17B
-F08B  3E 90                             LD A,90h
-F08D  B3                        I17B:   OR E
-F08E  32 01 D0                          LD (R_AH),A
-F091  C9                                RET
+F05E  0E 81                     T_I17:  LD C,81h
+F060  1E 00                             LD E,0
+F062  3A 01 D0                          LD A,(R_AH)
+F065  B7                                OR A
+F066  20 0E                             JR NZ,I17A
+F068  3A 00 D0                          LD A,(R_AL)
+F06B  5F                                LD E,A
+F06C  21 FF FF                          LD HL,0FFFFh
+F06F  CD 48 D0                          CALL SPUT
+F072  9F                                SBC A,A
+F073  E6 01                             AND 1
+F075  5F                                LD E,A
+F076  ED 78                     I17A:   IN A,(C)
+F078  17                                RLA
+F079  3E 10                             LD A,10h
+F07B  30 02                             JR NC,I17B
+F07D  3E 90                             LD A,90h
+F07F  B3                        I17B:   OR E
+F080  32 01 D0                          LD (R_AH),A
+F083  C9                                RET
                                 
                                 ; INT 1Ah AH=0: CX:DX = ticks (one more each call), AL = 0
-F092  3A 01 D0                  T_I1A:  LD A,(R_AH)
-F095  B7                                OR A
-F096  C0                                RET NZ
-F097  32 00 D0                          LD (R_AL),A
-F09A  2A 28 F1                          LD HL,(TICKS+2)
-F09D  22 02 D0                          LD (R_CX),HL
-F0A0  2A 26 F1                          LD HL,(TICKS)
-F0A3  22 04 D0                          LD (R_DX),HL
-F0A6  23                                INC HL
-F0A7  22 26 F1                          LD (TICKS),HL
-F0AA  7C                                LD A,H
-F0AB  B5                                OR L
-F0AC  C0                                RET NZ
-F0AD  2A 28 F1                          LD HL,(TICKS+2)
-F0B0  23                                INC HL
-F0B1  22 28 F1                          LD (TICKS+2),HL
-F0B4  C9                                RET
+F084  3A 01 D0                  T_I1A:  LD A,(R_AH)
+F087  B7                                OR A
+F088  C0                                RET NZ
+F089  32 00 D0                          LD (R_AL),A
+F08C  2A 28 F1                          LD HL,(TICKS+2)
+F08F  22 02 D0                          LD (R_CX),HL
+F092  2A 26 F1                          LD HL,(TICKS)
+F095  22 04 D0                          LD (R_DX),HL
+F098  23                                INC HL
+F099  22 26 F1                          LD (TICKS),HL
+F09C  7C                                LD A,H
+F09D  B5                                OR L
+F09E  C0                                RET NZ
+F09F  2A 28 F1                          LD HL,(TICKS+2)
+F0A2  23                                INC HL
+F0A3  22 28 F1                          LD (TICKS+2),HL
+F0A6  C9                                RET
                                 
                                 ; ---------------------------------------------------------------- CP/M
                                 ; 1Ch: CPM.COM's Z80 part (CPMZ80.ASM), which runs CP/M programs. BP =
@@ -4684,44 +4732,52 @@ F0B4  C9                                RET
                                 ; with (CPMSYM), then the code, for ENDBIOS. It is copied there; a
                                 ; CPM.COM made for another build of Z86.SYS gets CF=1 instead. BP = 0:
                                 ; run it (T_CPM, at ENDBIOS).
-F0B5  2A 0A D0                  T_CPML: LD HL,(R_BP)
-F0B8  7C                                LD A,H
-F0B9  B5                                OR L
-F0BA  CA 2C F1                          JP Z,ENDBIOS
-F0BD  4E                                LD C,(HL)
+F0A7  2A 0A D0                  T_CPML: LD HL,(R_BP)
+F0AA  7C                                LD A,H
+F0AB  B5                                OR L
+F0AC  CA 2C F1                          JP Z,ENDBIOS
+F0AF  4E                                LD C,(HL)
+F0B0  23                                INC HL
+F0B1  46                                LD B,(HL)
+F0B2  23                                INC HL
+F0B3  C5                                PUSH BC
+F0B4  11 DC F0                          LD DE,CPMSYM
+F0B7  06 0E                             LD B,CPMSYE-CPMSYM
+F0B9  1A                        TL1:    LD A,(DE)
+F0BA  BE                                CP (HL)
+F0BB  20 0D                             JR NZ,TL2
+F0BD  13                                INC DE
 F0BE  23                                INC HL
-F0BF  46                                LD B,(HL)
-F0C0  23                                INC HL
-F0C1  C5                                PUSH BC
-F0C2  11 EA F0                          LD DE,CPMSYM
-F0C5  06 0E                             LD B,CPMSYE-CPMSYM
-F0C7  1A                        TL1:    LD A,(DE)
-F0C8  BE                                CP (HL)
-F0C9  20 0D                             JR NZ,TL2
-F0CB  13                                INC DE
-F0CC  23                                INC HL
-F0CD  10 F8                             DJNZ TL1
-F0CF  C1                                POP BC
-F0D0  11 2C F1                          LD DE,ENDBIOS
-F0D3  ED B0                             LDIR
-F0D5  C3 AC EB                          JP CF0
-F0D8  C1                        TL2:    POP BC
-F0D9  C3 A7 EB                          JP CF1
+F0BF  10 F8                             DJNZ TL1
+F0C1  C1                                POP BC
+F0C2  11 2C F1                          LD DE,ENDBIOS
+F0C5  ED B0                             LDIR
+F0C7  C3 AC EB                          JP CF0
+F0CA  C1                        TL2:    POP BC
+F0CB  C3 A7 EB                          JP CF1
                                 
                                 ; 1Dh: the end of an INT 21h that CPMZ80's DOSCALL started: back to
                                 ; DOSCALL's caller, on the Z80 stack it had
-F0DC  2A 2A F1                  T_RET:  LD HL,(DCSP)
-F0DF  7C                                LD A,H
-F0E0  B5                                OR L
-F0E1  C8                                RET Z
-F0E2  F9                                LD SP,HL
-F0E3  21 00 00                          LD HL,0
-F0E6  22 2A F1                          LD (DCSP),HL
-F0E9  C9                                RET
+F0CE  2A 2A F1                  T_RET:  LD HL,(DCSP)
+F0D1  7C                                LD A,H
+F0D2  B5                                OR L
+F0D3  C8                                RET Z
+F0D4  F9                                LD SP,HL
+F0D5  21 00 00                          LD HL,0
+F0D8  22 2A F1                          LD (DCSP),HL
+F0DB  C9                                RET
                                 
-F0EA  3B D8 60 EB F6 EB 13 EC   CPMSYM: DW NEXT, JPHL, PEEKEY, GETKEY, CONOUT, DCSP, ENDBIOS
-F0EA  21 EC 2A F1 2C F1         
-F0F8                            CPMSYE:
+F0DC  3B D8 60 EB F6 EB 13 EC   CPMSYM: DW NEXT, JPHL, PEEKEY, GETKEY, CONOUT, DCSP, ENDBIOS
+F0DC  21 EC 2A F1 2C F1         
+F0EA                            CPMSYE:
+                                
+                                ; Free bytes.  SKEW, the variables and ENDBIOS stay where the 2026-11-07
+                                ; build had them (SKEW at F0F8h): CPM.COM's Z80 part, assembled for those
+                                ; addresses and checked by trap 1Ch, then needs no rebuild.  z86.py
+                                ; asserts this padding never goes negative.
+F0EA                            SKEWAT  EQU 0F0F8h
+F0EA  00 00 00 00 00 00 00 00           DS SKEWAT-$
+F0EA  00 00 00 00 00 00         
                                 
                                 ; ---------------------------------------------------------------- data
 F0F8  00 02 04 06 08 0A 0C 0E   SKEW:   DB 0,2,4,6,8,10,12,14,16,1,3,5,7,9,11,13,15,17

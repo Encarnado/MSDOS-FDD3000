@@ -358,53 +358,55 @@ SIO1:   CALL SEEK
         LD A,(DSEC)
         OUT (0C2h),A
         LD HL,(DADDR)
-        LD A,(DWRITE)
+        LD A,(DWRITE)           ; XFER's transfer instruction: INI (ED A2)
+        ADD A,0A2h              ; to read, OUTI (ED A3) to write
+        LD (XFI+1),A
+        LD A,(DWRITE)           ; and the command: 80h read sector,
+        RRCA                    ; A0h write sector
+        RRCA
+        RRCA
+        ADD A,80h
+        CALL XFER
         OR A
-        JR NZ,SIO2
-        CALL RDSEC
-        JR SIO3
-SIO2:   CALL WRSEC
-SIO3:   OR A
         RET Z
         BIT 6,A                 ; write protected: no point retrying
         RET NZ
+        BIT 5,A                 ; timed out (no disk, no drive): nor here,
+        RET NZ                  ; or DOS would wait 10 x 3 s
         LD (DSTAT),A
         LD HL,DTRY
         DEC (HL)
-        JR NZ,SIO1
-        LD A,(DSTAT)
+        JR Z,SIO4
+        LD A,(HL)               ; half the tries gone: back to track 0, so
+        CP RETRIES/2            ; that SEEK really moves the head again
+        CALL Z,FHOME            ; (it skips a seek to the track it is on)
+        JR SIO1
+SIO4:   LD A,(DSTAT)
         OR A
         RET
 
-; RDSEC / WRSEC: 256 bytes at HL (CBIOS F8ECh / F934h). They end when
-; INTRQ goes through 0038h to FDCINT: A = status AND 5Ch.
-RDSEC:  LD C,0C3h
-        IM 1
-        EI
-        LD A,80h                ; read sector
-        OUT (0C0h),A
-RD1:    IN A,(2Fh)              ; bit 7 = DRQ
-        RLA
-        JR NC,RD1
-        INI
-        JR RD1
+; Floppy waits time out after about 3 s at 4 MHz: a drive with no disk
+; (or no drive) gives the WD177x no index pulses, so a spin-up, a sector
+; search or a verify would never end.  FDTOUT then stops the command and
+; returns A = 20h (NZ), which DFAIL's ERRTAB turns into DOS's "not ready"
+; (error 2).  20h never comes from the FDC itself: its status is ANDed
+; with 5Ch on the way out.  The waits that time out: FDCCMD's, FHOME's,
+; and XFER's wait for the FIRST data byte; the byte loop itself is CBIOS
+; A1.1's, unchanged (the timing that ran on a real FDD3000).
 
-WRSEC:  LD C,0C3h
-        IM 1
-        EI
-        LD A,0A0h               ; write sector
-        OUT (0C0h),A
-WR1:    IN A,(2Fh)
-        RLA
-        JR NC,WR1
-        OUTI
-        JR WR1
-
-; FDCCMD: command A, wait for INTRQ: A = status AND 5Ch.
+; FDCCMD: command A, wait for INTRQ: A = status AND 5Ch, or A = 20h after
+; the timeout.  Corrupts B, DE (8 x 65536 turns of 26 T: ~3.4 s at 4 MHz).
 FDCCMD: IM 1
         EI
         OUT (0C0h),A
-FDCW:   JR FDCW
+        LD B,8
+        LD DE,0
+FDCW:   DEC DE                  ; INTRQ ends this through FDCINT
+        LD A,D
+        OR E
+        JR NZ,FDCW
+        DJNZ FDCW
+        JP FDTOUT
 
 FDCINT: POP AF                  ; drop the waiting loop's address
         IN A,(0C0h)             ; status; clears INTRQ
@@ -419,13 +421,17 @@ SEEK:   LD A,(DTRK)
         JR Z,SKOK
         LD A,RETRIES
         LD (STRY),A
-SK1:    LD A,B
+SK1:    LD A,(DTRK)             ; (from memory: FDCCMD's timer uses B)
         OUT (0C3h),A
         LD A,15h                ; seek, verify
         CALL FDCCMD
+        BIT 5,A                 ; timed out: give up at once (A = 20h)
+        RET NZ
         AND 18h                 ; seek error, CRC
         RET Z
         CALL FHOME
+        BIT 5,A                 ; the restore timed out too
+        RET NZ
         LD HL,STRY
         DEC (HL)
         JR NZ,SK1
@@ -435,20 +441,71 @@ SK1:    LD A,B
 SKOK:   XOR A
         RET
 
+;@SLACK EALO
+; XFER: one sector at HL, command A (80h read / A0h write), the transfer
+; instruction at XFI patched by SECTIO (INI / OUTI).  CBIOS A1.1's loop
+; (F8ECh / F934h): it ends when INTRQ goes through 0038h to FDCINT, A =
+; status AND 5Ch.  Only the wait for the first byte is timed (4 x 65536
+; turns of 48 T: ~3.1 s): once data flows, the sector ends by itself.
+; Lives in the free end of the EALO page (BIOS code, z86.py ;@SLACK).
+XFER:   LD C,0C3h
+        IM 1
+        EI
+        OUT (0C0h),A
+        LD B,4
+        LD DE,0
+XFW:    IN A,(2Fh)              ; bit 7 = DRQ: the first byte is there
+        RLA
+        JR C,XFI
+        DEC DE
+        LD A,D
+        OR E
+        JR NZ,XFW
+        DJNZ XFW
+        JP FDTOUT
+XF1:    IN A,(2Fh)              ; bit 7 = DRQ
+        RLA
+        JR NC,XF1
+XFI:    INI                     ; patched: INI (read) or OUTI (write)
+        JR XF1
+;@END
+
+;@SLACK EAHI
 ; FHOME: restore to track 0, polled (CBIOS F7B5h). NZ: seek error, the
-; drive never showed track 0.
+; drive never showed track 0 (A = 10h), or the restore timed out (A =
+; 20h, ~3.1 s).  Keeps BC; corrupts DE.  In the EAHI page's free end.
 FHOME:  LD A,(RESCMD)
         OUT (0C0h),A
         PUSH BC
         LD B,12h                ; let the FDC raise BUSY
 FH0:    DJNZ FH0
-        POP BC
+        LD B,4
+        LD DE,0
 FH1:    IN A,(0C0h)
         RRA
-        JR C,FH1
+        JR NC,FH2
+        DEC DE
+        LD A,D
+        OR E
+        JR NZ,FH1
+        DJNZ FH1
+        POP BC
+        JP FDTOUT
+FH2:    POP BC
         RLA
         AND 10h
         RET
+
+; FDTOUT: a floppy wait timed out.  Stop the command (Force Interrupt with
+; no condition raises no INTRQ) and return NZ, A = 20h ("not ready").
+; Reached by JP from the waits, so its RET goes to their caller.
+FDTOUT: DI
+        LD A,0D0h
+        OUT (0C0h),A
+        LD A,20h
+        OR A
+        RET
+;@END
 
 ; SELECT: drive A on, head loaded; the FDC track register is set to
 ; where that drive's head is (CBIOS FA1Eh). A drive not used yet is
@@ -566,7 +623,9 @@ T_FMT:  LD A,(R_AL)
         OUT (0C3h),A
         LD A,11h
         CALL FDCCMD
-        LD HL,(DADDR)
+        BIT 5,A                 ; the seek timed out (no disk): not ready.
+        JP NZ,DFAIL             ; (The write track itself is not timed: a
+        LD HL,(DADDR)           ; disk pulled with the motor running hangs it)
         LD DE,FMTLEN
         LD C,0C3h
         LD A,0FEh               ; write track, as FORMAT 2.0
@@ -864,6 +923,13 @@ T_RET:  LD HL,(DCSP)
 
 CPMSYM: DW NEXT, JPHL, PEEKEY, GETKEY, CONOUT, DCSP, ENDBIOS
 CPMSYE:
+
+; Free bytes.  SKEW, the variables and ENDBIOS stay where the 2026-11-07
+; build had them (SKEW at F0F8h): CPM.COM's Z80 part, assembled for those
+; addresses and checked by trap 1Ch, then needs no rebuild.  z86.py
+; asserts this padding never goes negative.
+SKEWAT  EQU 0F0F8h
+        DS SKEWAT-$
 
 ; ---------------------------------------------------------------- data
 SKEW:   DB 0,2,4,6,8,10,12,14,16,1,3,5,7,9,11,13,15,17

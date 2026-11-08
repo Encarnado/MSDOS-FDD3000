@@ -54,9 +54,14 @@
 ;     owns it only while the 8086 is stopped inside a trap.  A disk buffer
 ;     covering 0038h-003Ah would collide with the hook (read only, never
 ;     seen in DOS 1.25).                                     (part 08)
-;   - Disk retries never move the head (SEEK is a no-op on a matching track
-;     register); RTS stays raised more often than the README says.
-;                                                            (parts 07, 01)
+;   - FIXED 2026-11-08 (this build): floppy waits had no timeout - with no
+;     disk or no drive the WD1770 sees no index pulses and DOS hung for
+;     good on DIR B: - and disk retries never moved the head.  FDCCMD,
+;     FHOME and XFER's first-byte wait now time out (~3 s; DOS answers
+;     "Not ready" after ~10 s, its FAT fallback asking three times), and
+;     SECTIO restores half-way through its retries.  The byte loop is
+;     untouched.  (parts 07, 08; test_fdtimeout.py)
+;   - RTS stays raised more often than the README says.      (part 01)
 ;   - Latch bit 7 (IN USE LED) is active low: CBIOS's own LIGHTOF sets it.
 ;     ROMDIS fdd3000b.asm says the opposite (boot_findings item 7).
 ;   - The guide's code seeds miss three DW tables (G3BT, G3WT, G5T, via
@@ -66,13 +71,21 @@
 ;     B_ES as register B - `add a,B_ES&0FFh` assembles `add a,b`, silently.
 ;     Five sites are written `0FFh&B_ES` (dict/CONVENTIONS.md rule 3).
 ;
-;  HARDWARE.  Ran on a real FDD3000 on 2026-11-07 (emulator-written disk,
-;  TT3000 terminal): boot, DOS console tools, EDIT, CPM.COM and PRN/AUX all
-;  worked, so the interpreter, the console link, BIOS READ/WRITE with the
-;  RST 38h hook and the WD2123 set-up are exercised on real hardware.  Not
-;  exercised: FORMAT TRACK (trap 1Bh).  Edge findings above (PEEKEY values
-;  00h-03h, no FDC timeout, retries without re-seek) were not provoked and
-;  stay as code findings (notes/hardware_run.md).
+;  VERSION.  This volume is the 2026-11-08 build: the 2026-11-07 Z86.SYS
+;  plus the floppy timeouts and the re-seek above.  Same size (8 737 bytes);
+;  everything from SECTIO to the BIOS data moved, SKEW / variables /
+;  ENDBIOS did not (padding before SKEW), so CPMZ80 and CPM.COM are
+;  unchanged.  The new code is in the free ends of the EALO and EAHI pages
+;  (z86.py ;@SLACK).  Baseline volume: git eeadb54.
+;
+;  HARDWARE.  The 2026-11-07 BUILD ran on a real FDD3000 (emulator-written
+;  disk, TT3000 terminal): boot, DOS console tools, EDIT, CPM.COM and
+;  PRN/AUX all worked (notes/hardware_run.md).  THIS build has passed the
+;  emulator suites (lockstep, fuzz, test_fdd86 groups 1-5 and 8, test_edit,
+;  test_fdtimeout) but has NOT yet run on the real machine; the floppy byte
+;  loop that did run there is unchanged.  Not exercised on hardware in
+;  either build: FORMAT TRACK (trap 1Bh).  PEEKEY values 00h-03h stay a
+;  code finding.
 ;
 ;  VERIFICATION.  Reassembles BYTE-IDENTICAL to bin/Z86.SYS with Wijnen z80asm
 ;  v1.8 (tools/roundtrip.sh).  Code/data partition: recursive descent from the
@@ -88,8 +101,8 @@
 ;  `; (src: OLD)`, and dict/z86_part01..08.md hold the alias entries.
 ;
 ;  FILE:    Z86.SYS, 8 737 bytes
-;  MD5:     8477a2e5cfc7716dc9142116fc3a0b33
-;  SHA256:  d99cc4f68bb391f7a5c8b175713d16b510afe52a05f1e8fdef47e4abdf718e99
+;  MD5:     df195b7170363dc6913d740fe2512296
+;  SHA256:  0ebfdf104d29ad19a95ba4dc6e0ff8802f4087665110f4997814e4652a41f291
 ;  SOURCE:  project/MSDOS/poc/I86.ASM + BIOS.ASM (z86.py build(bios=True))
 ;
 ;  CREDITS.  Original code: the FDD3000-MSDOS project (2026).  Console link,

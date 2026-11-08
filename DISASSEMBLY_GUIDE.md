@@ -49,8 +49,12 @@ Conventions in `symbols/`:
 7. **Code in data pages:** the serial routines sit in the unused end of
    the register page (D03Eh-D0F0h, with two small tables at D0E1h and
    D0E8h) and INT 14h's set-up in the unused end of the BCORE page
-   (D5A2h-D5FFh). They are reached by CALL / JP from the BIOS and CPMZ80. Disassemble
-   the two as separate images at the same address.
+   (D5A2h-D5FFh). Since the floppy-timeout build (2026-11-08) the unused
+   ends of the EALO and EAHI pages hold BIOS floppy code too: XFER at
+   D3C0h (its INI at XFI is patched to OUTI for writes), FHOME at D4C0h,
+   FDTOUT at D4E4h (z86.py's ;@SLACK blocks in BIOS.ASM). They are reached
+   by CALL / JP from the BIOS and CPMZ80. Disassemble the pieces as separate
+   images at the same address.
 
 ## Z80 binaries
 
@@ -83,7 +87,8 @@ Conventions in `symbols/`:
 | D0FDh-D0FFh | `JP COLD` | code |
 | D100h-D1FFh | OPLO: low bytes of the 256 opcode handlers | data (split table) |
 | D200h-D2FFh | OPHI: high bytes | data (split table) |
-| D300h-D3BFh, D400h-D4BFh | EALO / EAHI: ModR/M 00h-BFh memory-operand routines, low / high bytes (rest of each page: padding) | data (split table) |
+| D300h-D3BFh, D400h-D4BFh | EALO / EAHI: ModR/M 00h-BFh memory-operand routines, low / high bytes | data (split table) |
+| D3C0h-D3FFh, D4C0h-D4FFh | BIOS floppy code (XFER; FHOME, FDTOUT), then zero fill to the page end | code, then padding |
 | D500h-D5FFh | BCORE: 8-bit ALU routines in 16-byte slots, then INC16 / DEC16 / LOGF16, then INT 14h's set-up (I14EXT D5A2h, I14INI D5C9h) | code |
 | D600h-D6FFh | WCORE: 16-bit ALU routines in 32-byte slots | code |
 | D700h-D7FFh | SHPG: shift / rotate routines in 16-byte slots | code |
@@ -98,8 +103,10 @@ Conventions in `symbols/`:
 Seeds for code discovery: D0FDh, D800h, D83Bh, EB46h, every entry of the
 OPLO/OPHI and EALO/EAHI tables (address = hi*256 + lo), every DW in TTAB
 and REPTAB, the BCORE / WCORE / SHPG slots, the serial routines above,
-and the RST 38h handler FDCINT (EDE3h; installed into 0038h at run time
-during disk transfers).
+the floppy routines in the EA pages (XFER D3C0h, FHOME D4C0h, FDTOUT
+D4E4h), and the RST 38h handler FDCINT (EDDCh; EDE3h before the
+floppy-timeout build; installed into 0038h at run time during disk
+transfers).
 
 ### `binaries/z80/CPMZ80.BIN` (2 506 bytes): CPM.COM's Z80 part
 
