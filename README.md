@@ -89,6 +89,86 @@ python3 test_term.py                      # TERM against a VT100 model, load, lo
 ```
 
 Without the boot ROM file the model does the ROM's one job (load sector 0 to
-3F00h) in Python. Rebuilding MSDOS.SYS / COMMAND.COM with `build.py` needs
-the Microsoft repository next to the project (`MSDOS/mit`, `MSDOS/src`),
-which is not in the package; the Z80 parts (`z86.py`) build without it.
+3F00h) in Python.
+
+More tests: `test_fdd86.py` (the whole machine: DOS session, two drives, boot
+cases, FORMAT, serial; groups 6 and 7 need the CP/M and MBASIC disks, which
+are not in the package), `test_fdtimeout.py` (an empty drive answers "Not
+ready" instead of hanging), `test_peekey.py`, `test_cpm_smoke.py` (CPM.COM
+with a tiny CP/M program, no CP/M disk needed), and `fuzz_z86.py --overlap`
+/ `--scan` (targeted REP MOVSW / REPNE SCASB cases).
+
+## Building
+
+### What builds what
+
+| Output | Built by | Needs |
+|---|---|---|
+| `Z86.SYS`, `BOOT.BIN`, `CPMZ80.BIN`, `TERMZ80.BIN` | `z86.py` (the project's own Z80 assembler, in Python) | Python only |
+| `IO.SYS`, `FORMAT.COM`, `CPM.COM`, `EDIT.COM`, `MODE.COM`, `TERM.COM`, `MSDOS.SYS`, `COMMAND.COM` | `build.py`: Microsoft's MASM 1.10, LINK 2.00 and EXE2BIN, run on the package's Python 8086 model (no DOS, DOSBox or PC needed) | the Microsoft repository (below) |
+| `MSDOS.DSK` (the bootable disk) | `build.py`, through `mkfat.py` | the above in `build/` |
+
+`CPM.COM` and `TERM.COM` carry their Z80 parts (`CPMZ80`, `TERMZ80`), which
+are assembled against Z86.SYS's addresses and checked by BIOS trap 1Ch: after
+any change to `I86.ASM` or `BIOS.ASM`, rebuild them too.
+
+### Installing the build system
+
+1. **Python 3.9 or later.** Nothing else for the Z80 parts and the tests.
+2. **Microsoft's MS-DOS repository** (MIT licence), for MASM / LINK / EXE2BIN
+   (from its `v2.0/bin`) and the MS-DOS 1.25 sources (`v1.25`). Only those
+   two directories are needed:
+
+   ```
+   git clone --depth 1 --filter=blob:none --sparse https://github.com/microsoft/MS-DOS.git ~/src/MS-DOS
+   git -C ~/src/MS-DOS sparse-checkout set v1.25 v2.0
+   ```
+
+   and link them where `build.py` looks for them (`project/MSDOS/mit/v1.25`,
+   `project/MSDOS/src/v20object`; `.gitignore` keeps both out of git; on
+   Windows copy the directories instead):
+
+   ```
+   cd project/MSDOS
+   ln -s ~/src/MS-DOS/v1.25 mit/v1.25
+   mkdir -p src && ln -s ~/src/MS-DOS/v2.0/bin src/v20object
+   ```
+
+3. **For the disassemblies (`DISASM/`) only:** Bas Wijnen's `z80asm` 1.8 and
+   NASM (2.x or 3.x):
+
+   ```
+   brew install z80asm nasm             # macOS (Homebrew)
+   sudo apt install z80asm nasm         # Debian / Ubuntu
+   ```
+
+   (Wijnen's `z80asm`, not z88dk's tool of the same name.)
+
+### Building and publishing
+
+From `project/MSDOS/poc`:
+
+```
+python3 build.py                  # everything (about 6 minutes: MSDOS.ASM alone is 87 M instructions)
+python3 build.py CPM TERM         # only these, then the disk
+python3 build.py DISK             # only the disk (it takes Z86.SYS from z86.py)
+python3 publish.py                # copy the build into binaries/, symbols/, DISASM/bin;
+                                  # regenerate the listings, symbol tables, MANIFEST.sha256
+```
+
+`build.py` leaves everything in `build/`; `publish.py` updates only files whose
+bytes changed. Built from the sources as they are, the outputs are
+byte-identical to those in `binaries/`.
+
+### The disassemblies
+
+```
+DISASM/tools/roundtrip.sh         # every volume must reassemble byte-identical to its binary
+python3 DISASM/tools/lint.py      # conventions: 0 errors expected
+```
+
+After a change that alters a binary, `publish.py` puts the new binary in
+`DISASM/bin` and the gate fails for its volume until the `.asm` is brought in
+line (`DISASM/PLAN.md`, `DISASM/dict/CONVENTIONS.md`). For a new binary,
+`DISASM/tools/z80dis.py` (Z80) and `DISASM/tools/x86dis.py` (8086) make a
+byte-identical first skeleton from the binary and its listing.
