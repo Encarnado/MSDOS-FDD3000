@@ -1,0 +1,1271 @@
+; CPMZ80.BIN: CPM.COM's Z80 part, loaded at F12Ch (over COLD)
+; address  bytes  source
+                                        ORG ENDBIOS
+F12C  21 00 D0                  T_CPM:  LD HL,REGS              ; CPM.COM's 8086 state, for DOSCALL and
+F12F  11 A7 FA                          LD DE,SAVREG            ; the return
+F132  01 2A 00                          LD BC,42
+F135  ED B0                             LDIR
+F137  08                                EX AF,AF'
+F138  F5                                PUSH AF
+F139  E1                                POP HL
+F13A  22 8A FA                          LD (SAVAF),HL
+F13D  08                                EX AF,AF'
+F13E  2A 06 D0                          LD HL,(R_BX)
+F141  22 7E FA                          LD (SWLEN),HL
+F144  2A 0E D0                          LD HL,(R_DI)
+F147  22 92 FA                          LD (DOSLEN),HL
+F14A  2A 02 D0                          LD HL,(R_CX)
+F14D  22 80 FA                          LD (PLEN),HL
+F150  2A 0C D0                          LD HL,(R_SI)
+F153  22 82 FA                          LD (PARAM),HL
+F156  3A 00 D0                          LD A,(R_AL)
+F159  32 8E FA                          LD (CPDSK),A
+F15C  2A 04 D0                          LD HL,(R_DX)
+F15F  22 78 FA                          LD (PAGE),HL
+F162  11 00 02                          LD DE,PSIZE
+F165  19                                ADD HL,DE
+F166  22 7C FA                          LD (SAVE),HL
+F169  2A 78 FA                          LD HL,(PAGE)            ; its segment
+F16C  06 04                             LD B,4
+F16E  CB 3C                     TC1:    SRL H
+F170  CB 1D                             RR L
+F172  10 FA                             DJNZ TC1
+F174  22 7A FA                          LD (SEGP),HL
+F177  2A 78 FA                          LD HL,(PAGE)            ; the P area
+F17A  54                                LD D,H
+F17B  5D                                LD E,L
+F17C  13                                INC DE
+F17D  36 00                             LD (HL),0
+F17F  01 FF 01                          LD BC,PSIZE-1
+F182  ED B0                             LDIR
+F184  DD 2A 78 FA                       LD IX,(PAGE)
+F188  DD 36 06 C3                       LD (IX+PBDOS),0C3h
+F18C  21 FF F2                          LD HL,BDOSE
+F18F  DD 75 07                          LD (IX+PBDOS+1),L
+F192  DD 74 08                          LD (IX+PBDOS+2),H
+F195  DD 36 09 CD                       LD (IX+PSTUB),0CDh
+F199  DD 36 0A 21                       LD (IX+PSTUB+1),21h
+F19D  DD 36 0B 0F                       LD (IX+PSTUB+2),0Fh
+F1A1  DD 36 0C 1D                       LD (IX+PSTUB+3),1Dh
+F1A5  2A 78 FA                          LD HL,(PAGE)
+F1A8  11 00 01                          LD DE,PBIOS
+F1AB  19                                ADD HL,DE
+F1AC  EB                                EX DE,HL
+F1AD  21 E6 F9                          LD HL,BIOSV
+F1B0  06 11                             LD B,17
+F1B2  3E C3                     TC2:    LD A,0C3h
+F1B4  12                                LD (DE),A
+F1B5  13                                INC DE
+F1B6  7E                                LD A,(HL)
+F1B7  12                                LD (DE),A
+F1B8  23                                INC HL
+F1B9  13                                INC DE
+F1BA  7E                                LD A,(HL)
+F1BB  12                                LD (DE),A
+F1BC  23                                INC HL
+F1BD  13                                INC DE
+F1BE  10 F2                             DJNZ TC2
+F1C0  3E 1A                             LD A,1Ah                ; DOS's DTA: P+PDTA
+F1C2  11 60 00                          LD DE,PDTA
+F1C5  CD 98 F2                          CALL DOSCALL
+F1C8  ED 73 88 FA                       LD (SHIMSP),SP          ; the BDOS's stack; RET from here: to TRAP
+F1CC  CD 53 F2                          CALL XCHGA              ; DOS out
+F1CF  2A 7E FA                          LD HL,(SWLEN)           ; the program to 0100h
+F1D2  11 00 01                          LD DE,0100h
+F1D5  ED 4B 80 FA                       LD BC,(PLEN)
+F1D9  78                                LD A,B
+F1DA  B1                                OR C
+F1DB  28 02                             JR Z,TC3
+F1DD  ED B0                             LDIR
+F1DF  21 00 00                  TC3:    LD HL,0                 ; page zero
+F1E2  45                                LD B,L
+F1E3  36 00                     TC4:    LD (HL),0
+F1E5  2C                                INC L
+F1E6  10 FB                             DJNZ TC4
+F1E8  3E C3                             LD A,0C3h
+F1EA  32 00 00                          LD (0000h),A
+F1ED  32 05 00                          LD (0005h),A
+F1F0  2A 78 FA                          LD HL,(PAGE)
+F1F3  11 03 01                          LD DE,PBIOS+3
+F1F6  19                                ADD HL,DE
+F1F7  22 01 00                          LD (0001h),HL
+F1FA  2A 78 FA                          LD HL,(PAGE)
+F1FD  11 06 00                          LD DE,PBDOS
+F200  19                                ADD HL,DE
+F201  22 06 00                          LD (0006h),HL
+F204  3A 8E FA                          LD A,(CPDSK)
+F207  32 04 00                          LD (0004h),A
+F20A  2A 7C FA                          LD HL,(SAVE)            ; FCBs and tail: exchanged out with CPM.COM
+F20D  ED 5B 82 FA                       LD DE,(PARAM)
+F211  19                                ADD HL,DE
+F212  11 5C 00                          LD DE,005Ch
+F215  01 20 00                          LD BC,32
+F218  ED B0                             LDIR
+F21A  11 80 00                          LD DE,0080h
+F21D  01 80 00                          LD BC,128
+F220  ED B0                             LDIR
+F222  21 80 00                          LD HL,0080h
+F225  22 84 FA                          LD (DMAADR),HL
+F228  AF                                XOR A
+F229  32 8F FA                          LD (COL),A
+F22C  2A 78 FA                          LD HL,(PAGE)
+F22F  F9                                LD SP,HL
+F230  21 00 00                          LD HL,0
+F233  E5                                PUSH HL                 ; RET from the program: warm boot
+F234  C3 00 01                          JP 0100h
+                                
+                                ; warm boot: DOS back, CPM.COM's registers, return from the trap
+F237  ED 7B 88 FA               CPEXIT: LD SP,(SHIMSP)
+F23B  CD A9 F7                          CALL FLUSH
+F23E  CD 53 F2                          CALL XCHGA
+F241  21 A7 FA                          LD HL,SAVREG
+F244  11 00 D0                          LD DE,REGS
+F247  01 2A 00                          LD BC,42
+F24A  ED B0                             LDIR
+F24C  2A 8A FA                          LD HL,(SAVAF)
+F24F  E5                                PUSH HL
+F250  F1                                POP AF
+F251  08                                EX AF,AF'
+F252  C9                                RET
+                                
+                                ; XCHGA: exchange 0000h-SWLEN with SAVE; XCHGD: only 0000h-DOSLEN, DOS
+                                ; and CPM.COM's PSP, for a DOS call. Both are multiples of 8.
+F253  ED 4B 7E FA               XCHGA:  LD BC,(SWLEN)
+F257  18 04                             JR XC0
+F259  ED 4B 92 FA               XCHGD:  LD BC,(DOSLEN)
+F25D  21 00 00                  XC0:    LD HL,0
+F260  ED 5B 7C FA                       LD DE,(SAVE)
+F264                            XC1:
+F264  1A                                LD A,(DE)
+F265  ED A0                             LDI
+F267  2B                                DEC HL
+F268  77                                LD (HL),A
+F269  23                                INC HL
+F26A  1A                                LD A,(DE)
+F26B  ED A0                             LDI
+F26D  2B                                DEC HL
+F26E  77                                LD (HL),A
+F26F  23                                INC HL
+F270  1A                                LD A,(DE)
+F271  ED A0                             LDI
+F273  2B                                DEC HL
+F274  77                                LD (HL),A
+F275  23                                INC HL
+F276  1A                                LD A,(DE)
+F277  ED A0                             LDI
+F279  2B                                DEC HL
+F27A  77                                LD (HL),A
+F27B  23                                INC HL
+F27C  1A                                LD A,(DE)
+F27D  ED A0                             LDI
+F27F  2B                                DEC HL
+F280  77                                LD (HL),A
+F281  23                                INC HL
+F282  1A                                LD A,(DE)
+F283  ED A0                             LDI
+F285  2B                                DEC HL
+F286  77                                LD (HL),A
+F287  23                                INC HL
+F288  1A                                LD A,(DE)
+F289  ED A0                             LDI
+F28B  2B                                DEC HL
+F28C  77                                LD (HL),A
+F28D  23                                INC HL
+F28E  1A                                LD A,(DE)
+F28F  ED A0                             LDI
+F291  2B                                DEC HL
+F292  77                                LD (HL),A
+F293  23                                INC HL
+F294  EA 64 F2                          JP PE,XC1
+F297  C9                                RET
+                                
+                                ; DOSCALL: INT 21h with AH = A, DS:DX = P:DE, ES = SS = P, SP = PSTK.
+                                ; Out: the registers in REGS (AL). DOS must be in.
+F298                            DOSCALL:
+F298  ED 73 2A F1                       LD (DCSP),SP
+F29C  F5                                PUSH AF
+F29D  D5                                PUSH DE
+F29E  21 A7 FA                          LD HL,SAVREG
+F2A1  11 00 D0                          LD DE,REGS
+F2A4  01 2A 00                          LD BC,42
+F2A7  ED B0                             LDIR
+F2A9  D1                                POP DE
+F2AA  F1                                POP AF
+F2AB  32 01 D0                          LD (R_AH),A
+F2AE  ED 53 04 D0                       LD (R_DX),DE
+F2B2  2A 7A FA                          LD HL,(SEGP)
+F2B5  22 10 D0                          LD (R_ES),HL
+F2B8  22 12 D0                          LD (R_CS),HL
+F2BB  22 14 D0                          LD (R_SS),HL
+F2BE  22 16 D0                          LD (R_DS),HL
+F2C1  2A 78 FA                          LD HL,(PAGE)
+F2C4  22 18 D0                          LD (B_ES),HL
+F2C7  22 1A D0                          LD (B_CS),HL
+F2CA  22 1C D0                          LD (B_SS),HL
+F2CD  22 1E D0                          LD (B_DS),HL
+F2D0  22 20 D0                          LD (EADS),HL
+F2D3  22 22 D0                          LD (EASS),HL
+F2D6  11 09 00                          LD DE,PSTUB
+F2D9  19                                ADD HL,DE
+F2DA  44                                LD B,H
+F2DB  4D                                LD C,L
+F2DC  21 00 02                          LD HL,PSTK
+F2DF  22 08 D0                          LD (R_SP),HL
+F2E2  2A 8A FA                          LD HL,(SAVAF)
+F2E5  E5                                PUSH HL
+F2E6  F1                                POP AF
+F2E7  08                                EX AF,AF'
+F2E8  DD 21 3B D8                       LD IX,NEXT
+F2EC  DD E9                             JP (IX)
+                                
+                                ; DOSX: DOSCALL with DOS exchanged in. A = AL.
+F2EE  F5                        DOSX:   PUSH AF
+F2EF  D5                                PUSH DE
+F2F0  CD 59 F2                          CALL XCHGD
+F2F3  D1                                POP DE
+F2F4  F1                                POP AF
+F2F5  CD 98 F2                          CALL DOSCALL
+F2F8  CD 59 F2                          CALL XCHGD
+F2FB  3A 00 D0                          LD A,(R_AL)
+F2FE  C9                                RET
+                                
+                                ; ---- BDOS: C = function, DE = parameter; A = L, B = H = result
+F2FF  ED 73 86 FA               BDOSE:  LD (USRSP),SP
+F303  ED 7B 88 FA                       LD SP,(SHIMSP)
+F307  21 00 00                          LD HL,0
+F30A  79                                LD A,C
+F30B  FE 29                             CP 41
+F30D  30 0F                             JR NC,BD1
+F30F  6F                                LD L,A
+F310  29                                ADD HL,HL
+F311  D5                                PUSH DE
+F312  11 25 F3                          LD DE,BDTAB
+F315  19                                ADD HL,DE
+F316  D1                                POP DE
+F317  7E                                LD A,(HL)
+F318  23                                INC HL
+F319  66                                LD H,(HL)
+F31A  6F                                LD L,A
+F31B  CD 60 EB                          CALL JPHL
+F31E  7D                        BD1:    LD A,L
+F31F  44                                LD B,H
+F320  ED 7B 86 FA                       LD SP,(USRSP)
+F324  C9                                RET
+                                
+F325  37 F2 7C F3 8F F3 95 F3   BDTAB:  DW CPEXIT, F_CIN, F_COUT, F_RDR         ; 0-3
+F32D  9A F3 A0 F3 A6 F3 BF F3           DW F_PUN, F_LST, F_DIO, F_GIOB          ; 4 PUNCH, 5 LIST, 6, 7
+F335  C4 F3 CA F3 20 F4 D5 F3           DW F_SIOB, F_PRT, F_RDL, F_CST          ; 8-11
+F33D  DF F3 E3 F3 F3 F3 CF F4           DW F_VER, F_RST, F_SEL, F_FCB           ; 12-15 OPEN
+F345  CF F4 67 F9 67 F9 CF F4           DW F_FCB, F_SRCH, F_SRCH, F_FCB         ; 16 CLOSE, 17, 18, 19 DELETE
+F34D  98 F5 F0 F6 CF F4 CF F4           DW F_RSEQ, F_WSEQ, F_FCB, F_FCB         ; 20 READ, 21 WRITE, 22 MAKE, 23 RENAME
+F355  07 F4 0B F4 11 F4 18 F4           DW F_LOGV, F_CUR, F_DMA, F_ALV          ; 24-27
+F35D  77 F3 77 F3 77 F3 1C F4           DW F_ZERO, F_ZERO, F_ZERO, F_DPB        ; 28 W/P, 29 R/O, 30 ATTR, 31
+F365  77 F3 A2 F5 FA F6 CF F4           DW F_ZERO, F_RRND, F_WRND, F_FCB        ; 32 USER, 33 READ R, 34 WRITE R, 35 SIZE
+F36D  CF F4 77 F3 77 F3 77 F3           DW F_FCB, F_ZERO, F_ZERO, F_ZERO        ; 36 SET R, 37 RESET DRIVE, 38, 39
+F375  FA F6                             DW F_WRND                               ; 40 WRITE R ZERO FILL
+                                
+F377  AF                        F_ZERO: XOR A
+F378  6F                        RETA:   LD L,A
+F379  26 00                             LD H,0
+F37B  C9                                RET
+                                
+F37C  CD 13 EC                  F_CIN:  CALL GETKEY
+F37F  F5                                PUSH AF
+F380  FE 20                             CP 20h
+F382  D4 93 F4                          CALL NC,OUTCH
+F385  F1                                POP AF
+F386  F5                                PUSH AF
+F387  FE 0D                             CP 13
+F389  CC 93 F4                          CALL Z,OUTCH
+F38C  F1                                POP AF
+F38D  18 E9                             JR RETA
+                                
+F38F  7B                        F_COUT: LD A,E
+F390  CD 93 F4                          CALL OUTCH
+F393  18 E2                             JR F_ZERO
+                                
+F395  CD 62 D0                  F_RDR:  CALL SAUXI              ; READER, PUNCH, LIST: the WD2123's
+F398  18 DE                             JR RETA                 ;   channels, as CBIOS A1.1 (I86.ASM)
+F39A  7B                        F_PUN:  LD A,E
+F39B  CD 42 D0                          CALL SAUXO
+F39E  18 D7                             JR F_ZERO
+F3A0  7B                        F_LST:  LD A,E
+F3A1  CD 3E D0                          CALL SPRN
+F3A4  18 D1                             JR F_ZERO
+                                
+F3A6  7B                        F_DIO:  LD A,E
+F3A7  3C                                INC A
+F3A8  28 09                             JR Z,DIO1               ; FFh: a key or 0
+F3AA  3C                                INC A
+F3AB  28 28                             JR Z,F_CST              ; FEh: status
+F3AD  7B                                LD A,E
+F3AE  CD 21 EC                          CALL CONOUT
+F3B1  18 C4                             JR F_ZERO
+F3B3  CD F6 EB                  DIO1:   CALL PEEKEY
+F3B6  3E 00                             LD A,0
+F3B8  30 BE                             JR NC,RETA
+F3BA  CD 13 EC                          CALL GETKEY
+F3BD  18 B9                             JR RETA
+                                
+F3BF  3A 03 00                  F_GIOB: LD A,(0003h)
+F3C2  18 B4                             JR RETA
+                                
+F3C4  7B                        F_SIOB: LD A,E
+F3C5  32 03 00                          LD (0003h),A
+F3C8  18 AD                             JR F_ZERO
+                                
+F3CA  1A                        F_PRT:  LD A,(DE)
+F3CB  FE 24                             CP '$'
+F3CD  28 A8                             JR Z,F_ZERO
+F3CF  CD 93 F4                          CALL OUTCH
+F3D2  13                                INC DE
+F3D3  18 F5                             JR F_PRT
+                                
+F3D5  CD F6 EB                  F_CST:  CALL PEEKEY
+F3D8  3E 00                             LD A,0
+F3DA  30 9C                             JR NC,RETA
+F3DC  3D                                DEC A
+F3DD  18 99                             JR RETA
+                                
+F3DF  21 22 00                  F_VER:  LD HL,0022h
+F3E2  C9                                RET
+                                
+F3E3  CD A9 F7                  F_RST:  CALL FLUSH
+F3E6  21 80 00                          LD HL,0080h
+F3E9  22 84 FA                          LD (DMAADR),HL
+F3EC  3E 0D                             LD A,0Dh
+F3EE  CD EE F2                          CALL DOSX
+F3F1  1E 00                             LD E,0
+F3F3  D5                        F_SEL:  PUSH DE
+F3F4  CD A9 F7                          CALL FLUSH
+F3F7  D1                                POP DE
+F3F8  7B                                LD A,E
+F3F9  32 8E FA                          LD (CPDSK),A
+F3FC  32 04 00                          LD (0004h),A
+F3FF  3E 0E                             LD A,0Eh
+F401  CD EE F2                          CALL DOSX
+F404  C3 77 F3                          JR F_ZERO
+                                
+F407  21 03 00                  F_LOGV: LD HL,3                 ; A: and B:
+F40A  C9                                RET
+                                
+F40B  3A 8E FA                  F_CUR:  LD A,(CPDSK)
+F40E  C3 78 F3                          JR RETA
+                                
+F411  ED 53 84 FA               F_DMA:  LD (DMAADR),DE
+F415  C3 77 F3                          JR F_ZERO
+                                
+F418  21 61 FA                  F_ALV:  LD HL,ALLOCV
+F41B  C9                                RET
+                                
+F41C  21 52 FA                  F_DPB:  LD HL,DPB
+F41F  C9                                RET
+                                
+                                ; 10: read a line to DE: max, count, text
+F420  EB                        F_RDL:  EX DE,HL
+F421  4E                                LD C,(HL)
+F422  23                                INC HL
+F423  E5                                PUSH HL                 ; -> count
+F424  06 00                             LD B,0
+F426  C5                        RL1:    PUSH BC
+F427  CD 13 EC                          CALL GETKEY
+F42A  C1                                POP BC
+F42B  E1                                POP HL
+F42C  E5                                PUSH HL
+F42D  FE 0D                             CP 13
+F42F  28 4C                             JR Z,RLEND
+F431  FE 0A                             CP 10
+F433  28 48                             JR Z,RLEND
+F435  FE 08                             CP 8
+F437  28 2C                             JR Z,RLBS
+F439  FE 7F                             CP 7Fh
+F43B  28 28                             JR Z,RLBS
+F43D  FE 15                             CP 15h                  ; ^U, ^X: the whole line
+F43F  28 30                             JR Z,RLKILL
+F441  FE 18                             CP 18h
+F443  28 2C                             JR Z,RLKILL
+F445  FE 03                             CP 3                    ; ^C on an empty line: warm boot
+F447  20 07                             JR NZ,RL2
+F449  04                                INC B
+F44A  05                                DEC B
+F44B  CA 37 F2                          JP Z,CPEXIT
+F44E  18 D6                             JR RL1
+F450  57                        RL2:    LD D,A
+F451  78                                LD A,B
+F452  B9                                CP C
+F453  30 D1                             JR NC,RL1               ; full
+F455  04                                INC B
+F456  58                                LD E,B
+F457  D5                                PUSH DE
+F458  16 00                             LD D,0
+F45A  19                                ADD HL,DE
+F45B  D1                                POP DE
+F45C  72                                LD (HL),D
+F45D  7A                                LD A,D
+F45E  C5                                PUSH BC
+F45F  CD 93 F4                          CALL OUTCH
+F462  C1                                POP BC
+F463  18 C1                             JR RL1
+F465  04                        RLBS:   INC B
+F466  05                                DEC B
+F467  28 BD                             JR Z,RL1
+F469  05                                DEC B
+F46A  C5                                PUSH BC
+F46B  CD 87 F4                          CALL RUBOUT
+F46E  C1                                POP BC
+F46F  18 B5                             JR RL1
+F471  04                        RLKILL: INC B
+F472  05                                DEC B
+F473  28 B1                             JR Z,RL1
+F475  05                                DEC B
+F476  C5                                PUSH BC
+F477  CD 87 F4                          CALL RUBOUT
+F47A  C1                                POP BC
+F47B  18 F4                             JR RLKILL
+F47D  E1                        RLEND:  POP HL
+F47E  70                                LD (HL),B
+F47F  3E 0D                             LD A,13
+F481  CD 93 F4                          CALL OUTCH
+F484  C3 77 F3                          JP F_ZERO
+F487  3E 08                     RUBOUT: LD A,8
+F489  CD 93 F4                          CALL OUTCH
+F48C  3E 20                             LD A,' '
+F48E  CD 93 F4                          CALL OUTCH
+F491  3E 08                             LD A,8
+                                
+                                ; OUTCH: A to the screen, tabs to the next column of 8. Keeps BC DE HL.
+F493  C5                        OUTCH:  PUSH BC
+F494  D5                                PUSH DE
+F495  E5                                PUSH HL
+F496  FE 09                             CP 9
+F498  20 0E                             JR NZ,OC2
+F49A  3E 20                     OC1:    LD A,' '
+F49C  CD AF F4                          CALL OC3
+F49F  3A 8F FA                          LD A,(COL)
+F4A2  E6 07                             AND 7
+F4A4  20 F4                             JR NZ,OC1
+F4A6  18 03                             JR OC4
+F4A8  CD AF F4                  OC2:    CALL OC3
+F4AB  E1                        OC4:    POP HL
+F4AC  D1                                POP DE
+F4AD  C1                                POP BC
+F4AE  C9                                RET
+F4AF  F5                        OC3:    PUSH AF
+F4B0  21 8F FA                          LD HL,COL
+F4B3  FE 0D                             CP 13
+F4B5  28 0B                             JR Z,OC5
+F4B7  FE 08                             CP 8
+F4B9  28 0B                             JR Z,OC6
+F4BB  FE 20                             CP 20h
+F4BD  38 0C                             JR C,OC7
+F4BF  34                                INC (HL)
+F4C0  18 09                             JR OC7
+F4C2  36 00                     OC5:    LD (HL),0
+F4C4  18 05                             JR OC7
+F4C6  7E                        OC6:    LD A,(HL)
+F4C7  B7                                OR A
+F4C8  28 01                             JR Z,OC7
+F4CA  35                                DEC (HL)
+F4CB  F1                        OC7:    POP AF
+F4CC  C3 21 EC                          JP CONOUT
+                                
+                                ; FCB calls other than sequential read / write: open, close, delete,
+                                ; make, rename, random read / write, file size, set random record
+F4CF  C5                        F_FCB:  PUSH BC
+F4D0  D5                                PUSH DE
+F4D1  CD A9 F7                          CALL FLUSH
+F4D4  D1                                POP DE
+F4D5  C1                                POP BC
+F4D6  ED 53 8C FA                       LD (UFCB),DE
+F4DA  79                                LD A,C
+F4DB  32 90 FA                          LD (CPFN),A
+F4DE  CD 4E F8                          CALL TOSCR
+F4E1  3A 90 FA                          LD A,(CPFN)             ; record size 128, where CP/M has S2, RC
+F4E4  FE 0F                             CP 15
+F4E6  28 0D                             JR Z,FF1
+F4E8  FE 13                             CP 19
+F4EA  28 09                             JR Z,FF1
+F4EC  FE 16                             CP 22
+F4EE  28 05                             JR Z,FF1
+F4F0  FE 17                             CP 23
+F4F2  C4 6C F8                          CALL NZ,SETRS
+F4F5  3A 90 FA                  FF1:    LD A,(CPFN)             ; a write: the record to the DTA
+F4F8  FE 22                             CP 34
+F4FA  28 04                             JR Z,FF2
+F4FC  FE 28                             CP 40
+F4FE  20 03                             JR NZ,FF3
+F500  CD 79 F8                  FF2:    CALL DMADTA
+F503  3A 90 FA                  FF3:    LD A,(CPFN)
+F506  FE 28                             CP 40
+F508  20 02                             JR NZ,FF4
+F50A  3E 22                             LD A,34                 ; zero fill: DOS has no such thing
+F50C  11 10 00                  FF4:    LD DE,PFCB
+F50F  CD EE F2                          CALL DOSX
+F512  32 91 FA                          LD (FRES),A
+F515  CD 64 F8                          CALL SCRFCB
+F518  CD BB F8                          CALL FBACK
+F51B  3A 90 FA                          LD A,(CPFN)             ; an open: its directory entry at the DMA
+F51E  FE 0F                             CP 15
+F520  20 15                             JR NZ,FF5
+F522  3A 91 FA                          LD A,(FRES)
+F525  B7                                OR A
+F526  20 0F                             JR NZ,FF5
+F528  2A 8C FA                          LD HL,(UFCB)
+F52B  11 0F 00                          LD DE,15
+F52E  19                                ADD HL,DE
+F52F  7E                                LD A,(HL)
+F530  2A 8C FA                          LD HL,(UFCB)
+F533  23                                INC HL
+F534  CD BA F9                          CALL DIRENT
+F537  3A 90 FA                  FF5:    LD A,(CPFN)             ; a random read: the record to the DMA
+F53A  FE 21                             CP 33
+F53C  20 15                             JR NZ,FR5
+F53E  3A 91 FA                          LD A,(FRES)
+F541  FE 03                             CP 3                    ; partial record: ^Z after the end
+F543  20 07                             JR NZ,FR4
+F545  CD 9B F8                          CALL PADZ
+F548  AF                                XOR A
+F549  32 91 FA                          LD (FRES),A
+F54C  3A 91 FA                  FR4:    LD A,(FRES)
+F54F  B7                                OR A
+F550  CC 8A F8                          CALL Z,DTADMA
+F553  3A 90 FA                  FR5:    LD A,(CPFN)             ; a close after writes that failed: FFh
+F556  FE 10                             CP 16
+F558  20 0F                             JR NZ,FR8
+F55A  3A A6 FA                          LD A,(FERR)
+F55D  B7                                OR A
+F55E  28 09                             JR Z,FR8
+F560  AF                                XOR A
+F561  32 A6 FA                          LD (FERR),A
+F564  3E FF                             LD A,0FFh
+F566  C3 78 F3                          JP RETA
+F569  3A 91 FA                  FR8:    LD A,(FRES)             ; DOS's codes -> CP/M's
+F56C  B7                                OR A
+F56D  CA 78 F3                          JP Z,RETA
+F570  FE FF                             CP 0FFh
+F572  CA 78 F3                          JP Z,RETA
+F575  47                                LD B,A
+F576  3A 90 FA                          LD A,(CPFN)
+F579  FE 21                             CP 33
+F57B  28 0C                             JR Z,FR6
+F57D  FE 22                             CP 34
+F57F  28 0D                             JR Z,FR7
+F581  FE 28                             CP 40
+F583  28 09                             JR Z,FR7
+F585  78                                LD A,B
+F586  C3 78 F3                          JP RETA
+F589  3E 01                     FR6:    LD A,1                  ; read: unwritten data
+F58B  C3 78 F3                          JP RETA
+F58E  05                        FR7:    DEC B                   ; write: 1 disk full -> 2
+F58F  3E 02                             LD A,2
+F591  CA 78 F3                          JP Z,RETA
+F594  3D                                DEC A
+F595  C3 78 F3                          JP RETA
+                                
+                                ; Sequential read and write, and random read, go through BUF, NBUF
+                                ; records of one file (one FCB): a read fills it with the records from
+                                ; the one asked for on (MBASIC LOADs with random reads), a write
+                                ; collects records there; DOS is exchanged in once for all of them.
+                                ; BMODE 1: BUF holds records BPOS.. of the file at BFCB (BCNT of them,
+                                ; BEOF: the end of the file after them); BSHAD is the FCB after the
+                                ; first, which the program got. 2: records to write at BPOS.. (WRND:
+                                ; by random writes), BSHAD the FCB before them, at BPOS. Any other file
+                                ; call writes them first (FLUSH).
+F598  ED 53 8C FA               F_RSEQ: LD (UFCB),DE
+F59C  CD 0A F9                          CALL FPOS
+F59F  AF                                XOR A
+F5A0  18 18                             JR RD0
+                                ; random read: the same, from record R0 R1, and the FCB's position is
+                                ; set to that record instead of the next
+F5A2  ED 53 8C FA               F_RRND: LD (UFCB),DE
+F5A6  21 23 00                          LD HL,35
+F5A9  19                                ADD HL,DE
+F5AA  7E                                LD A,(HL)
+F5AB  B7                                OR A
+F5AC  28 05                             JR Z,RR1
+F5AE  0E 21                             LD C,33                 ; R2 not 0: past 8 MB, DOS says so
+F5B0  C3 CF F4                          JP F_FCB
+F5B3  2B                        RR1:    DEC HL
+F5B4  56                                LD D,(HL)
+F5B5  2B                                DEC HL
+F5B6  5E                                LD E,(HL)
+F5B7  EB                                EX DE,HL
+F5B8  3E 01                             LD A,1
+F5BA  32 9E FA                  RD0:    LD (RRND),A
+F5BD  22 9C FA                          LD (RPOS),HL
+F5C0  3A 94 FA                          LD A,(BMODE)
+F5C3  3D                                DEC A
+F5C4  20 41                             JR NZ,RS2
+F5C6  ED 5B 95 FA                       LD DE,(BFCB)
+F5CA  2A 8C FA                          LD HL,(UFCB)
+F5CD  B7                                OR A
+F5CE  ED 52                             SBC HL,DE
+F5D0  20 35                             JR NZ,RS2
+F5D2  2A 9C FA                          LD HL,(RPOS)
+F5D5  ED 5B 97 FA                       LD DE,(BPOS)
+F5D9  ED 52                             SBC HL,DE
+F5DB  38 2A                             JR C,RS2
+F5DD  7C                                LD A,H
+F5DE  B7                                OR A
+F5DF  20 26                             JR NZ,RS2
+F5E1  3A 99 FA                          LD A,(BCNT)
+F5E4  BD                                CP L
+F5E5  28 15                             JR Z,RS1                ; just after the records
+F5E7  38 1E                             JR C,RS2
+F5E9  7D                                LD A,L                  ; one of them
+F5EA  CD 40 F9                          CALL BUFREC
+F5ED  ED 5B 84 FA                       LD DE,(DMAADR)
+F5F1  01 80 00                          LD BC,128
+F5F4  ED B0                             LDIR
+F5F6  CD C7 F6                          CALL RDPOS
+F5F9  C3 77 F3                          JP F_ZERO
+F5FC  3A 9A FA                  RS1:    LD A,(BEOF)
+F5FF  B7                                OR A
+F600  28 05                             JR Z,RS2
+F602  3E 01                             LD A,1                  ; end of file
+F604  C3 78 F3                          JP RETA
+F607  CD A9 F7                  RS2:    CALL FLUSH              ; read up to NBUF records
+F60A  CD 4E F8                          CALL TOSCR
+F60D  CD 6C F8                          CALL SETRS
+F610  3A 9E FA                          LD A,(RRND)
+F613  B7                                OR A
+F614  28 0A                             JR Z,RS2A
+F616  CD 64 F8                          CALL SCRFCB             ; random: from that record on
+F619  EB                                EX DE,HL
+F61A  2A 9C FA                          LD HL,(RPOS)
+F61D  CD D5 F6                          CALL POSTO
+F620  AF                        RS2A:   XOR A
+F621  32 99 FA                          LD (BCNT),A
+F624  32 9A FA                          LD (BEOF),A
+F627  CD 59 F2                          CALL XCHGD
+F62A  3E 14                     RS3:    LD A,14h
+F62C  11 10 00                          LD DE,PFCB
+F62F  CD 98 F2                          CALL DOSCALL
+F632  3A 00 D0                          LD A,(R_AL)
+F635  B7                                OR A
+F636  28 0C                             JR Z,RS4
+F638  FE 03                             CP 3
+F63A  20 3D                             JR NZ,RS6
+F63C  CD 9B F8                          CALL PADZ               ; the last, partial record
+F63F  3E 01                             LD A,1
+F641  32 9A FA                          LD (BEOF),A
+F644  3A 99 FA                  RS4:    LD A,(BCNT)
+F647  CD 40 F9                          CALL BUFREC
+F64A  EB                                EX DE,HL
+F64B  2A 78 FA                          LD HL,(PAGE)
+F64E  01 60 00                          LD BC,PDTA
+F651  09                                ADD HL,BC
+F652  01 80 00                          LD BC,128
+F655  ED B0                             LDIR
+F657  21 99 FA                          LD HL,BCNT
+F65A  34                                INC (HL)
+F65B  7E                                LD A,(HL)
+F65C  3D                                DEC A
+F65D  20 0B                             JR NZ,RS5
+F65F  CD 64 F8                          CALL SCRFCB             ; after the first record: the FCB the
+F662  11 D1 FA                          LD DE,BSHAD             ; program gets
+F665  01 25 00                          LD BC,37
+F668  ED B0                             LDIR
+F66A  3A 9A FA                  RS5:    LD A,(BEOF)
+F66D  B7                                OR A
+F66E  20 0E                             JR NZ,RS7
+F670  3A 99 FA                          LD A,(BCNT)
+F673  FE 08                             CP NBUF
+F675  38 B3                             JR C,RS3
+F677  18 05                             JR RS7
+F679  3E 01                     RS6:    LD A,1
+F67B  32 9A FA                          LD (BEOF),A
+F67E  CD 59 F2                  RS7:    CALL XCHGD
+F681  3A 99 FA                          LD A,(BCNT)
+F684  B7                                OR A
+F685  20 12                             JR NZ,RS8
+F687  CD 64 F8                          CALL SCRFCB             ; none: end of file
+F68A  CD BB F8                          CALL FBACK
+F68D  3A 9E FA                          LD A,(RRND)
+F690  B7                                OR A
+F691  C4 CE F6                          CALL NZ,SETPOS
+F694  3E 01                             LD A,1
+F696  C3 78 F3                          JP RETA
+F699  3E 01                     RS8:    LD A,1
+F69B  32 94 FA                          LD (BMODE),A
+F69E  2A 8C FA                          LD HL,(UFCB)
+F6A1  22 95 FA                          LD (BFCB),HL
+F6A4  2A 9C FA                          LD HL,(RPOS)
+F6A7  22 97 FA                          LD (BPOS),HL
+F6AA  21 D1 FA                          LD HL,BSHAD
+F6AD  CD BB F8                          CALL FBACK
+F6B0  3A 9E FA                          LD A,(RRND)
+F6B3  B7                                OR A
+F6B4  C4 CE F6                          CALL NZ,SETPOS
+F6B7  AF                                XOR A
+F6B8  CD 40 F9                          CALL BUFREC
+F6BB  ED 5B 84 FA                       LD DE,(DMAADR)
+F6BF  01 80 00                          LD BC,128
+F6C2  ED B0                             LDIR
+F6C4  C3 77 F3                          JP F_ZERO
+                                
+                                ; RDPOS: after a record from BUF, the program's FCB to the next record,
+                                ; or (random read) to that record
+F6C7  3A 9E FA                  RDPOS:  LD A,(RRND)
+F6CA  B7                                OR A
+F6CB  CA 26 F9                          JP Z,FNEXT
+                                ; SETPOS: the program's FCB to record RPOS
+F6CE  ED 5B 8C FA               SETPOS: LD DE,(UFCB)
+F6D2  2A 9C FA                          LD HL,(RPOS)
+                                ; POSTO: the FCB at DE to record HL: block HL / 128, CR HL MOD 128
+F6D5  7D                        POSTO:  LD A,L
+F6D6  E6 7F                             AND 7Fh
+F6D8  E5                                PUSH HL
+F6D9  21 20 00                          LD HL,32
+F6DC  19                                ADD HL,DE
+F6DD  77                                LD (HL),A
+F6DE  E1                                POP HL
+F6DF  EB                                EX DE,HL
+F6E0  01 0C 00                          LD BC,12
+F6E3  09                                ADD HL,BC
+F6E4  7B                                LD A,E
+F6E5  17                                RLA
+F6E6  7A                                LD A,D
+F6E7  17                                RLA
+F6E8  77                                LD (HL),A
+F6E9  23                                INC HL
+F6EA  7A                                LD A,D
+F6EB  07                                RLCA
+F6EC  E6 01                             AND 1
+F6EE  77                                LD (HL),A
+F6EF  C9                                RET
+                                
+F6F0  ED 53 8C FA               F_WSEQ: LD (UFCB),DE
+F6F4  CD 0A F9                          CALL FPOS
+F6F7  AF                                XOR A
+F6F8  18 14                             JR WR0
+                                ; random write (and with zero fill): the same, at record R0 R1, and the
+                                ; FCB's position is set to that record instead of the next. DOS writes
+                                ; them sequentially from the first (SAVE in MBASIC writes this way).
+F6FA  ED 53 8C FA               F_WRND: LD (UFCB),DE
+F6FE  21 23 00                          LD HL,35
+F701  19                                ADD HL,DE
+F702  7E                                LD A,(HL)
+F703  B7                                OR A
+F704  C2 CF F4                          JP NZ,F_FCB             ; R2 not 0: DOS says it is too far
+F707  2B                                DEC HL
+F708  56                                LD D,(HL)
+F709  2B                                DEC HL
+F70A  5E                                LD E,(HL)
+F70B  EB                                EX DE,HL
+F70C  3E 01                             LD A,1
+F70E  32 9E FA                  WR0:    LD (RRND),A
+F711  22 9C FA                          LD (RPOS),HL
+F714  3A 94 FA                          LD A,(BMODE)
+F717  FE 02                             CP 2
+F719  20 2C                             JR NZ,WS2
+F71B  ED 5B 95 FA                       LD DE,(BFCB)
+F71F  2A 8C FA                          LD HL,(UFCB)
+F722  B7                                OR A
+F723  ED 52                             SBC HL,DE
+F725  20 20                             JR NZ,WS2
+F727  3A 9F FA                          LD A,(WRND)
+F72A  21 9E FA                          LD HL,RRND
+F72D  BE                                CP (HL)
+F72E  20 17                             JR NZ,WS2
+F730  3A 99 FA                          LD A,(BCNT)
+F733  FE 08                             CP NBUF
+F735  30 10                             JR NC,WS2
+F737  5F                                LD E,A
+F738  16 00                             LD D,0
+F73A  2A 97 FA                          LD HL,(BPOS)
+F73D  19                                ADD HL,DE
+F73E  ED 5B 9C FA                       LD DE,(RPOS)
+F742  B7                                OR A
+F743  ED 52                             SBC HL,DE
+F745  28 49                             JR Z,WS3                ; the next record of the file
+F747  CD A9 F7                  WS2:    CALL FLUSH
+F74A  3A A6 FA                          LD A,(FERR)             ; the records before could not be written
+F74D  B7                                OR A
+F74E  28 09                             JR Z,WS1
+F750  AF                                XOR A
+F751  32 A6 FA                          LD (FERR),A
+F754  3E 02                             LD A,2                  ; disk full
+F756  C3 78 F3                          JP RETA
+F759  3E 02                     WS1:    LD A,2
+F75B  32 94 FA                          LD (BMODE),A
+F75E  AF                                XOR A
+F75F  32 99 FA                          LD (BCNT),A
+F762  2A 8C FA                          LD HL,(UFCB)
+F765  22 95 FA                          LD (BFCB),HL
+F768  2A 9C FA                          LD HL,(RPOS)
+F76B  22 97 FA                          LD (BPOS),HL
+F76E  2A 8C FA                          LD HL,(UFCB)
+F771  11 D1 FA                          LD DE,BSHAD
+F774  01 24 00                          LD BC,36
+F777  ED B0                             LDIR
+F779  AF                                XOR A
+F77A  12                                LD (DE),A
+F77B  32 DE FA                          LD (BSHAD+13),A         ; not the program's S1 (see TOSCR)
+F77E  3A 9E FA                          LD A,(RRND)
+F781  32 9F FA                          LD (WRND),A
+F784  B7                                OR A
+F785  28 09                             JR Z,WS3
+F787  11 D1 FA                          LD DE,BSHAD             ; random: DOS writes from that record on
+F78A  2A 9C FA                          LD HL,(RPOS)
+F78D  CD D5 F6                          CALL POSTO
+F790  3A 99 FA                  WS3:    LD A,(BCNT)
+F793  CD 40 F9                          CALL BUFREC
+F796  EB                                EX DE,HL
+F797  2A 84 FA                          LD HL,(DMAADR)
+F79A  01 80 00                          LD BC,128
+F79D  ED B0                             LDIR
+F79F  21 99 FA                          LD HL,BCNT
+F7A2  34                                INC (HL)
+F7A3  CD C7 F6                          CALL RDPOS
+F7A6  C3 77 F3                          JP F_ZERO
+                                
+                                ; FLUSH: write the records collected in BUF; BUF is empty after it.
+                                ; FERR = DOS's code if a write failed. Keeps UFCB.
+F7A9  3A 94 FA                  FLUSH:  LD A,(BMODE)
+F7AC  FE 02                             CP 2
+F7AE  3E 00                             LD A,0
+F7B0  32 94 FA                          LD (BMODE),A
+F7B3  C0                                RET NZ
+F7B4  2A 8C FA                          LD HL,(UFCB)
+F7B7  E5                                PUSH HL
+F7B8  2A 78 FA                          LD HL,(PAGE)
+F7BB  11 10 00                          LD DE,PFCB
+F7BE  19                                ADD HL,DE
+F7BF  EB                                EX DE,HL
+F7C0  21 D1 FA                          LD HL,BSHAD
+F7C3  01 25 00                          LD BC,37
+F7C6  ED B0                             LDIR
+F7C8  CD 6C F8                          CALL SETRS
+F7CB  CD 59 F2                          CALL XCHGD
+F7CE  AF                                XOR A
+F7CF  32 9B FA                          LD (BIDX),A
+F7D2  3A 9B FA                  FLU1:   LD A,(BIDX)
+F7D5  CD 40 F9                          CALL BUFREC
+F7D8  E5                                PUSH HL
+F7D9  2A 78 FA                          LD HL,(PAGE)
+F7DC  11 60 00                          LD DE,PDTA
+F7DF  19                                ADD HL,DE
+F7E0  EB                                EX DE,HL
+F7E1  E1                                POP HL
+F7E2  01 80 00                          LD BC,128
+F7E5  ED B0                             LDIR
+F7E7  3E 15                             LD A,15h
+F7E9  11 10 00                          LD DE,PFCB
+F7EC  CD 98 F2                          CALL DOSCALL
+F7EF  3A 00 D0                          LD A,(R_AL)
+F7F2  B7                                OR A
+F7F3  20 0B                             JR NZ,FLU2
+F7F5  21 9B FA                          LD HL,BIDX
+F7F8  34                                INC (HL)
+F7F9  3A 99 FA                          LD A,(BCNT)
+F7FC  BE                                CP (HL)
+F7FD  20 D3                             JR NZ,FLU1
+F7FF  AF                                XOR A
+F800  32 A6 FA                  FLU2:   LD (FERR),A
+F803  CD 59 F2                          CALL XCHGD
+F806  2A 95 FA                          LD HL,(BFCB)
+F809  22 8C FA                          LD (UFCB),HL
+F80C  11 0C 00                          LD DE,12                ; random writes: the program's position
+F80F  19                                ADD HL,DE               ; and R0-R2 stay (MBASIC counts in R0 R1)
+F810  11 A0 FA                          LD DE,PSAVE
+F813  01 02 00                          LD BC,2
+F816  ED B0                             LDIR
+F818  01 12 00                          LD BC,32-14
+F81B  09                                ADD HL,BC
+F81C  0E 04                             LD C,4
+F81E  ED B0                             LDIR
+F820  CD 64 F8                          CALL SCRFCB
+F823  CD BB F8                          CALL FBACK
+F826  3A 9F FA                          LD A,(WRND)
+F829  B7                                OR A
+F82A  28 1D                             JR Z,FLU3
+F82C  2A 8C FA                          LD HL,(UFCB)
+F82F  11 0C 00                          LD DE,12
+F832  19                                ADD HL,DE
+F833  EB                                EX DE,HL
+F834  21 A0 FA                          LD HL,PSAVE
+F837  01 02 00                          LD BC,2
+F83A  ED B0                             LDIR
+F83C  21 12 00                          LD HL,32-14
+F83F  19                                ADD HL,DE
+F840  EB                                EX DE,HL
+F841  21 A2 FA                          LD HL,PSAVE+2
+F844  01 04 00                          LD BC,4
+F847  ED B0                             LDIR
+F849  E1                        FLU3:   POP HL
+F84A  22 8C FA                          LD (UFCB),HL
+F84D  C9                                RET
+                                
+                                ; TOSCR: the program's FCB (UFCB) to the scratch one
+F84E  CD 64 F8                  TOSCR:  CALL SCRFCB
+F851  EB                                EX DE,HL
+F852  2A 8C FA                          LD HL,(UFCB)
+F855  01 24 00                          LD BC,36
+F858  ED B0                             LDIR
+F85A  AF                                XOR A
+F85B  12                                LD (DE),A
+F85C  FD 2A 78 FA                       LD IY,(PAGE)            ; byte 13 is CP/M's S1, which programs may
+F860  FD 77 1D                          LD (IY+PFCB+13),A       ;   use (PIP does); to DOS it is the high
+F863  C9                                RET                     ;   byte of the block number
+                                
+                                ; SCRFCB: HL = the scratch FCB
+F864  2A 78 FA                  SCRFCB: LD HL,(PAGE)
+F867  11 10 00                          LD DE,PFCB
+F86A  19                                ADD HL,DE
+F86B  C9                                RET
+                                
+F86C  FD 2A 78 FA               SETRS:  LD IY,(PAGE)
+F870  FD 36 1E 80                       LD (IY+PFCB+14),80h
+F874  FD 36 1F 00                       LD (IY+PFCB+15),0
+F878  C9                                RET
+                                
+F879  2A 78 FA                  DMADTA: LD HL,(PAGE)
+F87C  11 60 00                          LD DE,PDTA
+F87F  19                                ADD HL,DE
+F880  EB                                EX DE,HL
+F881  2A 84 FA                          LD HL,(DMAADR)
+F884  01 80 00                          LD BC,128
+F887  ED B0                             LDIR
+F889  C9                                RET
+                                
+F88A  2A 78 FA                  DTADMA: LD HL,(PAGE)
+F88D  11 60 00                          LD DE,PDTA
+F890  19                                ADD HL,DE
+F891  ED 5B 84 FA                       LD DE,(DMAADR)
+F895  01 80 00                          LD BC,128
+F898  ED B0                             LDIR
+F89A  C9                                RET
+                                
+                                ; PADZ: the DTA holds the file's last, partial record: ^Z after its end
+F89B  FD 2A 78 FA               PADZ:   LD IY,(PAGE)
+F89F  FD 7E 20                          LD A,(IY+PFCB+16)
+F8A2  E6 7F                             AND 7Fh
+F8A4  C8                                RET Z
+F8A5  5F                                LD E,A
+F8A6  16 00                             LD D,0
+F8A8  2A 78 FA                          LD HL,(PAGE)
+F8AB  19                                ADD HL,DE
+F8AC  11 60 00                          LD DE,PDTA
+F8AF  19                                ADD HL,DE
+F8B0  ED 44                             NEG
+F8B2  C6 80                             ADD A,128
+F8B4  47                                LD B,A
+F8B5  36 1A                     PZ1:    LD (HL),1Ah
+F8B7  23                                INC HL
+F8B8  10 FB                             DJNZ PZ1
+F8BA  C9                                RET
+                                
+                                ; FBACK: HL = an FCB after DOS; its bytes 12 and 14-35 to the program's (UFCB),
+                                ; with S2 = 0 and RC = the file's records in this extent: (size + 127) /
+                                ; 128 - block * 128, at most 128. Not the drive: DOS puts the drive's
+                                ; number there, CP/M leaves the program's 0 (MBASIC's NAME compares them).
+F8BB  E5                        FBACK:  PUSH HL
+F8BC  ED 5B 8C FA                       LD DE,(UFCB)
+F8C0  01 0C 00                          LD BC,12
+F8C3  09                                ADD HL,BC
+F8C4  EB                                EX DE,HL
+F8C5  09                                ADD HL,BC
+F8C6  EB                                EX DE,HL
+F8C7  ED A0                             LDI                     ; EX
+F8C9  23                                INC HL                  ; not S1: the program's own (see TOSCR)
+F8CA  13                                INC DE
+F8CB  01 16 00                          LD BC,22
+F8CE  ED B0                             LDIR
+F8D0  FD E1                             POP IY
+F8D2  FD 6E 10                          LD L,(IY+16)
+F8D5  FD 66 11                          LD H,(IY+17)
+F8D8  FD 7E 12                          LD A,(IY+18)
+F8DB  CD 4C F9                          CALL RECS
+F8DE  E5                                PUSH HL
+F8DF  2A 8C FA                          LD HL,(UFCB)
+F8E2  11 0C 00                          LD DE,12
+F8E5  19                                ADD HL,DE
+F8E6  5E                                LD E,(HL)
+F8E7  23                                INC HL
+F8E8  56                                LD D,(HL)
+F8E9  EB                                EX DE,HL
+F8EA  29                                ADD HL,HL
+F8EB  29                                ADD HL,HL
+F8EC  29                                ADD HL,HL
+F8ED  29                                ADD HL,HL
+F8EE  29                                ADD HL,HL
+F8EF  29                                ADD HL,HL
+F8F0  29                                ADD HL,HL
+F8F1  EB                                EX DE,HL
+F8F2  E1                                POP HL
+F8F3  B7                                OR A
+F8F4  ED 52                             SBC HL,DE
+F8F6  30 03                             JR NC,FB1
+F8F8  21 00 00                          LD HL,0
+F8FB  CD 5B F9                  FB1:    CALL MAX128
+F8FE  2A 8C FA                          LD HL,(UFCB)
+F901  11 0E 00                          LD DE,14
+F904  19                                ADD HL,DE
+F905  36 00                             LD (HL),0
+F907  23                                INC HL
+F908  77                                LD (HL),A
+F909  C9                                RET
+                                
+                                ; FPOS: HL = the record position of the program's FCB: block * 128 + CR
+F90A  2A 8C FA                  FPOS:   LD HL,(UFCB)
+F90D  11 0C 00                          LD DE,12
+F910  19                                ADD HL,DE
+F911  5E                                LD E,(HL)
+F912  23                                INC HL
+F913  56                                LD D,(HL)
+F914  01 13 00                          LD BC,32-13
+F917  09                                ADD HL,BC
+F918  7E                                LD A,(HL)
+F919  EB                                EX DE,HL
+F91A  29                                ADD HL,HL
+F91B  29                                ADD HL,HL
+F91C  29                                ADD HL,HL
+F91D  29                                ADD HL,HL
+F91E  29                                ADD HL,HL
+F91F  29                                ADD HL,HL
+F920  29                                ADD HL,HL
+F921  5F                                LD E,A
+F922  16 00                             LD D,0
+F924  19                                ADD HL,DE
+F925  C9                                RET
+                                
+                                ; FNEXT: the program's FCB to the next record
+F926  2A 8C FA                  FNEXT:  LD HL,(UFCB)
+F929  11 20 00                          LD DE,32
+F92C  19                                ADD HL,DE
+F92D  34                                INC (HL)
+F92E  7E                                LD A,(HL)
+F92F  FE 80                             CP 128
+F931  C0                                RET NZ
+F932  36 00                             LD (HL),0
+F934  2A 8C FA                          LD HL,(UFCB)
+F937  11 0C 00                          LD DE,12
+F93A  19                                ADD HL,DE
+F93B  34                                INC (HL)
+F93C  C0                                RET NZ
+F93D  23                                INC HL
+F93E  34                                INC (HL)
+F93F  C9                                RET
+                                
+                                ; BUFREC: HL = record A of BUF
+F940  67                        BUFREC: LD H,A
+F941  2E 00                             LD L,0
+F943  CB 3C                             SRL H
+F945  CB 1D                             RR L
+F947  11 F6 FA                          LD DE,BUF
+F94A  19                                ADD HL,DE
+F94B  C9                                RET
+                                
+                                ; RECS: HL = (A:HL + 127) / 128, records of a file of A:HL bytes
+F94C  11 7F 00                  RECS:   LD DE,127
+F94F  19                                ADD HL,DE
+F950  CE 00                             ADC A,0
+F952  CB 25                             SLA L
+F954  CB 14                             RL H
+F956  CB 17                             RL A
+F958  6C                                LD L,H
+F959  67                                LD H,A
+F95A  C9                                RET
+                                
+                                ; MAX128: A = HL, at most 128
+F95B  7C                        MAX128: LD A,H
+F95C  B7                                OR A
+F95D  3E 80                             LD A,128
+F95F  C0                                RET NZ
+F960  7D                                LD A,L
+F961  FE 81                             CP 129
+F963  D8                                RET C
+F964  3E 80                             LD A,128
+F966  C9                                RET
+                                
+                                ; 17 / 18: search first / next. DOS puts the drive and the directory
+                                ; entry at the DTA; CP/M wants a directory record at the DMA, entry 0.
+F967  C5                        F_SRCH: PUSH BC
+F968  D5                                PUSH DE
+F969  CD A9 F7                          CALL FLUSH
+F96C  D1                                POP DE
+F96D  C1                                POP BC
+F96E  79                                LD A,C
+F96F  FE 12                             CP 18
+F971  3E 12                             LD A,12h
+F973  28 1A                             JR Z,FS1
+F975  2A 78 FA                          LD HL,(PAGE)
+F978  01 38 00                          LD BC,PSRCH
+F97B  09                                ADD HL,BC
+F97C  EB                                EX DE,HL
+F97D  D5                                PUSH DE
+F97E  01 24 00                          LD BC,36
+F981  ED B0                             LDIR
+F983  AF                                XOR A
+F984  12                                LD (DE),A
+F985  E1                                POP HL
+F986  7E                                LD A,(HL)
+F987  FE 3F                             CP '?'                  ; all user numbers: the default drive
+F989  20 02                             JR NZ,FS0
+F98B  36 00                             LD (HL),0
+F98D  3E 11                     FS0:    LD A,11h
+F98F  11 38 00                  FS1:    LD DE,PSRCH
+F992  CD EE F2                          CALL DOSX
+F995  FE FF                             CP 0FFh
+F997  CA 78 F3                          JP Z,RETA
+F99A  2A 78 FA                          LD HL,(PAGE)            ; RC from the size
+F99D  01 7D 00                          LD BC,PDTA+29
+F9A0  09                                ADD HL,BC
+F9A1  5E                                LD E,(HL)
+F9A2  23                                INC HL
+F9A3  56                                LD D,(HL)
+F9A4  23                                INC HL
+F9A5  7E                                LD A,(HL)
+F9A6  EB                                EX DE,HL
+F9A7  CD 4C F9                          CALL RECS
+F9AA  CD 5B F9                          CALL MAX128
+F9AD  2A 78 FA                          LD HL,(PAGE)
+F9B0  01 61 00                          LD BC,PDTA+1
+F9B3  09                                ADD HL,BC
+F9B4  CD BA F9                          CALL DIRENT
+F9B7  C3 77 F3                          JP F_ZERO
+                                
+                                ; DIRENT: a CP/M directory record at the DMA, as CP/M's BDOS leaves it
+                                ; after a search or an open: entry 0 is user 0, the name at HL, RC = A,
+                                ; no allocation; entries 1-3 unused (E5h)
+F9BA  F5                        DIRENT: PUSH AF
+F9BB  E5                                PUSH HL
+F9BC  2A 84 FA                          LD HL,(DMAADR)
+F9BF  54                                LD D,H
+F9C0  5D                                LD E,L
+F9C1  13                                INC DE
+F9C2  36 E5                             LD (HL),0E5h
+F9C4  01 7F 00                          LD BC,127
+F9C7  ED B0                             LDIR
+F9C9  ED 5B 84 FA                       LD DE,(DMAADR)
+F9CD  AF                                XOR A
+F9CE  12                                LD (DE),A
+F9CF  13                                INC DE
+F9D0  E1                                POP HL
+F9D1  01 0B 00                          LD BC,11
+F9D4  ED B0                             LDIR
+F9D6  06 14                             LD B,20                 ; EX S1 S2 RC, allocation: 0
+F9D8  12                        FS2:    LD (DE),A
+F9D9  13                                INC DE
+F9DA  10 FC                             DJNZ FS2
+F9DC  F1                                POP AF
+F9DD  2A 84 FA                          LD HL,(DMAADR)
+F9E0  11 0F 00                          LD DE,15
+F9E3  19                                ADD HL,DE
+F9E4  77                                LD (HL),A
+F9E5  C9                                RET
+                                
+                                ; ---- BIOS entries, (0001h) - 3
+F9E6  37 F2 37 F2 08 FA 17 FA   BIOSV:  DW CPEXIT, CPEXIT, B_CONST, B_CONIN     ; BOOT WBOOT CONST CONIN
+F9EE  1F FA 28 FA 2E FA 34 FA           DW B_CONOUT, B_LIST, B_PUN, B_RDR       ; CONOUT LIST PUNCH READER
+F9F6  16 FA 48 FA 16 FA 16 FA           DW B_RET, B_SELD, B_RET, B_RET          ; HOME SELDSK SETTRK SETSEC
+F9FE  16 FA 4C FA 4C FA 3A FA           DW B_RET, B_RW, B_RW, B_LSTS            ; SETDMA READ WRITE LISTST
+FA06  4F FA                             DW B_STRN                               ; SECTRAN
+                                
+FA08                            B_CONST:
+FA08  C5                                PUSH BC
+FA09  D5                                PUSH DE
+FA0A  E5                                PUSH HL
+FA0B  CD F6 EB                          CALL PEEKEY
+FA0E  3E 00                             LD A,0
+FA10  30 01                             JR NC,BC1
+FA12  3D                                DEC A
+FA13  E1                        BC1:    POP HL
+FA14  D1                                POP DE
+FA15  C1                                POP BC
+FA16  C9                        B_RET:  RET
+FA17                            B_CONIN:
+FA17  C5                                PUSH BC
+FA18  D5                                PUSH DE
+FA19  E5                                PUSH HL
+FA1A  CD 13 EC                          CALL GETKEY
+FA1D  18 F4                             JR BC1
+FA1F                            B_CONOUT:
+FA1F  C5                                PUSH BC
+FA20  D5                                PUSH DE
+FA21  E5                                PUSH HL
+FA22  79                                LD A,C
+FA23  CD 21 EC                          CALL CONOUT
+FA26  18 EB                             JR BC1
+FA28  E5                        B_LIST: PUSH HL                 ; LIST, PUNCH, READER, LISTST: the serial
+FA29  21 3E D0                          LD HL,SPRN              ;   routines (I86.ASM), with C the byte;
+FA2C  18 10                             JR BSER                 ;   BC, DE and HL kept
+FA2E  E5                        B_PUN:  PUSH HL
+FA2F  21 42 D0                          LD HL,SAUXO
+FA32  18 0A                             JR BSER
+FA34  E5                        B_RDR:  PUSH HL
+FA35  21 62 D0                          LD HL,SAUXI
+FA38  18 04                             JR BSER
+FA3A  E5                        B_LSTS: PUSH HL
+FA3B  21 85 D0                          LD HL,SLSTS
+FA3E  D5                        BSER:   PUSH DE
+FA3F  C5                                PUSH BC
+FA40  79                                LD A,C
+FA41  CD 60 EB                          CALL JPHL
+FA44  C1                                POP BC
+FA45  D1                                POP DE
+FA46  E1                                POP HL
+FA47  C9                                RET
+FA48  21 00 00                  B_SELD: LD HL,0                 ; no CP/M disks
+FA4B  C9                                RET
+FA4C  3E 01                     B_RW:   LD A,1
+FA4E  C9                                RET
+FA4F  60                        B_STRN: LD H,B
+FA50  69                                LD L,C
+FA51  C9                                RET
+                                
+                                ; what STAT sees: the disk as CP/M would have it (1 KB blocks)
+FA52  48 00                     DPB:    DW 72                   ; SPT: 128-byte records per track
+FA54  03 07 00                          DB 3,7,0                ; BSH BLM EXM
+FA57  AF 00 3F 00                       DW 175,63               ; DSM DRM
+FA5B  C0 00                             DB 0C0h,0               ; AL0 AL1
+FA5D  10 00 00 00                       DW 16,0                 ; CKS OFF
+FA61  00 00 00 00 00 00 00 00   ALLOCV: DS 23
+FA61  00 00 00 00 00 00 00 00   
+FA61  00 00 00 00 00 00 00      
+                                
+                                ; ---- variables
+FA78  00 00                     PAGE:   DW 0                    ; the P area
+FA7A  00 00                     SEGP:   DW 0                    ; its segment
+FA7C  00 00                     SAVE:   DW 0                    ; where DOS goes while the program runs
+FA7E  00 00                     SWLEN:  DW 0                    ; bytes exchanged
+FA80  00 00                     PLEN:   DW 0
+FA82  00 00                     PARAM:  DW 0
+FA84  00 00                     DMAADR: DW 0
+FA86  00 00                     USRSP:  DW 0
+FA88  00 00                     SHIMSP: DW 0
+FA8A  00 00                     SAVAF:  DW 0
+FA8C  00 00                     UFCB:   DW 0
+FA8E  00                        CPDSK:  DB 0
+FA8F  00                        COL:    DB 0
+FA90  00                        CPFN:   DB 0
+FA91  00                        FRES:   DB 0
+FA92  00 00                     DOSLEN: DW 0                    ; bytes exchanged for a DOS call
+FA94  00                        BMODE:  DB 0                    ; BUF: 0 empty, 1 read ahead, 2 to write
+FA95  00 00                     BFCB:   DW 0
+FA97  00 00                     BPOS:   DW 0
+FA99  00                        BCNT:   DB 0
+FA9A  00                        BEOF:   DB 0
+FA9B  00                        BIDX:   DB 0
+FA9C  00 00                     RPOS:   DW 0
+FA9E  00                        RRND:   DB 0                    ; 1: a random read / write
+FA9F  00                        WRND:   DB 0                    ; BUF holds random writes
+FAA0  00 00 00 00 00 00         PSAVE:  DS 6                    ; FLUSH: block, CR, R0-R2
+FAA6  00                        FERR:   DB 0
+FAA7  00 00 00 00 00 00 00 00   SAVREG: DS 42                   ; CPM.COM's REGS
+FAA7  00 00 00 00 00 00 00 00   
+FAA7  00 00 00 00 00 00 00 00   
+FAA7  00 00 00 00 00 00 00 00   
+FAA7  00 00 00 00 00 00 00 00   
+FAA7  00 00                     
+FAD1  00 00 00 00 00 00 00 00   BSHAD:  DS 37
+FAD1  00 00 00 00 00 00 00 00   
+FAD1  00 00 00 00 00 00 00 00   
+FAD1  00 00 00 00 00 00 00 00   
+FAD1  00 00 00 00 00            
+FAF6                            CPMEND:
+FAF6                            BUF     EQU $                   ; NBUF records, not in CPM.COM
+FAF6                            BUFEND  EQU BUF+NBUF*128
+                                        END
+                                

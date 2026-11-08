@@ -1,0 +1,957 @@
+ The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-1
+
+
+
+1	 	 	 	 	; FORMAT.COM for MS-DOS 1.25 on the Tim
+	 	 	 	ex FDD3000.
+2	 	 	 	 	;
+3	 	 	 	 	;       FORMAT [d:] [/S]
+4	 	 	 	 	;
+5	 	 	 	 	; Formats the disk in drive d: (default
+	 	 	 	: the current drive) in the FDD3000
+6	 	 	 	 	; DOS format of mkfat.py: 40 tracks of 
+	 	 	 	18 x 256-byte sectors, IDs 0-17,
+7	 	 	 	 	; the boot sector, 2 FATs of 2 sectors,
+	 	 	 	 64 directory entries, 1 KB
+8	 	 	 	 	; clusters.
+9	 	 	 	 	;
+10	 	 	 	 	; Each track is written by the BIOS tra
+	 	 	 	p 1BH (FORMAT TRACK in BIOS.ASM:
+11	 	 	 	 	; the WD177x write track) from a track 
+	 	 	 	image made here, then read back
+12	 	 	 	 	; with INT 25H. The clusters of a track
+	 	 	 	 that does not read back are
+13	 	 	 	 	; marked bad (FF7H); a bad track 0 (boo
+	 	 	 	t sector, FATs, directory) fails
+14	 	 	 	 	; the format. Every disk gets the boot 
+	 	 	 	sector of the current drive: it
+15	 	 	 	 	; boots the system or says "Non-System 
+	 	 	 	disk".
+16	 	 	 	 	;
+17	 	 	 	 	; /S copies the system from the current
+	 	 	 	 drive: the hidden files Z86.SYS
+18	 	 	 	 	; (the Z80 interpreter and BIOS), IO.SY
+	 	 	 	S and MSDOS.SYS, then COMMAND.COM.
+19	 	 	 	 	; On the empty disk DOS gives them the 
+	 	 	 	first directory entries and the
+20	 	 	 	 	; first clusters, contiguous, where the
+	 	 	 	 boot sector and COLD look for
+21	 	 	 	 	; them. Everything is read before the n
+	 	 	 	ew disk is asked for, so
+22	 	 	 	 	; FORMAT A:/S works with one drive.
+23	 	 	 	 	;
+24	 	 	 	 	; INT 25H / 26H in MS-DOS 1.25 call the
+	 	 	 	 BIOS READ / WRITE directly: CF=1
+25	 	 	 	 	; and AL = error code, the flags are le
+	 	 	 	ft on the stack.
+26	 	 	 	 	
+27	 = 0012	 	 	 	SPT     EQU     18
+28	 = 0028	 	 	 	NTRACK  EQU     40
+29	 = 1778	 	 	 	TRKLEN  EQU     32+SPT*332      ; track
+	 	 	 	 image bytes (the FDC pads with 4EH)
+30	 = 0002	 	 	 	NDRIVE  EQU     2               ; IO.SY
+	 	 	 	S has A: and B:
+31	 = 0001	 	 	 	FATSEC  EQU     1               ; FAT 1
+	 	 	 	 at 1-2, FAT 2 at 3-4
+32	 = 0002	 	 	 	FATSECS EQU     2
+33	 = 0005	 	 	 	DIRSEC  EQU     5
+ The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-2
+
+
+
+34	 = 0008	 	 	 	DIRSECS EQU     8
+35	 = 000D	 	 	 	FIRREC  EQU     13
+36	 = 00B1	 	 	 	MAXCLUS EQU     177             ; clust
+	 	 	 	ers 2-177
+37	 = 0004	 	 	 	NSYS    EQU     4               ; files
+	 	 	 	 copied by /S
+38	 = 5800	 	 	 	SYSMAX  EQU     22528           ; their
+	 	 	 	 bytes
+39	 	 	 	 	
+40	 	 	 	 	; buffers after the program, at TRACK
+41	 =	 	 	 	VEROFF  EQU     TRKLEN          ; one t
+	 	 	 	rack read back (4.5 KB); the directory
+42	 = 2978	 	 	 	FATOFF  EQU     VEROFF+SPT*256  ; the F
+	 	 	 	AT (512 bytes)
+43	 = 2B78	 	 	 	BOOTOFF EQU     FATOFF+512      ; the b
+	 	 	 	oot sector
+44	 = 2C78	 	 	 	SYSOFF  EQU     BOOTOFF+256     ; the /
+	 	 	 	S files, one after the other
+45	 = 8478	 	 	 	BUFEND  EQU     SYSOFF+SYSMAX
+46	 	 	 	 	
+47	 0000	 	 	 	CODE    SEGMENT
+48	 	 	 	 	        ASSUME  CS:CODE,DS:CODE,ES:CODE
+	 	 	 	,SS:CODE
+49	 0100	 	 	 	        ORG     100H
+50	 	 	 	 	
+51	 0100  E9 035B R	 	BEGIN:  JMP     START
+52	 	 	 	 	
+53	 0103  00	 	 	DRIVE   DB      0               ; 0 = A
+	 	 	 	:
+54	 0104  00	 	 	SRCDRV  DB      0               ; the c
+	 	 	 	urrent drive: the system comes from it
+55	 0105  00	 	 	SYSFLG  DB      0               ; 1: /S
+56	 0106  00	 	 	TRK     DB      0
+57	 0107  0000	 	 	SYSCL   DW      0               ; clust
+	 	 	 	ers of the /S files
+58	 	 	 	 	
+59	 	 	 	 	; /S files: name, attribute, then size 
+	 	 	 	and address in memory (GETSYS)
+60	 0109  5A 38 36 20 20 20	SYSTAB  DB      "Z86     SYS",6
+61	       20 20 53 59 53 06	
+62	 0115  0000 0000	 	        DW      0,0
+63	 0119  49 4F 20 20 20 20	        DB      "IO      SYS",6
+64	       20 20 53 59 53 06	
+65	 0125  0000 0000	 	        DW      0,0
+66	 0129  4D 53 44 4F 53 20	        DB      "MSDOS   SYS",6
+67	       20 20 53 59 53 06	
+68	 0135  0000 0000	 	        DW      0,0
+69	 0139  43 4F 4D 4D 41 4E	        DB      "COMMAND COM",0
+70	       44 20 43 4F 4D 00	
+71	 0145  0000 0000	 	        DW      0,0
+72	 = 0010	 	 	 	SYSENT  EQU     16              ; bytes
+	 	 	 	 per entry
+73	 	 	 	 	
+ The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-3
+
+
+
+74	 	 	 	 	; extended FCB: FFH, 5 x 0, attribute, 
+	 	 	 	then the FCB (drive, name, ...)
+75	 0149  FF 00 00 00 00 00	XFCB    DB      0FFH,0,0,0,0,0,0
+76	       00	 	 	
+77	 0150  00 20 20 20 20 20	FCB     DB      0,"           "
+78	       20 20 20 20 20 20	
+79	 015C     19 [	 	 	        DB      25 DUP (0)
+80	                00	 	
+81	                    ]	 	
+82	 	 	 	 	
+83	 	 	 	 	
+84	 0175  20 20 20 20 20 20	NUMBUF  DB      "         $"
+85	       20 20 20 24	 	
+86	 	 	 	 	
+87	 017F  0D 0A 49 6E 73 65	INSMSG  DB      13,10,"Insert new diske
+	 	 	 	tte for drive "
+88	       72 74 20 6E 65 77	
+89	       20 64 69 73 6B 65	
+90	       74 74 65 20 66 6F	
+91	       72 20 64 72 69 76	
+92	       65 20	 	 	
+93	 019F  41 3A 0D 0A	 	DRVLET  DB      "A:",13,10
+94	 01A3  61 6E 64 20 73 74	        DB      "and strike any key whe
+	 	 	 	n ready$"
+95	       72 69 6B 65 20 61	
+96	       6E 79 20 6B 65 79	
+97	       20 77 68 65 6E 20	
+98	       72 65 61 64 79 24	
+99	 01C1  0D 0A 0D 0A 46 6F	FMTMSG  DB      13,10,13,10,"Formatting
+	 	 	 	...$"
+100	       72 6D 61 74 74 69	
+101	       6E 67 2E 2E 2E 24	
+102	 01D3  46 6F 72 6D 61 74	DONMSG  DB      "Format complete",13,10
+	 	 	 	,"$"
+103	       20 63 6F 6D 70 6C	
+104	       65 74 65 0D 0A 24	
+105	 01E5  53 79 73 74 65 6D	SYSMSG  DB      "System transferred",13
+	 	 	 	,10,"$"
+106	       20 74 72 61 6E 73	
+107	       66 65 72 72 65 64	
+108	       0D 0A 24	 	 	
+109	 01FA  20 62 79 74 65 73	TOTMSG  DB      " bytes total disk spac
+	 	 	 	e",13,10,"$"
+110	       20 74 6F 74 61 6C	
+111	       20 64 69 73 6B 20	
+112	       73 70 61 63 65 0D	
+113	       0A 24	 	 	
+114	 0214  20 62 79 74 65 73	USEMSG  DB      " bytes used by system"
+	 	 	 	,13,10,"$"
+115	       20 75 73 65 64 20	
+116	       62 79 20 73 79 73	
+117	       74 65 6D 0D 0A 24	
+118	 022C  20 62 79 74 65 73	BADMSG  DB      " bytes in bad sectors"
+ The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-4
+
+
+
+	 	 	 	,13,10,"$"
+119	       20 69 6E 20 62 61	
+120	       64 20 73 65 63 74	
+121	       6F 72 73 0D 0A 24	
+122	 0244  20 62 79 74 65 73	AVLMSG  DB      " bytes available on di
+	 	 	 	sk",13,10,"$"
+123	       20 61 76 61 69 6C	
+124	       61 62 6C 65 20 6F	
+125	       6E 20 64 69 73 6B	
+126	       0D 0A 24	 	 	
+127	 025F  0D 0A 46 6F 72 6D	AGNMSG  DB      13,10,"Format another (
+	 	 	 	Y/N)?$"
+128	       61 74 20 61 6E 6F	
+129	       74 68 65 72 20 28	
+130	       59 2F 4E 29 3F 24	
+131	 0277  0D 0A 24	 	 	CRLF    DB      13,10,"$"
+132	 027A  0D 0A 57 72 69 74	WPMSG   DB      13,10,"Write protect er
+	 	 	 	ror",13,10,"$"
+133	       65 20 70 72 6F 74	
+134	       65 63 74 20 65 72	
+135	       72 6F 72 0D 0A 24	
+136	 0292  0D 0A 44 72 69 76	NRMSG   DB      13,10,"Drive not ready"
+	 	 	 	,13,10,"$"
+137	       65 20 6E 6F 74 20	
+138	       72 65 61 64 79 0D	
+139	       0A 24	 	 	
+140	 02A6  0D 0A 46 6F 72 6D	FFMSG   DB      13,10,"Format failure",
+	 	 	 	13,10,"$"
+141	       61 74 20 66 61 69	
+142	       6C 75 72 65 0D 0A	
+143	       24	 	 	
+144	 02B9  49 6E 76 61 6C 69	DRVMSG  DB      "Invalid drive specific
+	 	 	 	ation",13,10,"$"
+145	       64 20 64 72 69 76	
+146	       65 20 73 70 65 63	
+147	       69 66 69 63 61 74	
+148	       69 6F 6E 0D 0A 24	
+149	 02D7  49 6E 73 75 66 66	MEMMSG  DB      "Insufficient memory",1
+	 	 	 	3,10,"$"
+150	       69 63 69 65 6E 74	
+151	       20 6D 65 6D 6F 72	
+152	       79 0D 0A 24	 	
+153	 02ED  4E 6F 20 73 79 73	NOSMSG  DB      "No system on default d
+	 	 	 	rive",13,10,"$"
+154	       74 65 6D 20 6F 6E	
+155	       20 64 65 66 61 75	
+156	       6C 74 20 64 72 69	
+157	       76 65 0D 0A 24	 	
+158	 030A  43 61 6E 6E 6F 74	NOBMSG  DB      "Cannot read the boot s
+	 	 	 	ector of the default drive",13,10,"$"
+159	       20 72 65 61 64 20	
+160	       74 68 65 20 62 6F	
+161	       6F 74 20 73 65 63	
+ The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-5
+
+
+
+162	       74 6F 72 20 6F 66	
+163	       20 74 68 65 20 64	
+164	       65 66 61 75 6C 74	
+165	       20 64 72 69 76 65	
+166	       0D 0A 24	 	 	
+167	 033D  0D 0A 44 69 73 6B	SWEMSG  DB      13,10,"Disk error writi
+	 	 	 	ng system",13,10,"$"
+168	       20 65 72 72 6F 72	
+169	       20 77 72 69 74 69	
+170	       6E 67 20 73 79 73	
+171	       74 65 6D 0D 0A 24	
+172	 	 	 	 	
+173	 035B	 	 	 	START:
+174	 035B  3C FF	 	 	        CMP     AL,0FFH         ; DOS: 
+	 	 	 	invalid drive in the first argument
+175	 035D  74 72	 	 	        JZ      BADDRV
+176	 035F  81 3E 0006 8CD4 R	        CMP     WORD PTR DS:[6],OFFSET 
+	 	 	 	TRACK+BUFEND+256
+177	 0365  72 6F	 	 	        JB      NOMEM
+178	 0367  8A 1E 005C	 	        MOV     BL,DS:[5CH]     ; 0 = c
+	 	 	 	urrent drive, else drive + 1
+179	 036B  B4 19	 	 	        MOV     AH,25           ; curre
+	 	 	 	nt drive
+180	 036D  CD 21	 	 	        INT     33
+181	 036F  A2 0104 R	 	        MOV     [SRCDRV],AL
+182	 0372  FE CB	 	 	        DEC     BL
+183	 0374  79 02	 	 	        JNS     HAVDRV
+184	 0376  8A D8	 	 	        MOV     BL,AL
+185	 0378  80 FB 02	 	 	HAVDRV: CMP     BL,NDRIVE
+186	 037B  73 54	 	 	        JAE     BADDRV
+187	 037D  88 1E 0103 R	 	        MOV     [DRIVE],BL
+188	 0381  80 C3 41	 	 	        ADD     BL,"A"
+189	 0384  88 1E 019F R	 	        MOV     [DRVLET],BL
+190	 	 	 	 	;
+191	 	 	 	 	; /S anywhere in the command tail
+192	 	 	 	 	;
+193	 0388  BE 0081	 	 	        MOV     SI,81H
+194	 038B  8A 0E 0080	 	        MOV     CL,DS:[80H]
+195	 038F  32 ED	 	 	        XOR     CH,CH
+196	 0391  E3 17	 	 	SCAN:   JCXZ    SCANX
+197	 0393  AC	 	 	        LODSB
+198	 0394  49	 	 	        DEC     CX
+199	 0395  3C 2F	 	 	        CMP     AL,"/"
+200	 0397  75 F8	 	 	        JNZ     SCAN
+201	 0399  E3 0F	 	 	        JCXZ    SCANX
+202	 039B  AC	 	 	        LODSB
+203	 039C  49	 	 	        DEC     CX
+204	 039D  24 DF	 	 	        AND     AL,0DFH
+205	 039F  3C 53	 	 	        CMP     AL,"S"
+206	 03A1  75 EE	 	 	        JNZ     SCAN
+207	 03A3  C6 06 0105 R 01	 	        MOV     [SYSFLG],1
+208	 03A8  EB E7	 	 	        JMP     SCAN
+209	 03AA	 	 	 	SCANX:
+ The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-6
+
+
+
+210	 03AA  E8 055B R	 	        CALL    MKTRACK
+211	 03AD  A0 0104 R	 	        MOV     AL,[SRCDRV]     ; the b
+	 	 	 	oot sector of the current drive
+212	 03B0  BB 32D4 R	 	        MOV     BX,OFFSET TRACK+BOOTOFF
+213	 03B3  B9 0001	 	 	        MOV     CX,1
+214	 03B6  33 D2	 	 	        XOR     DX,DX
+215	 03B8  CD 25	 	 	        INT     37
+216	 03BA  5D	 	 	        POP     BP              ; the f
+	 	 	 	lags INT 25H left
+217	 03BB  BA 030A R	 	        MOV     DX,OFFSET NOBMSG
+218	 03BE  72 19	 	 	        JC      QUITM
+219	 03C0  80 3E 0105 R 00	 	        CMP     [SYSFLG],0
+220	 03C5  74 18	 	 	        JZ      ASK
+221	 03C7  E8 05D1 R	 	        CALL    GETSYS
+222	 03CA  73 13	 	 	        JNC     ASK
+223	 03CC  BA 02ED R	 	        MOV     DX,OFFSET NOSMSG
+224	 03CF  EB 08	 	 	        JMP     SHORT QUITM
+225	 	 	 	 	
+226	 03D1  BA 02B9 R	 	BADDRV: MOV     DX,OFFSET DRVMSG
+227	 03D4  EB 03	 	 	        JMP     SHORT QUITM
+228	 03D6  BA 02D7 R	 	NOMEM:  MOV     DX,OFFSET MEMMSG
+229	 03D9  B4 09	 	 	QUITM:  MOV     AH,9
+230	 03DB  CD 21	 	 	        INT     33
+231	 03DD  CD 20	 	 	        INT     32
+232	 	 	 	 	
+233	 	 	 	 	;
+234	 	 	 	 	; One disk
+235	 	 	 	 	;
+236	 03DF  BA 017F R	 	ASK:    MOV     DX,OFFSET INSMSG
+237	 03E2  B4 09	 	 	        MOV     AH,9
+238	 03E4  CD 21	 	 	        INT     33
+239	 03E6  B8 0C08	 	 	        MOV     AX,0C08H        ; flush
+	 	 	 	 the keyboard, then a key, no echo
+240	 03E9  CD 21	 	 	        INT     33
+241	 03EB  B4 0D	 	 	        MOV     AH,13           ; disk 
+	 	 	 	reset
+242	 03ED  CD 21	 	 	        INT     33
+243	 03EF  BA 01C1 R	 	        MOV     DX,OFFSET FMTMSG
+244	 03F2  B4 09	 	 	        MOV     AH,9
+245	 03F4  CD 21	 	 	        INT     33
+246	 03F6  E8 042B R	 	        CALL    FORMAT
+247	 03F9  72 0F	 	 	        JC      ANOTHER
+248	 03FB  BA 01D3 R	 	        MOV     DX,OFFSET DONMSG
+249	 03FE  B4 09	 	 	        MOV     AH,9
+250	 0400  CD 21	 	 	        INT     33
+251	 0402  E8 063E R	 	        CALL    PUTSYS
+252	 0405  72 03	 	 	        JC      ANOTHER
+253	 0407  E8 06C7 R	 	        CALL    REPORT
+254	 040A	 	 	 	ANOTHER:
+255	 040A  B4 0D	 	 	        MOV     AH,13
+256	 040C  CD 21	 	 	        INT     33
+257	 040E  BA 025F R	 	        MOV     DX,OFFSET AGNMSG
+258	 0411  B4 09	 	 	        MOV     AH,9
+ The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-7
+
+
+
+259	 0413  CD 21	 	 	        INT     33
+260	 0415  B8 0C01	 	 	        MOV     AX,0C01H        ; flush
+	 	 	 	, then a key with echo
+261	 0418  CD 21	 	 	        INT     33
+262	 041A  50	 	 	        PUSH    AX
+263	 041B  BA 0277 R	 	        MOV     DX,OFFSET CRLF
+264	 041E  B4 09	 	 	        MOV     AH,9
+265	 0420  CD 21	 	 	        INT     33
+266	 0422  58	 	 	        POP     AX
+267	 0423  24 DF	 	 	        AND     AL,0DFH
+268	 0425  3C 59	 	 	        CMP     AL,"Y"
+269	 0427  74 B6	 	 	        JZ      ASK
+270	 0429  CD 20	 	 	        INT     32
+271	 	 	 	 	
+272	 	 	 	 	;
+273	 	 	 	 	; FORMAT: format and verify the 40 trac
+	 	 	 	ks, write the boot sector, the
+274	 	 	 	 	; FATs and the directory. CF=1: failed,
+	 	 	 	 message printed.
+275	 	 	 	 	;
+276	 042B  BF 30D4 R	 	FORMAT: MOV     DI,OFFSET TRACK+FATOFF
+277	 042E  33 C0	 	 	        XOR     AX,AX
+278	 0430  B9 0100	 	 	        MOV     CX,256
+279	 0433  F3/ AB	 	 	        REP     STOSW
+280	 0435  C7 06 30D4 R FFFE	        MOV     WORD PTR [TRACK+FATOFF]
+	 	 	 	,0FFFEH  ; media FEH, then FFFH
+281	 043B  C6 06 30D6 R FF	 	        MOV     BYTE PTR [TRACK+FATOFF+
+	 	 	 	2],0FFH
+282	 0440  C6 06 0106 R 00	 	        MOV     [TRK],0
+283	 0445  BF 078C R	 	FLOOP:  MOV     DI,OFFSET TRACK+48     
+	 	 	 	 ; the C byte of each ID field
+284	 0448  B9 0012	 	 	        MOV     CX,SPT
+285	 044B  A0 0106 R	 	        MOV     AL,[TRK]
+286	 044E  88 05	 	 	SETC:   MOV     [DI],AL
+287	 0450  81 C7 014C	 	        ADD     DI,332
+288	 0454  E2 F8	 	 	        LOOP    SETC
+289	 0456  A0 0103 R	 	        MOV     AL,[DRIVE]
+290	 0459  8A 16 0106 R	 	        MOV     DL,[TRK]
+291	 045D  BB 075C R	 	        MOV     BX,OFFSET TRACK
+292	 0460  0F 1B	 	 	        DB      0FH,1BH         ; BIOS 
+	 	 	 	trap: FORMAT TRACK
+293	 0462  72 75	 	 	        JC      FMTERR
+294	 0464  A0 0106 R	 	        MOV     AL,[TRK]        ; read 
+	 	 	 	it back
+295	 0467  B1 12	 	 	        MOV     CL,SPT
+296	 0469  F6 E1	 	 	        MUL     CL
+297	 046B  8B D0	 	 	        MOV     DX,AX
+298	 046D  A0 0103 R	 	        MOV     AL,[DRIVE]
+299	 0470  BB 1ED4 R	 	        MOV     BX,OFFSET TRACK+VEROFF
+300	 0473  B9 0012	 	 	        MOV     CX,SPT
+301	 0476  CD 25	 	 	        INT     37
+302	 0478  5D	 	 	        POP     BP
+303	 0479  73 0A	 	 	        JNC     TRKOK
+ The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-8
+
+
+
+304	 047B  80 3E 0106 R 00	 	        CMP     [TRK],0
+305	 0480  74 65	 	 	        JZ      FFAIL
+306	 0482  E8 04F0 R	 	        CALL    MARKBAD
+307	 0485  FE 06 0106 R	 	TRKOK:  INC     [TRK]
+308	 0489  80 3E 0106 R 28	 	        CMP     [TRK],NTRACK
+309	 048E  72 B5	 	 	        JB      FLOOP
+310	 	 	 	 	;
+311	 	 	 	 	; boot sector, FAT twice, then the dire
+	 	 	 	ctory: zeros (00 ends a directory
+312	 	 	 	 	; in 1.25)
+313	 	 	 	 	;
+314	 0490  BB 32D4 R	 	        MOV     BX,OFFSET TRACK+BOOTOFF
+315	 0493  B9 0001	 	 	        MOV     CX,1
+316	 0496  33 D2	 	 	        XOR     DX,DX
+317	 0498  E8 04D2 R	 	        CALL    WRSECS
+318	 049B  72 3C	 	 	        JC      FMTERR
+319	 049D  BB 30D4 R	 	        MOV     BX,OFFSET TRACK+FATOFF
+320	 04A0  B9 0002	 	 	        MOV     CX,FATSECS
+321	 04A3  BA 0001	 	 	        MOV     DX,FATSEC
+322	 04A6  E8 04D2 R	 	        CALL    WRSECS
+323	 04A9  72 2E	 	 	        JC      FMTERR
+324	 04AB  BB 30D4 R	 	        MOV     BX,OFFSET TRACK+FATOFF
+325	 04AE  B9 0002	 	 	        MOV     CX,FATSECS
+326	 04B1  BA 0003	 	 	        MOV     DX,FATSEC+FATSECS
+327	 04B4  E8 04D2 R	 	        CALL    WRSECS
+328	 04B7  72 20	 	 	        JC      FMTERR
+329	 04B9  BF 1ED4 R	 	        MOV     DI,OFFSET TRACK+VEROFF
+330	 04BC  33 C0	 	 	        XOR     AX,AX
+331	 04BE  B9 0400	 	 	        MOV     CX,DIRSECS*128
+332	 04C1  F3/ AB	 	 	        REP     STOSW
+333	 04C3  BB 1ED4 R	 	        MOV     BX,OFFSET TRACK+VEROFF
+334	 04C6  B9 0008	 	 	        MOV     CX,DIRSECS
+335	 04C9  BA 0005	 	 	        MOV     DX,DIRSEC
+336	 04CC  E8 04D2 R	 	        CALL    WRSECS
+337	 04CF  72 08	 	 	        JC      FMTERR
+338	 04D1  C3	 	 	        RET
+339	 	 	 	 	
+340	 	 	 	 	; WRSECS: CX sectors from BX to sector 
+	 	 	 	DX of the new disk
+341	 04D2  A0 0103 R	 	WRSECS: MOV     AL,[DRIVE]
+342	 04D5  CD 26	 	 	        INT     38
+343	 04D7  5D	 	 	        POP     BP
+344	 04D8  C3	 	 	        RET
+345	 	 	 	 	
+346	 04D9  BA 027A R	 	FMTERR: MOV     DX,OFFSET WPMSG
+347	 04DC  0A C0	 	 	        OR      AL,AL
+348	 04DE  74 0A	 	 	        JZ      FMSG
+349	 04E0  BA 0292 R	 	        MOV     DX,OFFSET NRMSG
+350	 04E3  3C 02	 	 	        CMP     AL,2
+351	 04E5  74 03	 	 	        JZ      FMSG
+352	 04E7  BA 02A6 R	 	FFAIL:  MOV     DX,OFFSET FFMSG
+353	 04EA  B4 09	 	 	FMSG:   MOV     AH,9
+354	 04EC  CD 21	 	 	        INT     33
+ The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-9
+
+
+
+355	 04EE  F9	 	 	        STC
+356	 04EF  C3	 	 	        RET
+357	 	 	 	 	
+358	 	 	 	 	;
+359	 	 	 	 	; MARKBAD: clusters with a sector on tr
+	 	 	 	ack TRK (1 or more) -> FF7H
+360	 	 	 	 	;
+361	 04F0	 	 	 	MARKBAD:
+362	 04F0  A0 0106 R	 	        MOV     AL,[TRK]
+363	 04F3  B1 12	 	 	        MOV     CL,SPT
+364	 04F5  F6 E1	 	 	        MUL     CL
+365	 04F7  2D 000D	 	 	        SUB     AX,FIRREC       ; first
+	 	 	 	 sector of the track, in the data area
+366	 04FA  8B D8	 	 	        MOV     BX,AX
+367	 04FC  05 0011	 	 	        ADD     AX,SPT-1        ; its l
+	 	 	 	ast
+368	 04FF  D1 EB	 	 	        SHR     BX,1
+369	 0501  D1 EB	 	 	        SHR     BX,1
+370	 0503  83 C3 02	 	 	        ADD     BX,2            ; first
+	 	 	 	 cluster
+371	 0506  D1 E8	 	 	        SHR     AX,1
+372	 0508  D1 E8	 	 	        SHR     AX,1
+373	 050A  05 0002	 	 	        ADD     AX,2            ; last 
+	 	 	 	cluster
+374	 050D  81 FB 00B1	 	MB1:    CMP     BX,MAXCLUS
+375	 0511  77 0D	 	 	        JA      MB2
+376	 0513  50	 	 	        PUSH    AX
+377	 0514  BA 0FF7	 	 	        MOV     DX,0FF7H
+378	 0517  E8 0521 R	 	        CALL    SETFAT
+379	 051A  58	 	 	        POP     AX
+380	 051B  43	 	 	        INC     BX
+381	 051C  3B D8	 	 	        CMP     BX,AX
+382	 051E  76 ED	 	 	        JBE     MB1
+383	 0520  C3	 	 	MB2:    RET
+384	 	 	 	 	
+385	 	 	 	 	; SETFAT: FAT entry BX = DX.  GETFAT: A
+	 	 	 	X = FAT entry BX.
+386	 0521  E8 0550 R	 	SETFAT: CALL    FATPTR
+387	 0524  8B 04	 	 	        MOV     AX,[SI]
+388	 0526  F7 C3 0001	 	        TEST    BX,1
+389	 052A  75 05	 	 	        JNZ     SF1
+390	 052C  25 F000	 	 	        AND     AX,0F000H
+391	 052F  EB 07	 	 	        JMP     SHORT SF2
+392	 0531  25 000F	 	 	SF1:    AND     AX,000FH
+393	 0534  B1 04	 	 	        MOV     CL,4
+394	 0536  D3 E2	 	 	        SHL     DX,CL
+395	 0538  0B C2	 	 	SF2:    OR      AX,DX
+396	 053A  89 04	 	 	        MOV     [SI],AX
+397	 053C  C3	 	 	        RET
+398	 	 	 	 	
+399	 053D  E8 0550 R	 	GETFAT: CALL    FATPTR
+400	 0540  8B 04	 	 	        MOV     AX,[SI]
+401	 0542  F7 C3 0001	 	        TEST    BX,1
+ The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-10
+
+
+
+402	 0546  74 04	 	 	        JZ      GF1
+403	 0548  B1 04	 	 	        MOV     CL,4
+404	 054A  D3 E8	 	 	        SHR     AX,CL
+405	 054C  25 0FFF	 	 	GF1:    AND     AX,0FFFH
+406	 054F  C3	 	 	        RET
+407	 	 	 	 	
+408	 0550  8B F3	 	 	FATPTR: MOV     SI,BX
+409	 0552  D1 EE	 	 	        SHR     SI,1
+410	 0554  03 F3	 	 	        ADD     SI,BX
+411	 0556  81 C6 30D4 R	 	        ADD     SI,OFFSET TRACK+FATOFF
+412	 055A  C3	 	 	        RET
+413	 	 	 	 	
+414	 	 	 	 	;
+415	 	 	 	 	; MKTRACK: the track image: 32 x 4EH, t
+	 	 	 	hen 18 x (12 x 00, 3 x F5 (sync),
+416	 	 	 	 	; FE C H R N F7 (ID, CRC), 22 x 4EH, 12
+	 	 	 	 x 00, 3 x F5, FB, 256 x E5
+417	 	 	 	 	; (data), F7, 16 x 4EH). Each F7 is 2 C
+	 	 	 	RC bytes on the disk: 6044 bytes of
+418	 	 	 	 	; a turn's 6250, so a drive 3% fast sti
+	 	 	 	ll fits it. C is set per track.
+419	 	 	 	 	;
+420	 055B	 	 	 	MKTRACK:
+421	 055B  FC	 	 	        CLD
+422	 055C  BF 075C R	 	        MOV     DI,OFFSET TRACK
+423	 055F  B0 4E	 	 	        MOV     AL,4EH
+424	 0561  B9 0020	 	 	        MOV     CX,32
+425	 0564  F3/ AA	 	 	        REP     STOSB
+426	 0566  32 DB	 	 	        XOR     BL,BL
+427	 0568  32 C0	 	 	MK1:    XOR     AL,AL
+428	 056A  B9 000C	 	 	        MOV     CX,12
+429	 056D  F3/ AA	 	 	        REP     STOSB
+430	 056F  B0 F5	 	 	        MOV     AL,0F5H
+431	 0571  B9 0003	 	 	        MOV     CX,3
+432	 0574  F3/ AA	 	 	        REP     STOSB
+433	 0576  B0 FE	 	 	        MOV     AL,0FEH
+434	 0578  AA	 	 	        STOSB
+435	 0579  33 C0	 	 	        XOR     AX,AX           ; C, H
+436	 057B  AB	 	 	        STOSW
+437	 057C  8A C3	 	 	        MOV     AL,BL           ; R: se
+	 	 	 	ctor ID
+438	 057E  AA	 	 	        STOSB
+439	 057F  B0 01	 	 	        MOV     AL,1            ; N: 25
+	 	 	 	6 bytes
+440	 0581  AA	 	 	        STOSB
+441	 0582  B0 F7	 	 	        MOV     AL,0F7H
+442	 0584  AA	 	 	        STOSB
+443	 0585  B0 4E	 	 	        MOV     AL,4EH
+444	 0587  B9 0016	 	 	        MOV     CX,22
+445	 058A  F3/ AA	 	 	        REP     STOSB
+446	 058C  32 C0	 	 	        XOR     AL,AL
+447	 058E  B9 000C	 	 	        MOV     CX,12
+448	 0591  F3/ AA	 	 	        REP     STOSB
+ The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-11
+
+
+
+449	 0593  B0 F5	 	 	        MOV     AL,0F5H
+450	 0595  B9 0003	 	 	        MOV     CX,3
+451	 0598  F3/ AA	 	 	        REP     STOSB
+452	 059A  B0 FB	 	 	        MOV     AL,0FBH
+453	 059C  AA	 	 	        STOSB
+454	 059D  B0 E5	 	 	        MOV     AL,0E5H
+455	 059F  B9 0100	 	 	        MOV     CX,256
+456	 05A2  F3/ AA	 	 	        REP     STOSB
+457	 05A4  B0 F7	 	 	        MOV     AL,0F7H
+458	 05A6  AA	 	 	        STOSB
+459	 05A7  B0 4E	 	 	        MOV     AL,4EH
+460	 05A9  B9 0010	 	 	        MOV     CX,16
+461	 05AC  F3/ AA	 	 	        REP     STOSB
+462	 05AE  FE C3	 	 	        INC     BL
+463	 05B0  80 FB 12	 	 	        CMP     BL,SPT
+464	 05B3  72 B3	 	 	        JB      MK1
+465	 05B5  C3	 	 	        RET
+466	 	 	 	 	
+467	 	 	 	 	;
+468	 	 	 	 	; SETFCB: XFCB for SYSTAB entry SI (nam
+	 	 	 	e, attribute) on drive AL (0 =
+469	 	 	 	 	; current, else drive + 1)
+470	 	 	 	 	;
+471	 05B6  BF 0150 R	 	SETFCB: MOV     DI,OFFSET FCB
+472	 05B9  AA	 	 	        STOSB
+473	 05BA  B9 000B	 	 	        MOV     CX,11
+474	 05BD  F3/ A4	 	 	        REP     MOVSB
+475	 05BF  AC	 	 	        LODSB
+476	 05C0  A2 014F R	 	        MOV     [XFCB+6],AL
+477	 05C3  32 C0	 	 	        XOR     AL,AL
+478	 05C5  B9 0019	 	 	        MOV     CX,25
+479	 05C8  F3/ AA	 	 	        REP     STOSB
+480	 05CA  C7 06 015E R 0001	        MOV     WORD PTR [FCB+14],1    
+	 	 	 	 ; record length 1
+481	 05D0  C3	 	 	        RET
+482	 	 	 	 	
+483	 	 	 	 	;
+484	 	 	 	 	; GETSYS: the /S files of the current d
+	 	 	 	rive into memory, one after the
+485	 	 	 	 	; other from SYSOFF. CF=1: one is missi
+	 	 	 	ng or they are too big.
+486	 	 	 	 	;
+487	 05D1  BB 0109 R	 	GETSYS: MOV     BX,OFFSET SYSTAB
+488	 05D4  BF 33D4 R	 	        MOV     DI,OFFSET TRACK+SYSOFF
+489	 05D7  57	 	 	GS1:    PUSH    DI
+490	 05D8  53	 	 	        PUSH    BX
+491	 05D9  8B F3	 	 	        MOV     SI,BX
+492	 05DB  32 C0	 	 	        XOR     AL,AL
+493	 05DD  E8 05B6 R	 	        CALL    SETFCB
+494	 05E0  BA 0149 R	 	        MOV     DX,OFFSET XFCB
+495	 05E3  B4 0F	 	 	        MOV     AH,15           ; open
+496	 05E5  CD 21	 	 	        INT     33
+497	 05E7  5B	 	 	        POP     BX
+ The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-12
+
+
+
+498	 05E8  5F	 	 	        POP     DI
+499	 05E9  0A C0	 	 	        OR      AL,AL
+500	 05EB  75 4F	 	 	        JNZ     GSNO
+501	 05ED  83 3E 0162 R 00	 	        CMP     WORD PTR [FCB+18],0
+502	 05F2  75 48	 	 	        JNZ     GSNO
+503	 05F4  A1 0160 R	 	        MOV     AX,WORD PTR [FCB+16]   
+	 	 	 	 ; size
+504	 05F7  89 47 0C	 	 	        MOV     [BX+12],AX
+505	 05FA  89 7F 0E	 	 	        MOV     [BX+14],DI
+506	 05FD  03 C7	 	 	        ADD     AX,DI
+507	 05FF  72 3B	 	 	        JC      GSNO
+508	 0601  3D 8BD4 R	 	        CMP     AX,OFFSET TRACK+BUFEND
+509	 0604  77 36	 	 	        JA      GSNO
+510	 0606  50	 	 	        PUSH    AX
+511	 0607  53	 	 	        PUSH    BX
+512	 0608  C7 06 015E R 0001	        MOV     WORD PTR [FCB+14],1    
+	 	 	 	 ; record length 1
+513	 060E  C7 06 0171 R 0000	        MOV     WORD PTR [FCB+33],0
+514	 0614  C7 06 0173 R 0000	        MOV     WORD PTR [FCB+35],0
+515	 061A  8B D7	 	 	        MOV     DX,DI
+516	 061C  B4 1A	 	 	        MOV     AH,26           ; DMA a
+	 	 	 	ddress
+517	 061E  CD 21	 	 	        INT     33
+518	 0620  8B 4F 0C	 	 	        MOV     CX,[BX+12]
+519	 0623  BA 0149 R	 	        MOV     DX,OFFSET XFCB
+520	 0626  B4 27	 	 	        MOV     AH,39           ; rando
+	 	 	 	m block read
+521	 0628  CD 21	 	 	        INT     33
+522	 062A  5B	 	 	        POP     BX
+523	 062B  5F	 	 	        POP     DI              ; where
+	 	 	 	 the next file goes
+524	 062C  3B 4F 0C	 	 	        CMP     CX,[BX+12]
+525	 062F  75 0B	 	 	        JNZ     GSNO
+526	 0631  83 C3 10	 	 	        ADD     BX,SYSENT
+527	 0634  81 FB 0149 R	 	        CMP     BX,OFFSET SYSTAB+NSYS*S
+	 	 	 	YSENT
+528	 0638  72 9D	 	 	        JB      GS1
+529	 063A  F8	 	 	        CLC
+530	 063B  C3	 	 	        RET
+531	 063C  F9	 	 	GSNO:   STC
+532	 063D  C3	 	 	        RET
+533	 	 	 	 	
+534	 	 	 	 	;
+535	 	 	 	 	; PUTSYS: with /S, create the files on 
+	 	 	 	the new disk, in SYSTAB's order.
+536	 	 	 	 	; CF=1: failed, message printed.
+537	 	 	 	 	;
+538	 063E  C7 06 0107 R 0000	PUTSYS: MOV     [SYSCL],0
+539	 0644  80 3E 0105 R 00	 	        CMP     [SYSFLG],0
+540	 0649  74 70	 	 	        JZ      PSX
+541	 064B  B4 0D	 	 	        MOV     AH,13           ; disk 
+	 	 	 	reset: DOS reads the new FAT
+542	 064D  CD 21	 	 	        INT     33
+ The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-13
+
+
+
+543	 064F  BB 0109 R	 	        MOV     BX,OFFSET SYSTAB
+544	 0652  53	 	 	PS1:    PUSH    BX
+545	 0653  8B F3	 	 	        MOV     SI,BX
+546	 0655  A0 0103 R	 	        MOV     AL,[DRIVE]
+547	 0658  FE C0	 	 	        INC     AL
+548	 065A  E8 05B6 R	 	        CALL    SETFCB
+549	 065D  BA 0149 R	 	        MOV     DX,OFFSET XFCB
+550	 0660  B4 16	 	 	        MOV     AH,22           ; creat
+	 	 	 	e
+551	 0662  CD 21	 	 	        INT     33
+552	 0664  5B	 	 	        POP     BX
+553	 0665  0A C0	 	 	        OR      AL,AL
+554	 0667  75 55	 	 	        JNZ     PSERR
+555	 0669  53	 	 	        PUSH    BX
+556	 066A  C7 06 015E R 0001	        MOV     WORD PTR [FCB+14],1
+557	 0670  C7 06 0171 R 0000	        MOV     WORD PTR [FCB+33],0
+558	 0676  C7 06 0173 R 0000	        MOV     WORD PTR [FCB+35],0
+559	 067C  8B 57 0E	 	 	        MOV     DX,[BX+14]
+560	 067F  B4 1A	 	 	        MOV     AH,26
+561	 0681  CD 21	 	 	        INT     33
+562	 0683  8B 4F 0C	 	 	        MOV     CX,[BX+12]
+563	 0686  BA 0149 R	 	        MOV     DX,OFFSET XFCB
+564	 0689  B4 28	 	 	        MOV     AH,40           ; rando
+	 	 	 	m block write
+565	 068B  CD 21	 	 	        INT     33
+566	 068D  0A C0	 	 	        OR      AL,AL
+567	 068F  75 2C	 	 	        JNZ     PSERRP
+568	 0691  BA 0149 R	 	        MOV     DX,OFFSET XFCB
+569	 0694  B4 10	 	 	        MOV     AH,16           ; close
+570	 0696  CD 21	 	 	        INT     33
+571	 0698  0A C0	 	 	        OR      AL,AL
+572	 069A  75 21	 	 	        JNZ     PSERRP
+573	 069C  5B	 	 	        POP     BX
+574	 069D  8B 47 0C	 	 	        MOV     AX,[BX+12]      ; its c
+	 	 	 	lusters
+575	 06A0  05 03FF	 	 	        ADD     AX,1023
+576	 06A3  B1 0A	 	 	        MOV     CL,10
+577	 06A5  D3 E8	 	 	        SHR     AX,CL
+578	 06A7  01 06 0107 R	 	        ADD     [SYSCL],AX
+579	 06AB  83 C3 10	 	 	        ADD     BX,SYSENT
+580	 06AE  81 FB 0149 R	 	        CMP     BX,OFFSET SYSTAB+NSYS*S
+	 	 	 	YSENT
+581	 06B2  72 9E	 	 	        JB      PS1
+582	 06B4  BA 01E5 R	 	        MOV     DX,OFFSET SYSMSG
+583	 06B7  B4 09	 	 	        MOV     AH,9
+584	 06B9  CD 21	 	 	        INT     33
+585	 06BB  F8	 	 	PSX:    CLC
+586	 06BC  C3	 	 	        RET
+587	 06BD  5B	 	 	PSERRP: POP     BX
+588	 06BE  BA 033D R	 	PSERR:  MOV     DX,OFFSET SWEMSG
+589	 06C1  B4 09	 	 	        MOV     AH,9
+590	 06C3  CD 21	 	 	        INT     33
+591	 06C5  F9	 	 	        STC
+ The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-14
+
+
+
+592	 06C6  C3	 	 	        RET
+593	 	 	 	 	
+594	 	 	 	 	;
+595	 	 	 	 	; REPORT: total, system, bad and availa
+	 	 	 	ble bytes, as CHKDSK prints them
+596	 	 	 	 	;
+597	 06C7  BA 0277 R	 	REPORT: MOV     DX,OFFSET CRLF
+598	 06CA  B4 09	 	 	        MOV     AH,9
+599	 06CC  CD 21	 	 	        INT     33
+600	 06CE  B8 00B0	 	 	        MOV     AX,MAXCLUS-1
+601	 06D1  E8 0720 R	 	        CALL    KBYTES
+602	 06D4  BE 01FA R	 	        MOV     SI,OFFSET TOTMSG
+603	 06D7  E8 0726 R	 	        CALL    DNUMM
+604	 06DA  A1 0107 R	 	        MOV     AX,[SYSCL]
+605	 06DD  0B C0	 	 	        OR      AX,AX
+606	 06DF  74 09	 	 	        JZ      RP1
+607	 06E1  E8 0720 R	 	        CALL    KBYTES
+608	 06E4  BE 0214 R	 	        MOV     SI,OFFSET USEMSG
+609	 06E7  E8 0726 R	 	        CALL    DNUMM
+610	 06EA  33 ED	 	 	RP1:    XOR     BP,BP           ; bad c
+	 	 	 	lusters
+611	 06EC  BB 0002	 	 	        MOV     BX,2
+612	 06EF  E8 053D R	 	RP2:    CALL    GETFAT
+613	 06F2  3D 0FF7	 	 	        CMP     AX,0FF7H
+614	 06F5  75 01	 	 	        JNZ     RP3
+615	 06F7  45	 	 	        INC     BP
+616	 06F8  43	 	 	RP3:    INC     BX
+617	 06F9  81 FB 00B1	 	        CMP     BX,MAXCLUS
+618	 06FD  76 F0	 	 	        JBE     RP2
+619	 06FF  0B ED	 	 	        OR      BP,BP
+620	 0701  74 0B	 	 	        JZ      RP4
+621	 0703  8B C5	 	 	        MOV     AX,BP
+622	 0705  E8 0720 R	 	        CALL    KBYTES
+623	 0708  BE 022C R	 	        MOV     SI,OFFSET BADMSG
+624	 070B  E8 0726 R	 	        CALL    DNUMM
+625	 070E  B8 00B0	 	 	RP4:    MOV     AX,MAXCLUS-1
+626	 0711  2B 06 0107 R	 	        SUB     AX,[SYSCL]
+627	 0715  2B C5	 	 	        SUB     AX,BP
+628	 0717  E8 0720 R	 	        CALL    KBYTES
+629	 071A  BE 0244 R	 	        MOV     SI,OFFSET AVLMSG
+630	 071D  EB 07 90	 	 	        JMP     DNUMM
+631	 	 	 	 	
+632	 	 	 	 	; KBYTES: DX:AX = AX clusters x 1024
+633	 0720  BA 0400	 	 	KBYTES: MOV     DX,1024
+634	 0723  F7 E2	 	 	        MUL     DX
+635	 0725  C3	 	 	        RET
+636	 	 	 	 	
+637	 	 	 	 	; DNUMM: DX:AX in decimal right-aligned
+	 	 	 	 in 9 columns, then message SI
+638	 0726  56	 	 	DNUMM:  PUSH    SI
+639	 0727  BF 0175 R	 	        MOV     DI,OFFSET NUMBUF
+640	 072A  50	 	 	        PUSH    AX
+641	 072B  B0 20	 	 	        MOV     AL," "
+ The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-15
+
+
+
+642	 072D  B9 0009	 	 	        MOV     CX,9
+643	 0730  F3/ AA	 	 	        REP     STOSB
+644	 0732  58	 	 	        POP     AX
+645	 0733  BB 000A	 	 	        MOV     BX,10
+646	 0736  8B C8	 	 	DN1:    MOV     CX,AX
+647	 0738  8B C2	 	 	        MOV     AX,DX
+648	 073A  33 D2	 	 	        XOR     DX,DX
+649	 073C  F7 F3	 	 	        DIV     BX              ; high 
+	 	 	 	word / 10
+650	 073E  91	 	 	        XCHG    AX,CX
+651	 073F  F7 F3	 	 	        DIV     BX              ; (rema
+	 	 	 	inder, low word) / 10
+652	 0741  80 C2 30	 	 	        ADD     DL,"0"
+653	 0744  4F	 	 	        DEC     DI
+654	 0745  88 15	 	 	        MOV     [DI],DL
+655	 0747  8B D1	 	 	        MOV     DX,CX
+656	 0749  8B C8	 	 	        MOV     CX,AX
+657	 074B  0B CA	 	 	        OR      CX,DX
+658	 074D  75 E7	 	 	        JNZ     DN1
+659	 074F  BA 0175 R	 	        MOV     DX,OFFSET NUMBUF
+660	 0752  B4 09	 	 	        MOV     AH,9
+661	 0754  CD 21	 	 	        INT     33
+662	 0756  5A	 	 	        POP     DX
+663	 0757  B4 09	 	 	        MOV     AH,9
+664	 0759  CD 21	 	 	        INT     33
+665	 075B  C3	 	 	        RET
+666	 	 	 	 	
+667	 075C	 	 	 	TRACK   LABEL   BYTE
+668	 	 	 	 	
+669	 075C	 	 	 	CODE    ENDS
+670	 	 	 	 	        END     BEGIN           ; at 10
+	 	 	 	0H: EXE2BIN makes a .COM
+
+ The Microsoft MACRO Assembler             11-06-<6    	PAGE	Symbols
+	 	 	 	-1
+
+
+
+Segments and groups:
+
+	 	N a m e	 	 	Size	align	combine	class
+
+CODE . . . . . . . . . . . . . .	075C	PARA  	NONE	
+
+Symbols:            
+
+	 	N a m e	 	 	Type	Value	Attr         
+
+AGNMSG . . . . . . . . . . . . .	L BYTE 	025F	CODE
+ANOTHER. . . . . . . . . . . . .	L NEAR 	040A	CODE
+ASK. . . . . . . . . . . . . . .	L NEAR 	03DF	CODE
+AVLMSG . . . . . . . . . . . . .	L BYTE 	0244	CODE
+BADDRV . . . . . . . . . . . . .	L NEAR 	03D1	CODE
+BADMSG . . . . . . . . . . . . .	L BYTE 	022C	CODE
+BEGIN. . . . . . . . . . . . . .	L NEAR 	0100	CODE
+BOOTOFF. . . . . . . . . . . . .	Number	2B78	
+BUFEND . . . . . . . . . . . . .	Number	8478	
+CRLF . . . . . . . . . . . . . .	L BYTE 	0277	CODE
+DIRSEC . . . . . . . . . . . . .	Number	0005	
+DIRSECS. . . . . . . . . . . . .	Number	0008	
+DN1. . . . . . . . . . . . . . .	L NEAR 	0736	CODE
+DNUMM. . . . . . . . . . . . . .	L NEAR 	0726	CODE
+DONMSG . . . . . . . . . . . . .	L BYTE 	01D3	CODE
+DRIVE. . . . . . . . . . . . . .	L BYTE 	0103	CODE
+DRVLET . . . . . . . . . . . . .	L BYTE 	019F	CODE
+DRVMSG . . . . . . . . . . . . .	L BYTE 	02B9	CODE
+FATOFF . . . . . . . . . . . . .	Number	2978	
+FATPTR . . . . . . . . . . . . .	L NEAR 	0550	CODE
+FATSEC . . . . . . . . . . . . .	Number	0001	
+FATSECS. . . . . . . . . . . . .	Number	0002	
+FCB. . . . . . . . . . . . . . .	L BYTE 	0150	CODE
+FFAIL. . . . . . . . . . . . . .	L NEAR 	04E7	CODE
+FFMSG. . . . . . . . . . . . . .	L BYTE 	02A6	CODE
+FIRREC . . . . . . . . . . . . .	Number	000D	
+FLOOP. . . . . . . . . . . . . .	L NEAR 	0445	CODE
+FMSG . . . . . . . . . . . . . .	L NEAR 	04EA	CODE
+FMTERR . . . . . . . . . . . . .	L NEAR 	04D9	CODE
+FMTMSG . . . . . . . . . . . . .	L BYTE 	01C1	CODE
+FORMAT . . . . . . . . . . . . .	L NEAR 	042B	CODE
+GETFAT . . . . . . . . . . . . .	L NEAR 	053D	CODE
+GETSYS . . . . . . . . . . . . .	L NEAR 	05D1	CODE
+GF1. . . . . . . . . . . . . . .	L NEAR 	054C	CODE
+GS1. . . . . . . . . . . . . . .	L NEAR 	05D7	CODE
+GSNO . . . . . . . . . . . . . .	L NEAR 	063C	CODE
+HAVDRV . . . . . . . . . . . . .	L NEAR 	0378	CODE
+INSMSG . . . . . . . . . . . . .	L BYTE 	017F	CODE
+KBYTES . . . . . . . . . . . . .	L NEAR 	0720	CODE
+MARKBAD. . . . . . . . . . . . .	L NEAR 	04F0	CODE
+MAXCLUS. . . . . . . . . . . . .	Number	00B1	
+MB1. . . . . . . . . . . . . . .	L NEAR 	050D	CODE
+ The Microsoft MACRO Assembler             11-06-<6    	PAGE	Symbols
+	 	 	 	-2
+
+
+
+MB2. . . . . . . . . . . . . . .	L NEAR 	0520	CODE
+MEMMSG . . . . . . . . . . . . .	L BYTE 	02D7	CODE
+MK1. . . . . . . . . . . . . . .	L NEAR 	0568	CODE
+MKTRACK. . . . . . . . . . . . .	L NEAR 	055B	CODE
+NDRIVE . . . . . . . . . . . . .	Number	0002	
+NOBMSG . . . . . . . . . . . . .	L BYTE 	030A	CODE
+NOMEM. . . . . . . . . . . . . .	L NEAR 	03D6	CODE
+NOSMSG . . . . . . . . . . . . .	L BYTE 	02ED	CODE
+NRMSG. . . . . . . . . . . . . .	L BYTE 	0292	CODE
+NSYS . . . . . . . . . . . . . .	Number	0004	
+NTRACK . . . . . . . . . . . . .	Number	0028	
+NUMBUF . . . . . . . . . . . . .	L BYTE 	0175	CODE
+PS1. . . . . . . . . . . . . . .	L NEAR 	0652	CODE
+PSERR. . . . . . . . . . . . . .	L NEAR 	06BE	CODE
+PSERRP . . . . . . . . . . . . .	L NEAR 	06BD	CODE
+PSX. . . . . . . . . . . . . . .	L NEAR 	06BB	CODE
+PUTSYS . . . . . . . . . . . . .	L NEAR 	063E	CODE
+QUITM. . . . . . . . . . . . . .	L NEAR 	03D9	CODE
+REPORT . . . . . . . . . . . . .	L NEAR 	06C7	CODE
+RP1. . . . . . . . . . . . . . .	L NEAR 	06EA	CODE
+RP2. . . . . . . . . . . . . . .	L NEAR 	06EF	CODE
+RP3. . . . . . . . . . . . . . .	L NEAR 	06F8	CODE
+RP4. . . . . . . . . . . . . . .	L NEAR 	070E	CODE
+SCAN . . . . . . . . . . . . . .	L NEAR 	0391	CODE
+SCANX. . . . . . . . . . . . . .	L NEAR 	03AA	CODE
+SETC . . . . . . . . . . . . . .	L NEAR 	044E	CODE
+SETFAT . . . . . . . . . . . . .	L NEAR 	0521	CODE
+SETFCB . . . . . . . . . . . . .	L NEAR 	05B6	CODE
+SF1. . . . . . . . . . . . . . .	L NEAR 	0531	CODE
+SF2. . . . . . . . . . . . . . .	L NEAR 	0538	CODE
+SPT. . . . . . . . . . . . . . .	Number	0012	
+SRCDRV . . . . . . . . . . . . .	L BYTE 	0104	CODE
+START. . . . . . . . . . . . . .	L NEAR 	035B	CODE
+SWEMSG . . . . . . . . . . . . .	L BYTE 	033D	CODE
+SYSCL. . . . . . . . . . . . . .	L WORD 	0107	CODE
+SYSENT . . . . . . . . . . . . .	Number	0010	
+SYSFLG . . . . . . . . . . . . .	L BYTE 	0105	CODE
+SYSMAX . . . . . . . . . . . . .	Number	5800	
+SYSMSG . . . . . . . . . . . . .	L BYTE 	01E5	CODE
+SYSOFF . . . . . . . . . . . . .	Number	2C78	
+SYSTAB . . . . . . . . . . . . .	L BYTE 	0109	CODE
+TOTMSG . . . . . . . . . . . . .	L BYTE 	01FA	CODE
+TRACK. . . . . . . . . . . . . .	L BYTE 	075C	CODE
+TRK. . . . . . . . . . . . . . .	L BYTE 	0106	CODE
+TRKLEN . . . . . . . . . . . . .	Number	1778	
+TRKOK. . . . . . . . . . . . . .	L NEAR 	0485	CODE
+USEMSG . . . . . . . . . . . . .	L BYTE 	0214	CODE
+VEROFF . . . . . . . . . . . . .	Alias	TRKLEN	 	
+WPMSG. . . . . . . . . . . . . .	L BYTE 	027A	CODE
+WRSECS . . . . . . . . . . . . .	L NEAR 	04D2	CODE
+XFCB . . . . . . . . . . . . . .	L BYTE 	0149	CODE
+
+ The Microsoft MACRO Assembler             11-06-<6    	PAGE	Symbols
+	 	 	 	-3
+
+
+
+Warning Severe
+Errors	Errors 
+0	0

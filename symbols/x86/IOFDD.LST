@@ -1,0 +1,322 @@
+ The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-1
+
+
+
+1	 	 	 	 	; I/O system for MS-DOS 1.25 on the Tim
+	 	 	 	ex FDD3000 (8086 interpreter).
+2	 	 	 	 	;
+3	 	 	 	 	; The FDD3000 has a Z80, so this 8086 c
+	 	 	 	ode runs on an interpreter. Each
+4	 	 	 	 	; device entry is a BIOS trap: opcode 0
+	 	 	 	FH (POP CS, unused on a real 8086)
+5	 	 	 	 	; followed by a function number. The in
+	 	 	 	terpreter does the function in
+6	 	 	 	 	; native code (console over the 2FH lin
+	 	 	 	k to the TT3000 / TC3256 / TC2068
+7	 	 	 	 	; terminal, sectors through the WD177x)
+	 	 	 	 and the following RETF returns
+8	 	 	 	 	; to MS-DOS.
+9	 	 	 	 	;
+10	 	 	 	 	; The boot loader (COLD in BIOS.ASM) pu
+	 	 	 	ts this file at 0040:0000 and
+11	 	 	 	 	; MSDOS.SYS at DOSSEG:0000, then jumps 
+	 	 	 	to 0040:0000. Both are hidden files
+12	 	 	 	 	; on the disk, after Z86.SYS (the Z80 i
+	 	 	 	nterpreter and BIOS).
+13	 	 	 	 	
+14	 = 0040	 	 	 	BIOSSEG EQU     40H
+15	 = 0060	 	 	 	DOSSEG  EQU     60H             ; this 
+	 	 	 	file must stay below 512 bytes
+16	 	 	 	 	
+17	 	 	 	 	ENTRY   MACRO   N
+18	 	 	 	 	        DB      0FH,N,0CBH      ; TRAP 
+	 	 	 	N / RETF
+19	 	 	 	 	        ENDM
+20	 	 	 	 	
+21	 0000	 	 	 	CODE    SEGMENT
+22	 	 	 	 	        ASSUME  CS:CODE,DS:CODE,ES:CODE
+	 	 	 	,SS:CODE
+23	 0000	 	 	 	        ORG     0
+24	 	 	 	 	
+25	 0000  EB 2B 90	 	 	        JMP     INIT
+26	 	 	 	 	        ENTRY   1               ; STATU
+	 	 	 	S  ZF=1 nothing; else ZF=0, AL=char
+27	 0003  0F 01 CB               +	        DB      0FH,1,0CBH      ; TRAP 
+	 	 	 	N / RETF
+28	 	 	 	 	        ENTRY   2               ; INP  
+	 	 	 	   AL=char (waits)
+29	 0006  0F 02 CB               +	        DB      0FH,2,0CBH      ; TRAP 
+	 	 	 	N / RETF
+30	 	 	 	 	        ENTRY   3               ; OUTP 
+	 	 	 	   AL=char
+31	 0009  0F 03 CB               +	        DB      0FH,3,0CBH      ; TRAP 
+	 	 	 	N / RETF
+32	 	 	 	 	        ENTRY   4               ; PRINT
+	 	 	 	   AL=char
+33	 000C  0F 04 CB               +	        DB      0FH,4,0CBH      ; TRAP 
+	 	 	 	N / RETF
+ The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-2
+
+
+
+34	 	 	 	 	        ENTRY   5               ; AUXIN
+35	 000F  0F 05 CB               +	        DB      0FH,5,0CBH      ; TRAP 
+	 	 	 	N / RETF
+36	 	 	 	 	        ENTRY   6               ; AUXOU
+	 	 	 	T
+37	 0012  0F 06 CB               +	        DB      0FH,6,0CBH      ; TRAP 
+	 	 	 	N / RETF
+38	 	 	 	 	        ENTRY   7               ; READ 
+	 	 	 	   AL=drive DS:BX=buffer CX=count DX=sector
+39	 0015  0F 07 CB               +	        DB      0FH,7,0CBH      ; TRAP 
+	 	 	 	N / RETF
+40	 	 	 	 	        ENTRY   8               ; WRITE
+	 	 	 	   same; CF=1 on error, AL=code, CX=left
+41	 0018  0F 08 CB               +	        DB      0FH,8,0CBH      ; TRAP 
+	 	 	 	N / RETF
+42	 	 	 	 	        ENTRY   9               ; DSKCH
+	 	 	 	G  AH=1 not changed, 0 don't know, -1 changed
+43	 001B  0F 09 CB               +	        DB      0FH,9,0CBH      ; TRAP 
+	 	 	 	N / RETF
+44	 	 	 	 	        ENTRY   10              ; SETDA
+	 	 	 	TE AX=day count
+45	 001E  0F 0A CB               +	        DB      0FH,10,0CBH      ; TRAP
+	 	 	 	 N / RETF
+46	 	 	 	 	        ENTRY   11              ; SETTI
+	 	 	 	ME CH=hour CL=min DH=sec DL=1/100
+47	 0021  0F 0B CB               +	        DB      0FH,11,0CBH      ; TRAP
+	 	 	 	 N / RETF
+48	 	 	 	 	        ENTRY   12              ; GETTI
+	 	 	 	ME AX=days, CX, DX as SETTIME
+49	 0024  0F 0C CB               +	        DB      0FH,12,0CBH      ; TRAP
+	 	 	 	 N / RETF
+50	 	 	 	 	        ENTRY   13              ; FLUSH
+	 	 	 	   clear console input
+51	 0027  0F 0D CB               +	        DB      0FH,13,0CBH      ; TRAP
+	 	 	 	 N / RETF
+52	 	 	 	 	        ENTRY   14              ; MAPDE
+	 	 	 	V
+53	 002A  0F 0E CB               +	        DB      0FH,14,0CBH      ; TRAP
+	 	 	 	 N / RETF
+54	 	 	 	 	
+55	 002D	 	 	 	INIT:
+56	 002D  FA	 	 	        CLI
+57	 002E  33 ED	 	 	        XOR     BP,BP           ; Stack
+	 	 	 	 just below the I/O system
+58	 0030  8E D5	 	 	        MOV     SS,BP
+59	 0032  BC 0400	 	 	        MOV     SP,BIOSSEG*16
+60	 0035  0E	 	 	        PUSH    CS
+61	 0036  1F	 	 	        POP     DS
+62	 0037  FB	 	 	        STI
+63	 	 	 	 	;
+64	 	 	 	 	; Minimal IBM PC ROM BIOS for programs 
+	 	 	 	written for PC-DOS (DEBUG, CHKDSK...):
+65	 	 	 	 	; INT 10H teletype, 11H equipment, 12H 
+ The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-3
+
+
+
+	 	 	 	memory size, 14H serial, 16H
+66	 	 	 	 	; keyboard, 17H printer, 1AH clock tick
+	 	 	 	. Each vector points to TRAP n / RETF 2,
+67	 	 	 	 	; which returns with the flags the trap
+	 	 	 	 set.
+68	 	 	 	 	;
+69	 0038  8E C5	 	 	        MOV     ES,BP
+70	 003A  BE 00D2 R	 	        MOV     SI,OFFSET ROMTAB
+71	 003D  B9 0007	 	 	        MOV     CX,7
+72	 0040  AC	 	 	SETROM: LODSB                   ; Inter
+	 	 	 	rupt number
+73	 0041  32 E4	 	 	        XOR     AH,AH
+74	 0043  D1 E0	 	 	        SHL     AX,1
+75	 0045  D1 E0	 	 	        SHL     AX,1
+76	 0047  8B F8	 	 	        MOV     DI,AX
+77	 0049  AD	 	 	        LODSW                   ; Handl
+	 	 	 	er offset
+78	 004A  AB	 	 	        STOSW
+79	 004B  8C C8	 	 	        MOV     AX,CS
+80	 004D  AB	 	 	        STOSW
+81	 004E  E2 F0	 	 	        LOOP    SETROM
+82	 0050  BE 00ED R	 	        MOV     SI,OFFSET INITTAB
+83	 0053  8B 16 00E7 R	 	        MOV     DX,[MEMTOP]     ; End o
+	 	 	 	f RAM in paragraphs (1 = scan)
+84	 0057  FF 1E 00E9 R	 	        CALL    DWORD PTR [DOSENT]
+85	 	 	 	 	;
+86	 	 	 	 	; MS-DOS returns with DS = segment for 
+	 	 	 	the first program. Load COMMAND.COM
+87	 	 	 	 	; there with function calls, as the SCP
+	 	 	 	 I/O system does.
+88	 	 	 	 	;
+89	 005B  BA 0100	 	 	        MOV     DX,100H
+90	 005E  B4 1A	 	 	        MOV     AH,26           ; Set D
+	 	 	 	MA address
+91	 0060  CD 21	 	 	        INT     33
+92	 0062  8B 0E 0006	 	        MOV     CX,DS:[6]       ; Size 
+	 	 	 	of segment
+93	 0066  8C DB	 	 	        MOV     BX,DS
+94	 0068  8C C8	 	 	        MOV     AX,CS
+95	 006A  8E D8	 	 	        MOV     DS,AX
+96	 006C  BA 0127 R	 	        MOV     DX,OFFSET FCB
+97	 006F  B4 0F	 	 	        MOV     AH,15           ; Open 
+	 	 	 	COMMAND.COM
+98	 0071  CD 21	 	 	        INT     33
+99	 0073  0A C0	 	 	        OR      AL,AL
+100	 0075  75 2F	 	 	        JNZ     COMERR
+101	 0077  33 C0	 	 	        XOR     AX,AX
+102	 0079  A3 0148 R	 	        MOV     WORD PTR [FCB+33],AX
+103	 007C  A3 014A R	 	        MOV     WORD PTR [FCB+35],AX
+104	 007F  40	 	 	        INC     AX
+105	 0080  A3 0135 R	 	        MOV     WORD PTR [FCB+14],AX   
+	 	 	 	 ; Record length 1
+106	 0083  B4 27	 	 	        MOV     AH,39           ; Block
+ The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-4
+
+
+
+	 	 	 	 read
+107	 0085  CD 21	 	 	        INT     33
+108	 0087  E3 1D	 	 	        JCXZ    COMERR
+109	 0089  A8 01	 	 	        TEST    AL,1
+110	 008B  74 19	 	 	        JZ      COMERR
+111	 008D  8E DB	 	 	        MOV     DS,BX
+112	 008F  8E C3	 	 	        MOV     ES,BX
+113	 0091  8E D3	 	 	        MOV     SS,BX
+114	 0093  BC 005C	 	 	        MOV     SP,5CH
+115	 0096  33 C0	 	 	        XOR     AX,AX
+116	 0098  50	 	 	        PUSH    AX
+117	 0099  BA 0080	 	 	        MOV     DX,80H
+118	 009C  B4 1A	 	 	        MOV     AH,26
+119	 009E  CD 21	 	 	        INT     33
+120	 00A0  53	 	 	        PUSH    BX
+121	 00A1  B8 0100	 	 	        MOV     AX,100H
+122	 00A4  50	 	 	        PUSH    AX
+123	 00A5  CB	 	 	        DB      0CBH            ; RETF 
+	 	 	 	to COMMAND
+124	 	 	 	 	
+125	 00A6	 	 	 	COMERR:
+126	 00A6  BA 00FE R	 	        MOV     DX,OFFSET BADCOM
+127	 00A9  B4 09	 	 	        MOV     AH,9
+128	 00AB  CD 21	 	 	        INT     33
+129	 00AD  EB FE	 	 	STALL:  JMP     STALL
+130	 	 	 	 	
+131	 00AF  0F 10 CA 02 00	 	INT10:  DB      0FH,10H,0CAH,2,0       
+	 	 	 	 ; TRAP n / RETF 2
+132	 00B4  0F 11 CA 02 00	 	INT11:  DB      0FH,11H,0CAH,2,0
+133	 00B9  0F 12 CA 02 00	 	INT12:  DB      0FH,12H,0CAH,2,0
+134	 00BE  0F 14 CA 02 00	 	INT14:  DB      0FH,14H,0CAH,2,0
+135	 00C3  0F 16 CA 02 00	 	INT16:  DB      0FH,16H,0CAH,2,0
+136	 00C8  0F 17 CA 02 00	 	INT17:  DB      0FH,17H,0CAH,2,0
+137	 00CD  0F 1A CA 02 00	 	INT1A:  DB      0FH,1AH,0CAH,2,0
+138	 	 	 	 	
+139	 00D2  10	 	 	ROMTAB  DB      10H
+140	 00D3  00AF R	 	 	        DW      OFFSET INT10
+141	 00D5  11	 	 	        DB      11H
+142	 00D6  00B4 R	 	 	        DW      OFFSET INT11
+143	 00D8  12	 	 	        DB      12H
+144	 00D9  00B9 R	 	 	        DW      OFFSET INT12
+145	 00DB  14	 	 	        DB      14H
+146	 00DC  00BE R	 	 	        DW      OFFSET INT14
+147	 00DE  16	 	 	        DB      16H
+148	 00DF  00C3 R	 	 	        DW      OFFSET INT16
+149	 00E1  17	 	 	        DB      17H
+150	 00E2  00C8 R	 	 	        DW      OFFSET INT17
+151	 00E4  1A	 	 	        DB      1AH
+152	 00E5  00CD R	 	 	        DW      OFFSET INT1A
+153	 	 	 	 	
+154	 00E7  0D00	 	 	MEMTOP  DW      0D00H           ; 52 KB
+	 	 	 	 of 8086 memory (patched by the loader)
+155	 00E9  0000 0060	 	DOSENT  DW      0,DOSSEG
+ The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-5
+
+
+
+156	 	 	 	 	
+157	 	 	 	 	; Disk parameters. FDD3000 40-track sin
+	 	 	 	gle-sided disk, 18 sectors of
+158	 	 	 	 	; 256 bytes per track: 720 sectors. The
+	 	 	 	 boot sector, then 2 FATs (MS-DOS
+159	 	 	 	 	; makes them 2 sectors each), 64 direct
+	 	 	 	ory entries, 1 KB clusters. The
+160	 	 	 	 	; system is in files: Z86.SYS, IO.SYS a
+	 	 	 	nd MSDOS.SYS.
+161	 00ED  02	 	 	INITTAB DB      2               ; Two d
+	 	 	 	rives, A: and B:
+162	 00EE  00	 	 	        DB      0
+163	 00EF  00F4 R	 	 	        DW      OFFSET DPT40
+164	 00F1  01	 	 	        DB      1
+165	 00F2  00F4 R	 	 	        DW      OFFSET DPT40
+166	 00F4  0100	 	 	DPT40   DW      256             ; Secto
+	 	 	 	r size
+167	 00F6  04	 	 	        DB      4               ; Secto
+	 	 	 	rs per cluster
+168	 00F7  0001	 	 	        DW      1               ; Reser
+	 	 	 	ved sectors: the boot sector
+169	 00F9  02	 	 	        DB      2               ; FATs
+170	 00FA  0040	 	 	        DW      64              ; Direc
+	 	 	 	tory entries
+171	 00FC  02D0	 	 	        DW      720             ; Total
+	 	 	 	 sectors
+172	 	 	 	 	
+173	 00FE  0D 0A 45 72 72 6F	BADCOM  DB      13,10,"Error in loading
+	 	 	 	 Command Interpreter",13,10,"$"
+174	       72 20 69 6E 20 6C	
+175	       6F 61 64 69 6E 67	
+176	       20 43 6F 6D 6D 61	
+177	       6E 64 20 49 6E 74	
+178	       65 72 70 72 65 74	
+179	       65 72 0D 0A 24	 	
+180	 0127  01 43 4F 4D 4D 41	FCB     DB      1,"COMMAND COM"
+181	       4E 44 20 43 4F 4D	
+182	 0133     19 [	 	 	        DB      25 DUP (0)
+183	                00	 	
+184	                    ]	 	
+185	 	 	 	 	
+186	 	 	 	 	
+187	 014C	 	 	 	CODE    ENDS
+188	 	 	 	 	        END
+
+ The Microsoft MACRO Assembler             11-07-<6    	PAGE	Symbols
+	 	 	 	-1
+
+
+
+Macros:
+
+	 	N a m e  	 	Length
+
+ENTRY. . . . . . . . . . . . . .	0002	
+
+Segments and groups:
+
+	 	N a m e	 	 	Size	align	combine	class
+
+CODE . . . . . . . . . . . . . .	014C	PARA  	NONE	
+
+Symbols:            
+
+	 	N a m e	 	 	Type	Value	Attr         
+
+BADCOM . . . . . . . . . . . . .	L BYTE 	00FE	CODE
+BIOSSEG. . . . . . . . . . . . .	Number	0040	
+COMERR . . . . . . . . . . . . .	L NEAR 	00A6	CODE
+DOSENT . . . . . . . . . . . . .	L WORD 	00E9	CODE
+DOSSEG . . . . . . . . . . . . .	Number	0060	
+DPT40. . . . . . . . . . . . . .	L WORD 	00F4	CODE
+FCB. . . . . . . . . . . . . . .	L BYTE 	0127	CODE
+INIT . . . . . . . . . . . . . .	L NEAR 	002D	CODE
+INITTAB. . . . . . . . . . . . .	L BYTE 	00ED	CODE
+INT10. . . . . . . . . . . . . .	L NEAR 	00AF	CODE
+INT11. . . . . . . . . . . . . .	L NEAR 	00B4	CODE
+INT12. . . . . . . . . . . . . .	L NEAR 	00B9	CODE
+INT14. . . . . . . . . . . . . .	L NEAR 	00BE	CODE
+INT16. . . . . . . . . . . . . .	L NEAR 	00C3	CODE
+INT17. . . . . . . . . . . . . .	L NEAR 	00C8	CODE
+INT1A. . . . . . . . . . . . . .	L NEAR 	00CD	CODE
+MEMTOP . . . . . . . . . . . . .	L WORD 	00E7	CODE
+ROMTAB . . . . . . . . . . . . .	L BYTE 	00D2	CODE
+SETROM . . . . . . . . . . . . .	L NEAR 	0040	CODE
+STALL. . . . . . . . . . . . . .	L NEAR 	00AD	CODE
+
+Warning Severe
+Errors	Errors 
+0	0

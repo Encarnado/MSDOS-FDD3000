@@ -1,0 +1,197 @@
+; BDOSTEST.MAC - BDOS calls for CPM.COM's test (test_fdd86.py), M80 / L80.
+; Prints a line of results that must be the same under CP/M 2.2.
+;
+;       M80 =BDOSTEST
+;       L80 BDOSTEST,BDOSTEST/N/E
+
+        ASEG
+        ORG     100H
+BDOS    EQU     5
+DMA     EQU     80H
+
+START:  LXI     SP,STACK
+        LXI     D,HELLO
+        MVI     C,9
+        CALL    BDOS
+        LXI     D,RFCB          ; delete, make R.DAT
+        MVI     C,19
+        CALL    BDOS
+        LXI     D,RFCB
+        MVI     C,22
+        CALL    BDOS
+        CALL    HEXA
+        MVI     A,3             ; random writes: records 3, 0, 1, 2
+        CALL    WREC
+        MVI     A,0
+        CALL    WREC
+        MVI     A,1
+        CALL    WREC
+        MVI     A,2
+        CALL    WREC
+        LXI     D,RFCB          ; close, open
+        MVI     C,16
+        CALL    BDOS
+        CALL    HEXA
+        LXI     D,RFCB
+        MVI     C,15
+        CALL    BDOS
+        CALL    HEXA
+        LXI     D,RFCB          ; file size: 4 records
+        MVI     C,35
+        CALL    BDOS
+        LDA     RFCB+33
+        CALL    HEXA
+        LXI     D,DMA
+        MVI     C,26
+        CALL    BDOS
+        MVI     A,2             ; random read of record 2
+        CALL    SETR
+        LXI     D,RFCB
+        MVI     C,33
+        CALL    BDOS
+        CALL    HEXA
+        CALL    PDMA
+        CALL    RSEQ            ; sequential: 2 again, 3, end of file
+        CALL    RSEQ
+        LXI     D,RFCB
+        MVI     C,20
+        CALL    BDOS
+        CALL    HEXA
+        LXI     D,RFCB          ; set random record: 4
+        MVI     C,36
+        CALL    BDOS
+        LDA     RFCB+33
+        CALL    HEXA
+        LXI     D,RFCB          ; close
+        MVI     C,16
+        CALL    BDOS
+        CALL    HEXA
+        LXI     D,SFCB          ; search: R?.DAT finds R.DAT
+        MVI     C,17
+        CALL    BDOS
+        CPI     4
+        JNC     NOTF
+        ADD     A
+        ADD     A
+        ADD     A
+        ADD     A
+        ADD     A
+        MOV     L,A
+        MVI     H,0
+        LXI     D,DMA+1
+        DAD     D
+        MVI     B,11
+PN:     MOV     E,M
+        PUSH    H
+        PUSH    B
+        MVI     C,2
+        CALL    BDOS
+        POP     B
+        POP     H
+        INX     H
+        DCR     B
+        JNZ     PN
+        MVI     A,' '
+        CALL    PCHR
+NOTF:   LXI     D,OFCB          ; rename R.DAT to S.DAT, open S.DAT
+        MVI     C,19
+        CALL    BDOS
+        LXI     D,NFCB
+        MVI     C,23
+        CALL    BDOS
+        CALL    HEXA
+        LXI     D,OFCB
+        MVI     C,15
+        CALL    BDOS
+        CALL    HEXA
+        LXI     D,XFCB          ; open a file that is not there
+        MVI     C,15
+        CALL    BDOS
+        CALL    HEXA
+        MVI     C,12            ; version
+        CALL    BDOS
+        CALL    HEXA
+        LHLD    1               ; BIOS CONOUT, as MBASIC calls it
+        LXI     D,9
+        DAD     D
+        PUSH    H
+        MVI     C,'#'
+        CALL    PCHL
+        POP     H
+        MVI     C,' '
+        CALL    PCHL
+        LXI     D,BYE
+        MVI     C,9
+        CALL    BDOS
+        JMP     0
+
+; WREC: record A of R.DAT = 128 x ('A' + A), random write
+WREC:   PUSH    PSW
+        CALL    SETR
+        POP     PSW
+        ADI     'A'
+        LXI     H,DMA
+        MVI     C,128
+WR1:    MOV     M,A
+        INX     H
+        DCR     C
+        JNZ     WR1
+        LXI     D,DMA
+        MVI     C,26
+        CALL    BDOS
+        LXI     D,RFCB
+        MVI     C,34
+        CALL    BDOS
+        JMP     HEXA
+
+PCHL:   PCHL
+
+SETR:   STA     RFCB+33
+        XRA     A
+        STA     RFCB+34
+        STA     RFCB+35
+        RET
+
+RSEQ:   LXI     D,RFCB
+        MVI     C,20
+        CALL    BDOS
+        CALL    HEXA
+PDMA:   LDA     DMA
+        CALL    PCHR
+        MVI     A,' '
+        JMP     PCHR
+
+HEXA:   PUSH    PSW
+        RRC
+        RRC
+        RRC
+        RRC
+        CALL    HEX1
+        POP     PSW
+        CALL    HEX1
+        MVI     A,' '
+        JMP     PCHR
+HEX1:   ANI     0FH
+        ADI     90H
+        DAA
+        ACI     40H
+        DAA
+PCHR:   MOV     E,A
+        MVI     C,2
+        JMP     BDOS
+
+HELLO:  DB      'BDOSTEST $'
+BYE:    DB      'END',13,10,'$'
+RFCB:   DB      0,'R       DAT'
+        DB      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+SFCB:   DB      0,'R?      DAT'
+        DB      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+NFCB:   DB      0,'R       DAT',0,0,0,0
+        DB      0,'S       DAT',0,0,0,0,0,0,0,0
+OFCB:   DB      0,'S       DAT'
+        DB      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+XFCB:   DB      0,'NOSUCH  DAT'
+        DB      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+        DS      64
+STACK:
+        END     START

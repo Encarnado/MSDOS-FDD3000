@@ -1,0 +1,167 @@
+; BOOT.BIN: the boot sector, loaded by the FDD3000 boot ROM at 3F00h
+                                ; BOOT.ASM - sector 0 of an MS-DOS disk for the FDD3000 (the IPL).
+                                ;
+                                ; The FDD3000 boot ROM restores drive A, reads sector 0 of track 0 to 3F00h
+                                ; and jumps here with interrupts off, SP = 3EFFh and the ROM still paged in
+                                ; at 0000h-07FFh.
+                                ;
+                                ; This reads the first directory sector (logical 5) to D000h. If its first
+                                ; entry is Z86.SYS starting at cluster 2 (FORMAT /S and mkfat put it there,
+                                ; contiguous), it reads that file - the 8086 interpreter and the BIOS - to
+                                ; D000h and jumps to D0FDh, where the interpreter's page holds JP COLD.
+                                ; COLD loads IO.SYS and MSDOS.SYS. A disk without the system gets
+                                ; "Non-System disk" on the terminal (the CBIOS link protocol, without
+                                ; timeouts) and stops.
+                                ;
+                                ; Logical sector s is track s / 18; in the track, logical sector e is
+                                ; sector ID 2e, or 2e - 17 from e = 9 on (2:1 interleave: 0 2 4 .. 16
+                                ; 1 3 .. 17), as for the rest of the disk (mkfat.chs, BIOS.ASM's SKEW). Polled throughout: no interrupts, 0038h is
+                                ; not used. A read error restores the drive and starts again, 8 times at
+                                ; most, then it stops (HALT).
+                                
+0100                            SPT     EQU 18
+0100                            FIRDIR  EQU 5                   ; first directory sector
+0100                            FIRREC  EQU 13                  ; first data sector: cluster 2
+0100                            IMAGE   EQU 0D000h
+0100                            ENTRY   EQU 0D0FDh              ; JP COLD
+                                
+                                        ORG 3F00h
+3F00  3E 5E                     IPL:    LD A,5Eh                ; drive A, side 0, ROM off, head loaded
+3F02  D3 E0                             OUT (0E0h),A
+3F04  3E 01                     IPL0:   LD A,01h                ; restore
+3F06  CD 95 3F                          CALL CMD
+3F09  21 00 D0                          LD HL,IMAGE
+3F0C  11 05 00                          LD DE,FIRDIR            ; D = track, E = sector in it
+3F0F  06 01                             LD B,1
+3F11  CD 44 3F                          CALL LOAD
+3F14  21 00 D0                          LD HL,IMAGE             ; entry 0: Z86.SYS, cluster 2?
+3F17  11 DE 3F                          LD DE,SYSNAM
+3F1A  06 0B                             LD B,11
+3F1C  1A                        CK1:    LD A,(DE)
+3F1D  BE                                CP (HL)
+3F1E  C2 A3 3F                          JR NZ,NOSYS
+3F21  23                                INC HL
+3F22  13                                INC DE
+3F23  10 F7                             DJNZ CK1
+3F25  2A 1A D0                          LD HL,(IMAGE+26)
+3F28  2B                                DEC HL
+3F29  2B                                DEC HL
+3F2A  7C                                LD A,H
+3F2B  B5                                OR L
+3F2C  20 75                             JR NZ,NOSYS
+3F2E  2A 1C D0                          LD HL,(IMAGE+28)        ; size -> sectors
+3F31  7D                                LD A,L
+3F32  B7                                OR A
+3F33  7C                                LD A,H
+3F34  28 01                             JR Z,CK2
+3F36  3C                                INC A
+3F37  47                        CK2:    LD B,A                  ; z86.bootcode: it fits below FF00h
+3F38  21 00 D0                          LD HL,IMAGE
+3F3B  11 0D 00                          LD DE,FIRREC
+3F3E  CD 44 3F                          CALL LOAD
+3F41  C3 FD D0                          JP ENTRY
+                                
+                                ; LOAD: B sectors from track D, sector E (logical, in the track) to HL
+3F44  C5                        LOAD:   PUSH BC
+3F45  D5                                PUSH DE
+3F46  7B                                LD A,E                  ; sector ID: 2e, or 2e - 17
+3F47  87                                ADD A,A
+3F48  FE 12                             CP SPT
+3F4A  38 02                             JR C,LD0
+3F4C  D6 11                             SUB SPT-1
+3F4E  D3 C2                     LD0:    OUT (0C2h),A
+3F50  01 C3 00                          LD BC,00C3h
+3F53  3E 80                             LD A,80h                ; read sector
+3F55  D3 C0                             OUT (0C0h),A
+3F57  3E 06                             LD A,6                  ; let the FDC raise BUSY
+3F59  3D                        LD1:    DEC A
+3F5A  20 FD                             JR NZ,LD1
+3F5C  DB 2F                     LD2:    IN A,(2Fh)              ; bit 7 = DRQ
+3F5E  17                                RLA
+3F5F  38 07                             JR C,LD3
+3F61  DB C0                             IN A,(0C0h)
+3F63  1F                                RRA
+3F64  38 F6                             JR C,LD2
+3F66  18 22                             JR ERR                  ; ended without data
+3F68  ED A2                     LD3:    INI
+3F6A  20 F0                             JR NZ,LD2
+3F6C  DB C0                     LD4:    IN A,(0C0h)
+3F6E  1F                                RRA
+3F6F  38 FB                             JR C,LD4
+3F71  DB C0                             IN A,(0C0h)
+3F73  E6 1C                             AND 1Ch                 ; not found, CRC, lost data
+3F75  20 13                             JR NZ,ERR
+3F77  D1                                POP DE
+3F78  C1                                POP BC
+3F79  1C                                INC E
+3F7A  7B                                LD A,E
+3F7B  FE 12                             CP SPT
+3F7D  20 08                             JR NZ,LD5
+3F7F  1E 00                             LD E,0
+3F81  14                                INC D
+3F82  3E 51                             LD A,51h                ; step in
+3F84  CD 95 3F                          CALL CMD
+3F87  10 BB                     LD5:    DJNZ LOAD
+3F89  C9                                RET
+                                
+3F8A  31 FF 3E                  ERR:    LD SP,3EFFh
+3F8D  21 FD 3F                          LD HL,TRIES
+3F90  35                                DEC (HL)
+3F91  C2 04 3F                          JR NZ,IPL0
+3F94  76                                HALT                    ; interrupts are off: stop here
+                                
+                                ; CMD: type I command A, polled until not BUSY
+3F95  D3 C0                     CMD:    OUT (0C0h),A
+3F97  C5                                PUSH BC
+3F98  06 12                             LD B,12h
+3F9A  10 FE                     CMD1:   DJNZ CMD1
+3F9C  C1                                POP BC
+3F9D  DB C0                     CMD2:   IN A,(0C0h)
+3F9F  1F                                RRA
+3FA0  38 FB                             JR C,CMD2
+3FA2  C9                                RET
+                                
+                                ; "Non-System disk": each character as CBIOS A1.1 sends it (0Ah, then
+                                ; the low and the high nibble, each echoed by the terminal, then 50h)
+3FA3  21 E9 3F                  NOSYS:  LD HL,NSMSG
+3FA6  5E                        NS1:    LD E,(HL)
+3FA7  1C                                INC E
+3FA8  1D                                DEC E
+3FA9  28 32                             JR Z,NS4
+3FAB  3E 0A                     NS2:    LD A,0Ah                ; ask to send
+3FAD  D3 2F                             OUT (2Fh),A
+3FAF  DB 2F                             IN A,(2Fh)
+3FB1  E6 5F                             AND 5Fh
+3FB3  FE 0F                             CP 0Fh
+3FB5  20 F4                             JR NZ,NS2
+3FB7  7B                                LD A,E
+3FB8  E6 0F                             AND 0Fh
+3FBA  F6 10                             OR 10h
+3FBC  CD D2 3F                          CALL NSPUT
+3FBF  7B                                LD A,E
+3FC0  0F                                RRCA
+3FC1  0F                                RRCA
+3FC2  0F                                RRCA
+3FC3  0F                                RRCA
+3FC4  E6 0F                             AND 0Fh
+3FC6  F6 40                             OR 40h
+3FC8  CD D2 3F                          CALL NSPUT
+3FCB  3E 50                             LD A,50h
+3FCD  D3 2F                             OUT (2Fh),A
+3FCF  23                                INC HL
+3FD0  18 D4                             JR NS1
+3FD2  D3 2F                     NSPUT:  OUT (2Fh),A
+3FD4  57                                LD D,A
+3FD5  DB 2F                     NSP1:   IN A,(2Fh)
+3FD7  E6 5F                             AND 5Fh
+3FD9  BA                                CP D
+3FDA  20 F9                             JR NZ,NSP1
+3FDC  C9                                RET
+3FDD  76                        NS4:    HALT
+                                
+3FDE  5A 38 36 20 20 20 20 20   SYSNAM: DB 'Z86     SYS'
+3FE9  0D 0A 4E 6F 6E 2D 53 79   NSMSG:  DB 13,10,'Non-System disk',13,10,0
+3FFD  08                        TRIES:  DB 8
+3FFE                            ENDIPL:
+                                        END
+                                
