@@ -8,8 +8,8 @@ Check: `python3 tools/z86parts.py check 4` PASS. Lint: 550 instructions,
 
 Evidence used: I86.ASM (source), Z86.SYS.lst, cpu86.py (op_string and
 neighbours), README.md "The Z80 interpreter", OVERVIEW.md 2.2 / 3, and a
-lockstep run of z86.Z86 against cpu86.CPU (script in the session scratchpad,
-built on fuzz_z86.setup).
+lockstep run of z86.Z86 against cpu86.CPU (a throwaway script built on
+fuzz_z86.setup).
 
 ## 1. REP MOVSW with operands overlapping by one byte diverges from the 8086 - verified (test)
 

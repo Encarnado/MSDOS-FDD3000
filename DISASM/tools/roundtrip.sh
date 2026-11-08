@@ -7,7 +7,7 @@
 # Usage:  tools/roundtrip.sh            (from anywhere)
 #         tools/roundtrip.sh z86        (only names matching substring)
 #
-# Z80: Wijnen z80asm v1.8 (the dialect of the TC3256 ROMDIS/TOSDIS corpus).
+# Z80: Wijnen z80asm v1.8.
 #   Lexer hazards, both SILENT (see dict/CONVENTIONS.md):
 #   - after call/jp/jr/ret, a label spelled <condition>_... is read as the
 #     condition (NZ_ Z_ NC_ C_ PO_ PE_ P_ M_);

@@ -4,7 +4,7 @@
 ;==============================================================================
 ;
 ;  ROLE.  Logical sector 0 of an FDD3000 MS-DOS disk.  The FDD3000's own
-;  2K boot ROM (../../TC3256/SIM/ROMDIS/asm/fdd3000b.asm) restores drive
+;  2K boot ROM restores drive
 ;  0, reads track 0 sector ID 0 into 3F00h and jumps here.  This sector
 ;  pages that ROM out, reads the first directory sector, checks that
 ;  entry 0 is Z86.SYS starting at cluster 2, reads the whole file to
@@ -13,21 +13,20 @@
 ;  polled WD177x I/O, exactly as the boot ROM before it does.
 ;
 ;  WHERE IT SITS IN THE BOOT CHAIN
-;     boot ROM (fdd3000b, 0000h)  ->  THIS SECTOR (3F00h)
+;     boot ROM (0000h)  ->  THIS SECTOR (3F00h)
 ;       ->  Z86.SYS COLD (F12Ch: serial set-up, loads IO.SYS + MSDOS.SYS)
 ;       ->  IO.SYS INIT (8086, 0040:0000)  ->  MSDOS.SYS  ->  COMMAND.COM
-;  TOS's own boot sector plays the same part for TOS A.2
-;  (../../TC3256/SIM/TOSDIS, BOOT_INIT); the two share nothing but the
-;  entry contract: interrupts off, SP = 3EFFh, ROM still paged in.
+;  TOS's own boot sector plays the same part for TOS A.2; the two
+;  share nothing but the entry contract: interrupts off, SP = 3EFFh, ROM still paged in.
 ;
 ;  KEY FINDINGS OF THIS DISASSEMBLY (notes/boot_findings.md)
 ;   - The latch value 5Eh is drive 0 + MFM + side 0 + boot ROM OFF +
 ;     IN USE LED on.  The source's gloss "head loaded" names no latch
 ;     bit: the latch has no head-load line and the WD1770 no HLD pin.
 ;     Bit 7 is ACTIVE LOW (0 = LED on): CBIOS A1.1's own LIGHTOF sets it
-;     to put the light out.  This contradicts fdd3000b.asm's HRD_LED
-;     "1 = on" (notes/boot_findings.md, item 7 - provisional, no
-;     hardware observation).
+;     to put the light out.  An earlier reading of the boot ROM had it
+;     the other way, "1 = on" (notes/boot_findings.md, item 7 -
+;     provisional, no hardware observation).
 ;   - The track number in D is bookkeeping only - it never reaches the
 ;     FDC.  The WD177x's own track register, set by the Restore and kept
 ;     current by Step-In with u=1, is what Read Sector compares against
@@ -63,8 +62,7 @@
 ;
 ;  CREDITS.  Original code: the FDD3000-MSDOS project (2026).  Link and
 ;  WD177x idioms after the FDD3000 CP/M CBIOS A1.1 (Antonio Nobrega, TMX
-;  Portugal, 85/10/29).  Disassembly and annotation in the style of "The
-;  Complete TMX Portugal ROM Disassemblies", LoadZX Museum, 2026.
+;  Portugal, 85/10/29).
 ;==============================================================================
 
 ; =====================================================================
@@ -94,11 +92,11 @@ DIR_CLUSTER:	equ	26		; directory entry: first cluster (word)
 DIR_SIZE:	equ	28		; directory entry: file size, low word
 SYS_CLUSTER:	equ	2		; Z86.SYS must start at the first data cluster
 BOOT_STACK:	equ	03EFFh		; the boot ROM's SP, re-established on retry
-					;   (same name and value as fdd3000b.asm)
+					;   (the value the boot ROM sets)
 BOOT_TRIES:	equ	8		; failures allowed over the whole boot
 
 ; =====================================================================
-;                    HARDWARE (names shared with fdd3000b.asm / CBIOS)
+;                    HARDWARE (names after the CP/M CBIOS A1.1)
 ; =====================================================================
 
 ; ---- WD177x floppy controller ----
@@ -120,7 +118,7 @@ FDC_RDERR_MASK:	equ	1Ch		; Type II status: bit 4 record not found,
 
 ; ---- communication port (terminal link + DRQ readback) ----
 COM:		equ	2Fh		; the terminal link; bit 7 reads the
-					;   WD177x DRQ line (fdd3000b polls the same
+					;   WD177x DRQ line (the boot ROM polls the same
 					;   register through its partial decode 20h)
 MASK:		equ	5Fh		; link bits 6 and 4-0 (bit 7 is DRQ, bit 5
 					;   unwired) - CBIOS's MASK
@@ -132,14 +130,14 @@ STMSK:		equ	50h		; end of character: CBIOS's STMSK (= its
 					;   DSTAT; TXBY sends it as STMSK, and
 					;   Z86.SYS owns DSTAT as a variable)
 
-; ---- system control latch (74LS273 at E0h; bit map in fdd3000b.asm) ----
+; ---- system control latch (74LS273 at E0h; its bits: see HRD_DRV0_RAM) ----
 HRD:		equ	0E0h
 HRD_DRV0_RAM:	equ	5Eh		; 01011110b: bit 7 = 0 IN USE LED on
 					;   (active low, per CBIOS LIGHTOF), bit 6 /BOOT=1
 					;   (boot ROM OUT - full 64K RAM), bit 5
 					;   DDEN#=0 (MFM), bit 4 SIDE1#=1 (side 0),
 					;   bits 3-0 = 1110 (drive 0 selected).
-					;   fdd3000b leaves 1Eh: the same with the
+					;   the boot ROM leaves 1Eh: the same with the
 					;   ROM still in.
 
 
@@ -320,7 +318,7 @@ CMD_WAIT:				; (src: CMD2)
 ; CBIOS gives each echo 256 polls and sends 07h (TXERR) on a timeout;
 ; here there is nobody to report an error to, so the waits are endless.
 ; The terminal side of this dialect is the Terminal ROM's console code
-; (ROMDIS tc3256_terminal_3ccb.asm), which sees the six link wires as
+; (in the TC3256's Terminal 3000 ROM), which sees the six link wires as
 ; bits 0-3, 6, 7 - so the tags read 80h/40h at that end.
 ; =====================================================================
 NOSYS:

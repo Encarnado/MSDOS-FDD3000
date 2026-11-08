@@ -21,10 +21,16 @@ VT100 / VT52 that TERM shows the host: every cell but the bottom right one
    20 ms a scroll (a guess at the real one), at 9600 and 19200 baud, with
    XON / XOFF, with RTS / CTS (nothing lost) and with no flow control
    (bytes lost, as expected). The speed with a terminal that takes no time.
+   A scrolling region at 19200 baud (rows drawn again from the shadow):
+   nothing lost.
 6. The log: on, 12 KB through the 8 KB buffer, off: the file is every byte.
 7. XMODEM receive (CRC, a corrupted block sent again; checksums, when the
    sender doesn't take 'C') and send (CRC, checksums): the files.
+   A key cancels a transfer; a line hit on a block's SOH (into EOT or CAN)
+   is a bad block, two CANs cancel; a stale answer while sending; the
+   host's output after a transfer kept (/R).
 8. /52 (a VT52 host) and /80 (80 columns).
+9. Quit lets the host go (XON with /X, RTS on with /R).
 
     python3 test_term.py
 """
@@ -43,6 +49,13 @@ B = test_z86.B
 TS = z86.termz80()[1]
 ESC = '\x1b'
 GR = ' *#HFCLo#NV+++++~--__++++|<>p#f.'
+
+
+def lost(r):
+    """(bytes lost at the chip: overwritten, or sent while it could not
+    take them, TERM's LOST). LOST counts each overrun once more (RXPOLL
+    sees its OE bit) and a full ring, so the two are kept apart."""
+    return r.h.lost + r.h.deaf, r.word('LOST')
 
 
 def check(cond, what):
@@ -489,7 +502,7 @@ def fuzz(r, vt, batches=60):
                 p = csi()
             s += p
         show(r, vt, s, 'batch %d' % i)
-    print('  done; lost %d' % (r.h.lost + r.word('LOST') + r.h.deaf))
+    print('  done; lost %d (LOST %d)' % lost(r))
 
 
 def keys():
@@ -591,15 +604,16 @@ def load():
         vt.feed(text)
         r.settle(2_000_000_000)
         secs = (r.m.tstates - t0) / 4e6
-        lost = r.h.lost + r.word('LOST') + r.h.deaf
+        chip, cnt = lost(r)
         d = differences(r.term, vt)
         if flow:
-            check(lost == 0 and not d, '%d baud %s: lost %d; %s' % (baud, opt, lost, '; '.join(d[:3])))
+            check(chip == cnt == 0 and not d, '%d baud %s: lost %d (LOST %d); %s' % (
+                baud, opt, chip, cnt, '; '.join(d[:3])))
         else:
-            check(lost > 0, '%d baud, no flow control: nothing lost?' % baud)
+            check(chip + cnt > 0, '%d baud, no flow control: nothing lost?' % baud)
         stops = r.h.tx.count(0x13) if flow == 'x' else ''
-        print('  %5d baud %s: %5.1f s, %4d chars/s, lost %d%s' % (
-            baud, opt, secs, len(text) / secs, lost, ', XOFF %d times' % stops if stops != '' else ''))
+        print('  %5d baud %s: %5.1f s, %4d chars/s, lost %d (LOST %d)%s' % (
+            baud, opt, secs, len(text) / secs, chip, cnt, ', XOFF %d times' % stops if stops != '' else ''))
     for baud in (9600, 19200):
         r = start('TERM AUX:%d' % baud)
         r.h.flow = 'x'
@@ -609,6 +623,23 @@ def load():
         secs = (r.m.tstates - t0) / 4e6
         print('  %5d baud, a terminal that takes no time: %4d chars/s (the line: %d), XOFF %d times' % (
             baud, len(text) / secs, baud // 10, r.h.tx.count(0x13)))
+
+
+def region():
+    print('5b. a scrolling region at 19200 baud')
+    r = start('TERM AUX:19200')
+    vt = VT()
+    vt.feed(b'TERM: Ctrl-A for the menu')
+    vt.setcur(0, 0)
+    rnd = random.Random(1)
+    data = (ESC + '[2;23r' + ESC + '[23;1H' + ''.join('x' * rnd.randint(0, 63) + '\r\n' for _ in range(400))
+            + ESC + '[r').encode()
+    r.h.host(data)
+    vt.feed(data)
+    r.settle(4_000_000_000)
+    d = differences(r.term, vt)
+    check(lost(r) == (0, 0) and not d, 'region at 19200: lost %d (LOST %d); %s' % (lost(r) + ('; '.join(d[:3]),)))
+    print('  400 lines of 0-63 characters scrolled in rows 2-23: lost %d (LOST %d)' % lost(r))
 
 
 def log():
@@ -624,7 +655,7 @@ def log():
     r.keys('\x01L', 20_000_000)
     got = r.file('LOG.TXT')
     check(got == data, 'LOG.TXT: %s bytes, want %d' % (got and len(got), len(data)))
-    check(r.h.lost + r.word('LOST') + r.h.deaf == 0, 'lost %d' % (r.h.lost + r.word('LOST') + r.h.deaf))
+    check(lost(r) == (0, 0), 'lost %d (LOST %d)' % lost(r))
     print('  12 KB logged at 19200 baud (the 8 KB buffer written when full): %s' % (
         'the same bytes' if got == data else 'DIFFERENT'))
 
@@ -752,6 +783,174 @@ def xmodem():
             (r.m.tstates - t0) / 4e6))
 
 
+def xkey():
+    print('7b. a key during an XMODEM receive cancels it')
+    r = start('TERM AUX:9600')
+    r.keys('\x01R', 8_000_000)
+    r.keys('IN.BIN\r', 4_000_000)
+    r.tx()
+    r.h.flow = None
+    gen = sender(bytes(range(256)) * 24)
+    out, t0, typed, ok = next(gen), r.m.tstates, None, False
+    while r.m.tstates - t0 < 400_000_000 and not ok:
+        while out is not None:
+            r.h.host(out)
+            out = gen.send(b'')
+        r.run(500_000)
+        if typed is None and r.m.tstates - t0 > 40_000_000:
+            r.m.keys.extend(b'x')       # while TERM shows the progress
+            typed = r.m.tstates
+        got = r.tx()
+        ok = typed is not None and b'\x18\x18\x18' in got and r.m.tstates - typed < 4_000_000
+        try:
+            out = gen.send(got)
+        except StopIteration:
+            break
+    check(ok, 'XMODEM receive: a key did not cancel it within 1 s')
+    print('  x typed after 10 s: %s' % ('CAN sent' if ok else 'NOT CANCELLED'))
+
+
+def hitsender(data, first):
+    """XMODEM sender (CRC) whose block 3 starts, the first time, with the
+    bytes first instead of SOH (a line hit: EOT, CAN; or CAN CAN, the
+    sender cancelling)."""
+    got = b''
+    while b'C' not in got:
+        got += yield None
+    blocks = [data[i:i + 128].ljust(128, b'\x1a') for i in range(0, len(data), 128)]
+    n, tries = 0, 0
+    while n < len(blocks):
+        blk = xblock(n + 1, blocks[n], True)
+        if n == 2 and tries == 0:
+            if first == b'\x18\x18':
+                yield first
+                return 'sender: cancelled'
+            blk = first + blk[1:]
+        yield blk
+        got = b''
+        while not got:
+            got += yield None
+        if got[-1:] == b'\x06':
+            n, tries = n + 1, 0
+        elif b'\x18' in got:
+            return 'sender: cancelled by TERM'
+        else:
+            tries += 1
+    yield b'\x04'
+    got = b''
+    while b'\x06' not in got:
+        got += yield None
+    return 'sender: done'
+
+
+def staleget(extra_c, nak_block):
+    """XMODEM receiver (CRC) that sends a second 'C' as block 1 starts
+    (its start-up poll crossing the block) and NAKs block nak_block once.
+    Block numbers are checked as a receiver does: one behind is ACKed and
+    dropped, any other cancels."""
+    out, buf, want, naked = bytearray(), b'', 1, False
+    yield b'C'
+    sent = not extra_c
+    while True:
+        buf += yield None
+        buf = buf.lstrip(b'\x11\x13')
+        if not sent and buf[:1] == b'\x01':
+            sent = True
+            yield b'C'
+        if buf[:1] == b'\x04':
+            yield b'\x06'
+            return bytes(out)
+        if buf[:1] == b'\x18':
+            return 'cancelled by TERM'
+        if len(buf) >= 133:
+            blk, buf = buf[:133], buf[133:]
+            n = blk[1]
+            if blk != xblock(n, blk[3:131], True):
+                yield b'\x15'
+            elif n == want == nak_block and not naked:
+                naked = True
+                yield b'\x15'
+            elif n == want:
+                out += blk[3:131]
+                want += 1
+                yield b'\x06'
+            elif n == want - 1:
+                yield b'\x06'
+            else:
+                yield b'\x18\x18\x18'
+                return 'receiver: block %d, want %d' % (n, want)
+
+
+def xfaults():
+    print('7c. XMODEM faults')
+    data = bytes(random.Random(5).randrange(256) for _ in range(1280))
+    padded = data + b'\x1a' * (-len(data) % 128)
+    for first, what in ((b'\x04', 'into EOT'), (b'\x18', 'into CAN')):
+        r = start('TERM AUX:9600')
+        r.keys('\x01R', 8_000_000)
+        r.keys('IN.BIN\r', 4_000_000)
+        r.tx()
+        r.h.flow = None
+        res = drive(r, hitsender(data, first), 400_000_000)
+        got = r.file('IN.BIN')
+        check(got == padded and 'done' in r.term.row(23), "block 3's SOH hit %s: %s bytes, want %d; %r (%s)" % (
+            what, got and len(got), len(padded), r.term.row(23).strip(), res))
+        print("  receive, block 3's SOH hit %s: %s" % (what, 'the same bytes' if got == padded else 'DIFFERENT'))
+        r.keys('x', 8_000_000)
+    r = start('TERM AUX:9600')
+    r.keys('\x01R', 8_000_000)
+    r.keys('IN.BIN\r', 4_000_000)
+    r.tx()
+    r.h.flow = None
+    drive(r, hitsender(data, b'\x18\x18'), 400_000_000)
+    r.run(20_000_000)
+    check('Cancelled' in r.term.row(23), 'receive, two CANs: %r' % r.term.row(23).strip())
+    print('  receive, two CANs from the sender: %s' % r.term.row(23).strip())
+    r = start('TERM AUX:9600', files=[('OUT.BIN', data)])
+    r.keys('\x01S', 8_000_000)
+    r.keys('OUT.BIN\r', 4_000_000)
+    r.tx()
+    r.h.flow = None
+    got = drive(r, staleget(True, 4))
+    check(got == padded, 'send, a stale C and a NAK: %s' % (got if isinstance(got, str) else len(got)))
+    print('  send, a second C crossing block 1, block 4 NAKed once: %s' % (
+        'the same bytes' if got == padded else got))
+
+
+def after():
+    print("7d. the host's output while 'done - a key' waits (/R)")
+    r = start('TERM AUX:9600 /R')
+    r.h.flow = 'r'
+    r.keys('\x01R', 8_000_000)
+    r.keys('IN.BIN\r', 4_000_000)
+    r.tx()
+    drive(r, sender(bytes(random.Random(5).randrange(256) for _ in range(1000))))
+    r.h.host(b'\r\nhost$ ')             # the shell's prompt, after sx
+    end = r.m.tstates + 8_000_000       # 2 s reading the bottom line: DOS
+    while r.m.tstates < end:            #   waits for a key, so spin
+        r.m.run(until=end)
+    r.keys('x', 8_000_000)
+    r.settle()
+    rows = [r.term.row(i) for i in range(24)]
+    check(any('host$' in row for row in rows), 'the prompt after a transfer was lost (lost %d)' % lost(r)[0])
+    print('  the prompt sent 0 s after the transfer, a key 2 s later: %s' % (
+        'shown' if any('host$' in row for row in rows) else 'LOST'))
+
+
+def quits():
+    print('9. quit lets the host go')
+    for opt, flow in (('/X', 'x'), ('/R', 'r')):
+        r = start('TERM AUX:9600 ' + opt)
+        r.h.flow = flow
+        r.keys('\x01', 8_000_000)       # the menu: the host stopped
+        r.tx()
+        r.keys('Q', 30_000_000)
+        check(not r.h.paused and r.h.cmd & 0x20, '%s: Q left the host stopped (command %02X)' % (opt, r.h.cmd))
+        if flow == 'x':
+            check(r.tx().endswith(b'\x11'), '/X: no XON on quit')
+        print('  %s: after Q the host %s, command %02X' % (opt, 'stopped' if r.h.paused else 'goes on', r.h.cmd))
+
+
 def other():
     print('8. /52 and /80')
     r = start('TERM AUX:9600 /52')
@@ -781,9 +980,14 @@ def main():
     echo()
     crlf()
     load()
+    region()
     log()
     xmodem()
+    xkey()
+    xfaults()
+    after()
     other()
+    quits()
     print('FAILED: %d' % len(FAILS) if FAILS else 'all ok')
     sys.exit(1 if FAILS else 0)
 

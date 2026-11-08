@@ -33,7 +33,7 @@ None of these documents was edited. Each item cites the finding that supports it
 12. `fdd86.py` prints a bad opcode's address one byte low (BC already points at
     it at BADSTOP). (`z86_part02`)
 
-## The TC3256 corpus (ROMDIS)
-13. `fdd3000b.asm` HRD_LED "1 = on": CBIOS's LIGHTOF sets bit 7 to put the light
-    out, i.e. active low. Provisional until someone observes the LED.
-    (`boot_findings` 7)
+## Earlier readings of the boot ROM
+13. Latch bit 7 (IN USE LED) "1 = on" in an earlier reading of the FDD3000 boot
+    ROM: CBIOS's LIGHTOF sets bit 7 to put the light out, i.e. active low.
+    Provisional until someone observes the LED. (`boot_findings` 7)

@@ -5,14 +5,14 @@
 ;
 ; port: PRN, LPT1 or COM1 for channel A (DOS's PRN), AUX or COM2 for
 ; channel B (DOS's AUX); COM1 and COM2 are INT 14H's ports 0 and 1.
-; baud: 50 75 110 134.5 150 200 300 600 1200 1800 2400 3600 4800 7200 9600
-; 19200, or the PC's 11 15 30 60 12 24 48 96 19. parity: N, O or E. data
-; bits: 5 to 8. stop bits: 1, 1.5 or 2. A setting left out stays as it
-; is. MODE with a port alone shows its settings, with no port both.
+; baud: 50 75 110 134.5 (or 134) 150 200 300 600 1200 1800 2400 3600 4800
+; 7200 9600 19200, or the PC's 11 15 30 60 12 24 48 96 19. parity: N, O or
+; E. data bits: 5 to 8. stop bits: 1, 1.5 or 2. A setting left out stays
+; as it is. MODE with a port alone shows its settings, with no port both.
 ;
-; The settings go to the chip through INT 14H's FDD3000 calls (BIOS.ASM,
-; I86.ASM's I14X): F0H reads the mode byte and baud code the BIOS last
-; set, F1H sets them. CP/M programs run by CPM.COM use the same settings.
+; The settings go to the chip through INT 14H's FDD3000 calls (BIOS.ASM's
+; I14X, with I86.ASM's I14RD and SSET): F0H reads the mode byte and baud
+; code the BIOS last set, F1H sets them. CP/M programs run by CPM.COM use the same settings.
 ; Every boot sets both channels to 1200 baud, no parity, 8 bits, 1.5 stop
 ; bits, as the FDD3000's CP/M does: put MODE lines in AUTOEXEC.BAT to
 ; have others.

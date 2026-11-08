@@ -4698,7 +4698,7 @@ EFFE  C9                                RET
                                 ; INT 14h serial: DX = 0 channel A, 1 channel B. AH = 0 set up from AL
                                 ; (PC format), 1 send AL, 2 receive into AL, 3 status, 4 set up from BX
                                 ; and CX (PS/2 format), F0h and F1h read and set the WD2123's own mode
-                                ; byte and baud code (I14X, in I86.ASM). Returns AH = line status (bit 7:
+                                ; byte and baud code (I14X, below). Returns AH = line status (bit 7:
                                 ; timed out) and AL = modem status (but the byte received, for AH = 2).
 EFFF  2A 04 D0                  T_I14:  LD HL,(R_DX)
 F002  0E 81                             LD C,81h

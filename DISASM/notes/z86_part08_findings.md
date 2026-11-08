@@ -52,9 +52,9 @@ instruction lines.
 
 9. **LATCHC "head loaded (bit 7 low)"**: no latch bit loads a head
    (boot_findings #1). Bit 7 is CBIOS's LUZ (light: `res` = on in LIGHT, `set` =
-   off in LIGHTOF); this BIOS follows CBIOS. **Cross-corpus conflict:**
-   fdd3000b.asm HRD_LED says 1 = on, the opposite of CBIOS. Provisional;
-   boot.asm's "5Eh = LED off" inherits fdd3000b's polarity.
+   off in LIGHTOF); this BIOS follows CBIOS. **Conflict:** an earlier reading
+   of the FDD3000 boot ROM says 1 = on, the opposite of CBIOS. Provisional;
+   boot.asm's first "5Eh = LED off" followed that reading (since corrected).
 10. **T_I14 header "AL = modem status"**: true only for AH = 3; for AH = 1 AL
     is the byte sent (unchanged), for AH = 2 the byte received. Verified.
 11. **FDCINT mask differs from CBIOS**: CBIOS INTRPT keeps 9Ch (bit 7); on a

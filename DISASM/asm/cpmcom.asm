@@ -86,8 +86,6 @@
 ;  CREDITS.  Original code: the FDD3000-MSDOS project (2026).  CP/M 2.2
 ;  conventions (page zero, FCBs at 5Ch/6Ch, the tail at 80h) after
 ;  Digital Research's CCP; MS-DOS 1.25 and COMMAND.COM by Microsoft.
-;  Disassembly and annotation in the style of "The Complete TMX Portugal
-;  ROM Disassemblies", LoadZX Museum, 2026.
 ;==============================================================================
 
 ; =====================================================================

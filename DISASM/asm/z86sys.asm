@@ -63,7 +63,8 @@
 ;     untouched.  (parts 07, 08; test_fdtimeout.py)
 ;   - RTS stays raised more often than the README says.      (part 01)
 ;   - Latch bit 7 (IN USE LED) is active low: CBIOS's own LIGHTOF sets it.
-;     ROMDIS fdd3000b.asm says the opposite (boot_findings item 7).
+;     An earlier reading of the boot ROM had the opposite (boot_findings
+;     item 7).
 ;   - The guide's code seeds miss three DW tables (G3BT, G3WT, G5T, via
 ;     JP JTAB) and code reached only by LD IX,nn (RESTORE).  RADVS
 ;     (E25Dh-E26Eh) is dead: nothing refers to it.  (notes/partition_findings.md)
@@ -114,16 +115,14 @@
 ;
 ;  CREDITS.  Original code: the FDD3000-MSDOS project (2026).  Console link,
 ;  WD177x transfer and WD2123 set-up after the FDD3000 CP/M CBIOS A1.1
-;  (Antonio Nobrega, TMX Portugal, 85/10/29).  Disassembly and annotation in
-;  the style of "The Complete TMX Portugal ROM Disassemblies", LoadZX Museum,
-;  2026.
+;  (Antonio Nobrega, TMX Portugal, 85/10/29).
 ;==============================================================================
 	org	0d000h
 
 ; =====================================================================
-;   HARDWARE - one shared block for the whole volume.  Names follow
-;   fdd3000b.asm (ROMDIS), TOSDIS and the CP/M CBIOS A1.1 so the same
-;   port reads the same in both corpora (dict/CONVENTIONS.md).
+;   HARDWARE - one shared block for the whole volume.  Names follow the
+;   FDD3000's CP/M CBIOS A1.1 and the WD177x / WD2123 datasheets, the
+;   same in every volume (dict/CONVENTIONS.md).
 ; =====================================================================
 ; ---- WD177x floppy controller ----
 FDCSTS:		equ	0C0h		; status (read)
@@ -141,7 +140,9 @@ CSTAT:		equ	10h		; low-nibble tag             (CBIOS)
 BSTAT:		equ	40h		; high-nibble tag            (CBIOS)
 STMSK:		equ	50h		; end of character (CBIOS STMSK = its DSTAT;
 					;   DSTAT here is the BIOS disk-status byte)
-; ---- system control latch (74LS273; bit map in fdd3000b.asm HRD_*) ----
+; ---- system control latch (74LS273): bits 3-0 drive select (low active),
+;      4 SIDE1# (1 = side 0), 5 DDEN# (0 = MFM), 6 boot ROM off, 7 IN USE LED
+;      (low active, per CBIOS's LIGHTOF) ----
 HRD:		equ	0E0h
 ; ---- WD2123 dual UART (8251A-compatible channels) ----
 ; Each channel: data port, control port = data + 1 (status on read,
@@ -162,9 +163,9 @@ UART_CMD_CHA:	equ	81h		; status (read) / mode+command (write)
 ;   5 RTS, 6 IR (internal reset), 7 EH (enter hunt; sync mode only).
 ; Status byte (read from the control port):
 ;   bit 0 TxRDY, 1 RxRDY, 2 TxEMPTY, 3 PE, 4 OE, 5 FE,
-;   6 SYNDET/BRKDET, 7 DSR.
+;   6 SYNDET/BRKDET, 7 CTS (the WD2123 has no DSR pin).
 ; Names and values are CBIOS A1.1's where it has them (one name, one
-; value across both corpora).
+; value in every volume).
 ACOM:		equ	07h		; TxEN + DTR + RxE, RTS off   (CBIOS ACOM)
 SIOWORD:	equ	27h		; ACOM + RTS                  (CBIOS SIOWORD)
 IOERR:		equ	37h		; SIOWORD + ER: clear PE/OE/FE (CBIOS IOERR)

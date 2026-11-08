@@ -12,7 +12,7 @@ decode(mem, addr) -> (length, mnemonic, operands, info)
              'flow': None | 'jump' | 'call' | 'ret' | 'stop' (no fall-through),
              'cond': True if conditional, 'target': branch target or None.
 
-Written for the FDD3000-MSDOS disassembly corpus (DISASM/), checked by the
+Written for the FDD3000-MSDOS disassemblies (DISASM/), checked by the
 z80asm round-trip gate: every decoded line must reassemble to its bytes.
 """
 

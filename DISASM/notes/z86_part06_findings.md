@@ -9,9 +9,8 @@ Evidence: `symbols/z80/Z86.SYS.lst`, `project/MSDOS/poc/I86.ASM` (lines 2865-337
 
 - **The shift/rotate groups D0h-D3h, SHB2 / SHW2 and their SHPG patching are not in
   this part.** They sit at E591h-E6xxh, in `parts/z86_05.asm` (O_SHD0 .. SHW2), and SHPG
-  (D700h) is in part 01. The brief listed them for part 06; part 06 actually begins
-  at O_CMC (E806h). Not narrated here, to keep to "edit only your file". The part-05
-  agent should carry the store/JP explanation (`ld (SHB2+1),a` / `SHB2: jp SHPG`,
+  (D700h) is in part 01. The plan listed them for part 06; part 06 actually begins
+  at O_CMC (E806h), so they are narrated in part 05, which carries the store/JP explanation (`ld (SHB2+1),a` / `SHB2: jp SHPG`,
   low byte = ((reg AND 38h) * 2) OR 80h, i.e. a 16-byte slot in the upper half of the
   SHPG page; verified from the bytes only, the slot contents not checked here).
 - The BIOS.ASM preface and its equates (NDRIVE, SPT, NTRACK, NSECT, FIRDIR, FIRREC,

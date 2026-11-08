@@ -4,7 +4,7 @@
 ;       TERM [port[:] [baud][,[parity][,[data bits][,stop bits]]]] [/opts]
 ;
 ; port and settings as for MODE (default: AUX, as it is set now). Options:
-;       /80     an 80-column terminal (default 64)
+;       /80     an 80-column terminal (/64, the default: 64 columns)
 ;       /52     the host sends VT52 codes (default VT100 / ANSI)
 ;       /X      XON / XOFF flow control (the default), /R RTS / CTS, /N none
 ;       /E      local echo: what is typed shows on the screen too
@@ -95,10 +95,10 @@ NABAUDS EQU     10
 
 USEMSG  DB      "Invalid parameter",13,10,13,10
         DB      "Usage: TERM [port[:] [baud][,[N|O|E][,[5-8][,[1|1.5|2]]]]]",13,10
-        DB      "            [/80] [/52] [/X|/R|/N] [/E] [/C]",13,10
+        DB      "            [/80|/64] [/52] [/X|/R|/N] [/E] [/C]",13,10
         DB      "  port: PRN, LPT1 or COM1 (channel A), AUX or COM2 (channel B)",13,10
         DB      "  /80 80 columns, /52 VT52 host, /X XON/XOFF, /R RTS/CTS, /N none",13,10
-        DB      "  /E local echo, /C LF after each CR received",13,10
+        DB      "  /E local echo, /C LF after each CR received, /64 64 columns",13,10
         DB      "  Ctrl-A: the menu$"
 CRLF    DB      13,10,"$"
 VERMSG  DB      "TERM.COM does not match Z86.SYS",13,10,"$"
@@ -456,7 +456,9 @@ ONOFF1: JMP     PUTS
 QUIT:   CMP     [LOGON],0
         JZ      QUIT1
         CALL    LOGOFF
-QUIT1:  CALL    BOTTOM          ; DOS goes on from the bottom line
+QUIT1:  XOR     CX,CX           ; the host let go (SEND of nothing:
+        CALL    SEND            ;   the Z80 part's ENSURE)
+        CALL    BOTTOM          ; DOS goes on from the bottom line
         CALL    BOTEND
         MOV     DL,13
         MOV     AH,2
@@ -556,12 +558,19 @@ XR1:    MOV     BL,[XREPLY]     ; the answer, then a block, its first
         JZ      XRSOH
         CMP     AL,EOT
         JNZ     XR2
+        CMP     CX,1            ; an EOT alone, not a block's first byte
+        JNZ     XR4             ;   hit by noise
         JMP     XREOT
 XR2:    CMP     AL,CAN
         JNZ     XR3
+        CMP     CX,1            ; two CANs, as YMODEM's graceful abort
+        JNA     XR3
+        CMP     BYTE PTR [XBUF+1],CAN
+        JNZ     XR4
         JMP     XRCAN
 XR3:    MOV     [XREPLY],0      ; noise: wait on
         JMP     XR1
+XR4:    JMP     XRBAD
 XRUSR:  JMP     XUSER
 XRTO:   INC     [TRIES]
         CMP     [TRIES],10
@@ -709,7 +718,8 @@ XS5:    MOV     SI,OFFSET XBUF
         CMP     AL,CAN
         JNZ     XS51
         JMP     XRCAN
-XS51:   INC     [TRIES]
+XS51:   CALL    PURGE           ; not ACK: the line quiet first, so no
+        INC     [TRIES]         ;   late answer is taken for the next
         CMP     [TRIES],10
         JB      XS5
 XSFL1:  JMP     XFAIL
@@ -784,11 +794,13 @@ XCHECK: MOV     SI,OFFSET XBUF+3
         MOV     AH,7
         JMP     Z80
 
-; PURGE: wait till nothing comes for 0.3 s
-PURGE:  MOV     CX,133
+; PURGE: wait till nothing comes for 0.3 s (not into XBUF: XSEND sends
+; it again)
+PURGE:  MOV     CX,1
         MOV     DX,30
         XOR     BX,BX
-        CALL    XGET
+        MOV     DI,OFFSET ANSB
+        CALL    XGETDI
         JCXZ    PURGE1
         JMP     PURGE
 PURGE1: RET
@@ -798,7 +810,9 @@ SEND:   ADD     SI,[BASE]
         MOV     AH,4
         JMP     Z80
 
-XDONE:  MOV     DX,OFFSET XFCB
+XDONE:  MOV     AH,10           ; HOLD: the host stopped till SESS
+        CALL    Z80
+        MOV     DX,OFFSET XFCB
         MOV     AH,16
         INT     33
         CALL    BOTTOM
@@ -815,6 +829,8 @@ XCAN:   PUSH    DX
         CALL    SEND
         POP     DX
 XEND:   PUSH    DX
+        MOV     AH,10           ; HOLD
+        CALL    Z80
         MOV     DX,OFFSET XFCB
         MOV     AH,16
         INT     33

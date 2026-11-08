@@ -86,6 +86,6 @@ lint: 0 errors, comment coverage 91.8 % (523 instructions).
 
 The 34 CRYPTIC warnings are all for author or global names that are kept
 under the conventions: SHL4, NEXT2, REG8, SZP8, EA00-EA27 (named by the
-EALO/EAHI tables in part 01), and ALU0J-ALU5J (named by the brief and the
+EALO/EAHI tables in part 01), and ALU0J-ALU5J (named by the plan and the
 README). The patched-JP labels could get descriptive aliases at the join
 if wanted.

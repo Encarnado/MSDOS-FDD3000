@@ -159,9 +159,36 @@ limits, a duplicated block, the sender's 60 s timeout.
   are MODE.ASM's, nearly line for line.
 - README line 731 vs 801 / OVERVIEW 4 (finding 12).
 
-## Hardware evidence (coordinator, 2026-11-08)
+## Hardware evidence (2026-11-08)
 poc README line ~731 records a TERM <-> PuTTY interactive session "Tried on a real
 FDD3000" (João's build, undated); line ~699 (serial section) says "nothing has been
 tried on the hardware"; line ~801's "Not known" is about the terminal's speed. Read
 as: one interactive session on hardware, probably; everything else emulator-only.
 To confirm with João. The merged build has not been run on hardware.
+
+## Verified and fixed 2026-11-08
+
+Independent verification: `verify_term.md` (classes, experiments, diffs). Fixed in TERM.ASM
+(and TERMZ80.ASM for N1); TERM.COM is now 6720 bytes, TERMZ80 ends at FEA4h. Each fix has a
+test in test_term.py that fails on the old build and passes on the new one.
+
+| # | Class | Outcome |
+|---|---|---|
+| 1 QUIT leaves the host stopped | BUG | FIXED: QUIT1 does `XOR CX,CX / CALL SEND` (TERMZ80's ENSURE: XON, RTS on) after LOGOFF. Worse than reported: a new TERM did not free an XOFFed host either. Test: section 9 |
+| 2 One CAN cancels | DESIGN | receive side FIXED with N3 (two CANs needed); send side LEFT FOR THE AUTHOR |
+| 3 Wait for 'C' restarts on noise | NOTE | as Christensen's one-minute rule; nothing to do |
+| 4 BLK-1 ACKed and dropped | NOTE | standard duplicate rule; nothing to do |
+| 5 Partial file kept | DESIGN | LEFT FOR THE AUTHOR |
+| 6 Retry limits / timeouts | DESIGN | LEFT FOR THE AUTHOR (3 s for a block vs the usual 10 s) |
+| 7 Whole blocks | NOTE | nothing to do |
+| 8 /64 not documented | DOC | FIXED: header comment, USEMSG (`[/80|/64]`, "/64 64 columns"), README, OVERVIEW |
+| 9 LFCB closed twice | NOTE | harmless (MSDOS.ASM CLOSE rewrites the same entry) |
+| 10 MASM NOPs | NOTE | nothing to do (now at 07CE, 0AA1, 0BEC) |
+| 11 Header / REGS unchecked | DESIGN | LEFT FOR THE AUTHOR; correction: TERMZ80 does not use CONOUT |
+| 12 README hardware conflict | DOC | LEFT FOR THE AUTHOR: README 731 vs 699 / 801 is João's to settle |
+| 13-16 | NOTE | confirmed; nothing to do |
+| N1 Host output lost while "done - a key" waits | BUG | FIXED: new TERMZ80 function 10 HOLD, called at XDONE and XEND. Complete with /R; with /X the XOFF may reach a program still in raw mode. Test: section 7d (/R) |
+| N2 Stale byte puts answers a block late | BUG | FIXED: XS51 calls PURGE on any non-ACK answer; PURGE reads one byte at a time into ANSB, not XBUF. Test: section 7c (a second 'C' crossing block 1, block 4 NAKed) |
+| N3 Line hit on SOH ends the receive | BUG | FIXED: EOT only with CX = 1, CAN only doubled, otherwise XRBAD. Test: section 7c (SOH into EOT, into CAN; two CANs still cancel) |
+| N4 Arrow key at the menu | NOTE | LEFT FOR THE AUTHOR |
+| N5 TERMZ80 "at a quarter" | DOC | FIXED in TERMZ80.ASM (comment) |

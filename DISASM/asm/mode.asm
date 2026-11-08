@@ -59,9 +59,11 @@
 ;   - A comma right after the port stands for an empty baud field:
 ;     `MODE COM1:,O` and `MODE COM1 ,O` change the parity; `MODE PRN,,E`
 ;     is refused (the 'E' lands in the data-bits field).
-;   - The STOPS table has a "?" for stop-bit code 00 (not a valid async
-;     mode); no path in MODE or the BIOS ever stores it (SSET's callers
-;     give 40h / 80h / C0h only).
+;   - The STOPS table has a "?" for stop-bit code 00 (the 8251A's
+;     "invalid" async setting).  MODE never makes it, but INT 14h F1h
+;     passes AL's bits 7-6 through, so another program can store it;
+;     MODE then shows "? stop bits" and keeps it on a partial set
+;     (corrected 2026-11-08: this said "never stored", and "sync mode").
 ;   - SHOW names channel A "PRN:" and channel B "AUX:" whatever name was
 ;     typed (COM1, LPT1 ...).
 ;
@@ -81,9 +83,10 @@
 ;  SSTAT, I14RD, SAVED).  Under the emulator (fdd86.py, with its WD2123
 ;  model): test_fdd86.py group 9 runs MODE with no argument, every port
 ;  name, all four fields, fields left out, the PC's baud names, a port
-;  alone, and nine bad lines, checking after each the mode byte and baud
-;  code the model chip received and MODE's printed line; then COPY to PRN
-;  after MODE.
+;  alone, a parity-only `MODE PRN,E`, and ten bad lines (`MODE PRN,,E`
+;  among them), checking after each the mode byte and baud code the
+;  model chip received and MODE's printed line; then COPY to PRN after
+;  MODE.
 ;
 ;  FILE:    MODE.COM, 1 119 bytes
 ;  MD5:     d3bed820421d5a7fdc6aa9e1c9daf3c1
@@ -93,8 +96,7 @@
 ;  CREDITS.  Original code: João Encarnado, for the FDD3000-MSDOS project
 ;  (2026).  The INT 14h F0h / F1h calls it uses (I14X, I14RD, SAVED) are
 ;  his too.  Mode byte and baud codes as CBIOS A1.1 and TMX CONFIGUR
-;  (TMX Portugal) use them.  Disassembly and annotation in the style of
-;  "The Complete TMX Portugal ROM Disassemblies", LoadZX Museum, 2026.
+;  (TMX Portugal) use them.
 ;==============================================================================
 ;
 ; ASSEMBLER NOTES.  NASM, `-O0 -f bin`: -O0 stops NASM re-sizing
@@ -177,7 +179,7 @@ I14_SETMODE	equ	0F1h	; FDD3000 call (I14X -> SSET, SSTAT): AL =
 				;   the line / modem status (MODE ignores them)
 
 ; ---- the 8251A asynchronous mode byte (WD2123 = two 8251A channels) ----
-;   bits 7-6  stop bits   01 = 1, 10 = 1.5, 11 = 2   (00: sync mode)
+;   bits 7-6  stop bits   01 = 1, 10 = 1.5, 11 = 2   (00: invalid)
 ;   bit  5    EP          1 = even, 0 = odd  (only with PEN)
 ;   bit  4    PEN         parity on
 ;   bits 3-2  data bits   00 = 5, 01 = 6, 10 = 7, 11 = 8
@@ -316,7 +318,7 @@ CRLF:
 
 ; STOPS - mode bits 7-6 as text, 3 characters each (PUTN stops at a space)
 STOPS:
-	db "?  1  1.52  "	; 00 "?" (sync - never stored), 01 "1",
+	db "?  1  1.52  "	; 00 "?" (invalid; only via F1h), 01 "1",
 				;   10 "1.5", 11 "2"
 
 ; USEMSG - shown for every bad command line; nothing has been changed

@@ -87,3 +87,26 @@ moved these into `;@SLACK` slot ends; a location note, not an error.
   (`DOS_PRTSTR`) and adds `DOS_CONOUT` (02h, MSDOS.LST's CONOUT).
 - Volume numbering: earlier volumes' banners say "N/7"; this one is "8/10"
   as instructed. The older banners may need updating to "/10".
+
+## Verified and fixed 2026-11-08
+
+Independent verification: `verify_mode.md` (classes and experiments there). No code bug was
+found in MODE.COM; MODE.COM and Z86.SYS are byte-identical before and after (z86.py's
+Z86.SYS MD5 adaa64d4..., MODE.COM d3bed820...).
+
+| # | Class | Outcome |
+|---|---|---|
+| 1-3, 6, 10-12 | NOTE | confirmed; nothing to do |
+| 4 Full reset on every set | DESIGN (effect HW) | LEFT FOR THE AUTHOR (a fix would go in SSET: wait for TxEMPTY) |
+| 5 Comma after the port | NOTE (correct) | locked down: test_fdd86.py group 9 now has `MODE PRN,E` (accepted, parity only) and `MODE PRN,,E` (refused) |
+| 7 One-character fields | DESIGN | LEFT FOR THE AUTHOR (as the usage documents) |
+| 8 STOPS "?" for code 00 | INVALID | 00 is the 8251A's "invalid" stop setting, not sync (I14X forces async), and it is reachable: F1h passes AL bits 7-6 through, so another program can store it and MODE shows "?". Volume 8 corrected (header, mode-byte note, STOPS) |
+| 9 SHOW names by channel | DESIGN | LEFT FOR THE AUTHOR |
+| 13 Baud rates | HW | LEFT FOR THE AUTHOR (measure on the machine) |
+| Source comments "none wrong" | DOC | FIXED: MODE.ASM's header names I14X's real home (BIOS.ASM, with I86.ASM's I14RD / SSET) and lists the `134` alias (comments only) |
+| Cross-volume: I14X "in I86.ASM" (BIOS.ASM T_I14 header) | DOC | FIXED: "(I14X, below)" (comment only) |
+| Cross-volume: F1h with CL >= 16 | DOC | FIXED: poc README says nothing is done and AX comes back unchanged |
+| Cross-volume: edit's DOS_PRINT | INVALID | stale: edit.asm uses DOS_PRTSTR (CONVENTIONS.md records the rename) |
+| Cross-volume: banners "N/7" | INVALID | stale: every banner reads "/10" |
+| New: F1h accepts stop code 00 | DESIGN (BIOS, effect HW) | LEFT FOR THE AUTHOR (a guard in I14X changes Z86.SYS) |
+| New: stricter than PC MODE | NOTE | nothing to do |

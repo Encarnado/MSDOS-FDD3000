@@ -101,8 +101,7 @@
 ;
 ;  CREDITS.  Original code: the FDD3000-MSDOS project (2026).  Keys and
 ;  status line after TMX CP/M's EDIT; terminal codes read from the
-;  Terminal 3000 ROM.  Disassembly and annotation in the style of "The
-;  Complete TMX Portugal ROM Disassemblies", LoadZX Museum, 2026.
+;  Terminal 3000 ROM.
 ;==============================================================================
 ;
 ;  ASSEMBLER NOTES.  NASM, `-O0 -f bin`: nothing is ever re-sized, so the
