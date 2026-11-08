@@ -41,6 +41,6 @@ Claims written before this report are tagged `HW-PENDING` in the 8086 notes and 
 resolved against this table.
 
 ## Note (2026-11-08)
-The run above used the BASELINE build (git eeadb54). The floppy-timeout build
+The run above used the BASELINE build (git 868a965). The floppy-timeout build
 that followed (same size; CPMZ80/CPM.COM unchanged) has passed the emulator
 suites but not yet run on the real machine.

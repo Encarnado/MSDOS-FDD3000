@@ -8,4 +8,4 @@ MODE.COM      1119  md5 d3bed820421d5a7fdc6aa9e1c9daf3c1  sha256 c60807affd8e3ad
 TERM.COM      6679  md5 e28710898db1d2cb34972e30b1201089  sha256 a50bf0384031f6e1e67d3b011464030fb82e17d3ca15c338b7a48cb62403c875
 TERMZ80.BIN   3468  md5 abb0d2751f017c72a716eabe318c0a07  sha256 5823888f4d5aafe18f03f89271ecdc0c67a1e9a7bad36ff139f668c1cac1fe96
 Z86.SYS       8737  md5 adaa64d4663138e0dc9f16935f24f60f  sha256 e1c9f69bc5c993d0e529a324356fbe3a4f4f6c076e8da013ef5a2f0a6485343b
-(merged 2026-11-08 build: our fixes + João Encarnado's serial work; the 2026-11-07 hardware-run build is git eeadb54)
+(merged 2026-11-08 build: our fixes + João Encarnado's serial work; the 2026-11-07 hardware-run build is git 868a965)

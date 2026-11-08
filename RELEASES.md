@@ -64,7 +64,7 @@ CRs; open findings in TERM for its author are listed in
 ## Before the first release: the 2026-11-07 internal build
 
 Not a release (nothing was published before v1.0-rc1); recorded because it is
-the build that ran on real hardware. Git `eeadb54`: MS-DOS 1.25 on the Timex
+the build that ran on real hardware. Git `868a965`: MS-DOS 1.25 on the Timex
 FDD3000 - the 8086 interpreter and Z80 BIOS (`Z86.SYS`), the boot sector, the
 I/O system, Microsoft's MS-DOS 1.25 kernel and COMMAND 1.17, and FORMAT, CPM
 (CP/M 2.2 programs natively on the Z80) and EDIT, with the first version of
