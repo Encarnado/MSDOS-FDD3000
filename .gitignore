@@ -8,3 +8,4 @@ project/MSDOS/poc/build/*.ASM
 project/MSDOS/poc/build/*.EXE
 project/MSDOS/poc/build/*.OBJ
 project/MSDOS/poc/build/*.LST
+release/

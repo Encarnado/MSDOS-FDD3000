@@ -17,8 +17,37 @@ pinout in `project/MSDOS/poc/README.md`, "Serial ports", before
 connecting anything.
 
 Everything was built and tested on emulators (a Python 8086 model, and an
-emulated FDD3000 with its Z80, WD177x and boot ROM). The disk also boots on
-FUSE. **It has not been tried on real FDD3000 hardware.**
+emulated FDD3000 with its Z80, WD177x and boot ROM), and the disk also boots
+on FUSE. **The v1.0 build booted and ran on a real FDD3000 on 2026-11-07**
+(TT3000 terminal: DOS, EDIT, CPM and the serial ports worked; FORMAT was not
+tried). Later builds have so far been tested on the emulators only; see
+`RELEASES.md`.
+
+## Quick start
+
+1. **Get the disk image.** Download `MSDOS-FDD3000.DSK` from the GitHub
+   release you want (`RELEASES.md` lists them), or take
+   `binaries/disk/MSDOS-FDD3000.DSK` from a clone of the repository (that
+   one is the current build). It is an Extended CPC DSK image: 40 tracks,
+   1 side, 18 sectors of 256 bytes per track, sector IDs 0-17.
+2. **On a real FDD3000:** write the image to a 3" disk with a tool that can
+   write DSK images to a real drive in that format, put it in drive A,
+   connect the Timex terminal (TT3000 / TC3256 / TC2068 running its
+   Terminal 3000 software), and reset the FDD3000. Its boot ROM loads the
+   disk; DOS asks for the date and the time (press RETURN for each), and
+   you are at `A:`.
+3. **On the package's emulator** (Python 3.9 or later, nothing else):
+
+   ```
+   python3 project/MSDOS/poc/fdd86.py binaries/disk/MSDOS-FDD3000.DSK
+   ```
+
+   You type on the emulated terminal; Ctrl-] quits. The disk also boots on
+   FUSE.
+4. **Try:** `DIR`, `CHKDSK`, `EDIT NOTES.TXT` (WordStar keys; ^KX saves
+   and exits), `MODE` (the serial ports), `TERM` (a serial terminal; Ctrl-A
+   for its menu), `CPM program` for a CP/M 2.2 program saved on the disk
+   as `program.CPM`.
 
 ## Start here
 
@@ -30,6 +59,7 @@ FUSE. **It has not been tried on real FDD3000 hardware.**
 | `project/MSDOS/poc/README.md` | The project's own working notes: full detail, measurements, design decisions. |
 | `project/MSDOS/FEASIBILITY.md` | The feasibility study written before the work started. |
 | `MANIFEST.sha256` | SHA-256 and size of every file in the package. |
+| `RELEASES.md` | The releases (git tags, GitHub release assets), what each changed, and which have run on real hardware. |
 
 ## What is in the package
 
@@ -149,7 +179,7 @@ any change to `I86.ASM` or `BIOS.ASM`, rebuild them too.
 From `project/MSDOS/poc`:
 
 ```
-python3 build.py                  # everything (about 6 minutes: MSDOS.ASM alone is 87 M instructions)
+python3 build.py                  # everything (about 3 minutes: MSDOS.ASM alone is 87 M instructions)
 python3 build.py CPM TERM         # only these, then the disk
 python3 build.py DISK             # only the disk (it takes Z86.SYS from z86.py)
 python3 publish.py                # copy the build into binaries/, symbols/, DISASM/bin;
@@ -158,7 +188,9 @@ python3 publish.py                # copy the build into binaries/, symbols/, DIS
 
 `build.py` leaves everything in `build/`; `publish.py` updates only files whose
 bytes changed. Built from the sources as they are, the outputs are
-byte-identical to those in `binaries/`.
+byte-identical to those in `binaries/` (checked from a fresh clone with
+exactly these steps). The MASM listings carry the date of the build in their
+page headers, so a rebuild on another day changes those lines only.
 
 ### The disassemblies
 
