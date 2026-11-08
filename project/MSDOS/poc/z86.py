@@ -87,21 +87,45 @@ def ea_table():
     return ['EA%d%d' % (m >> 6, m & 7) for m in range(0xC0)]
 
 
-def table_text(lo, hi, labels):
+def table_text(lo, hi, labels, slack=None):
+    """A split jump table: 256 low bytes, then 256 high bytes, each part on
+    its own page.  A part with fewer than 256 entries ends in free bytes; a
+    ;@SLACK block named after the part (EALO, EAHI) is assembled there, and
+    the rest is zero-filled to the page end (<part>END marks the slack's
+    end; _build asserts it stays inside the page)."""
+    slack = slack or {}
     out = ['        DS (($+255)&0FF00h)-$', lo + ':']
     for part, fmt in ((lo, '%s&0FFh'), (hi, '%s>>8')):
         if part == hi:
             out.append(hi + ':')
-        vals = [fmt % l for l in labels] + ['0'] * (256 - len(labels))
-        for i in range(0, 256, 8):
+        vals = [fmt % l for l in labels]
+        for i in range(0, len(vals), 8):
             out.append('        DB ' + ', '.join(vals[i:i + 8]))
+        if len(vals) < 256:
+            out += slack.get(part, [])
+            out += [part + 'END:', '        DS %s+256-$' % part]
     return out
 
 
 def preprocess(text):
     """;@FOR V a b c ... ;@END repeats a block with {V} replaced;
     ;@TABLE LO HI ops|ea inserts a split 256-entry jump table."""
-    out, lines, i = [], text.split('\n'), 0
+    lines = text.split('\n')
+    # ;@SLACK PART ... ;@END: lift the block out; it is assembled in the free
+    # end of the table page PART (see table_text)
+    slack, kept, i = {}, [], 0
+    while i < len(lines):
+        m = re.match(r'\s*;@SLACK\s+(\w+)', lines[i])
+        if m:
+            j = i + 1
+            while not re.match(r'\s*;@END', lines[j]):
+                j += 1
+            slack.setdefault(m.group(1), []).extend(lines[i + 1:j])
+            i = j + 1
+            continue
+        kept.append(lines[i])
+        i += 1
+    out, lines, i = [], kept, 0
     while i < len(lines):
         line = lines[i]
         m = re.match(r'\s*;@FOR\s+(\w+)\s+(.*)', line)
@@ -117,7 +141,7 @@ def preprocess(text):
         m = re.match(r'\s*;@TABLE\s+(\w+)\s+(\w+)\s+(\w+)', line)
         if m:
             labels = op_table() if m.group(3) == 'ops' else ea_table()
-            out += table_text(m.group(1), m.group(2), labels)
+            out += table_text(m.group(1), m.group(2), labels, slack)
         else:
             out.append(line)
         i += 1
@@ -146,6 +170,10 @@ def _build(bios):
     syms = {k: v for k, v in a.symbols.items() if isinstance(v, int)}
     assert syms['REGS'] == 0xD000 and syms['BOOTJP'] == 0xD0FD
     assert syms['WCORE'] == syms['BCORE'] + 0x100, 'the end of the BCORE page overflows'
+    if bios:
+        assert syms['SKEW'] == syms['SKEWAT'], 'BIOS code runs past SKEWAT (F0F8h)'
+    for part in ('EALO', 'EAHI'):
+        assert syms[part + 'END'] <= syms[part] + 0x100, 'the ;@SLACK block overflows ' + part
     if bios:
         assert syms['TTEND'] - syms['TTAB'] == 2 * 0x1E, 'TRAP checks CP 1Eh'
         assert len(code) == syms['BIOSEND'] - 0xD000 + syms['CPMEND'] - syms['ENDBIOS']

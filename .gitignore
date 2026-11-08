@@ -2,3 +2,9 @@
 __pycache__/
 *.pyc
 DISASM/build/
+project/MSDOS/mit/v1.25
+project/MSDOS/src/
+project/MSDOS/poc/build/*.ASM
+project/MSDOS/poc/build/*.EXE
+project/MSDOS/poc/build/*.OBJ
+project/MSDOS/poc/build/*.LST

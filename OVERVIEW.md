@@ -123,8 +123,13 @@ extra functions are each a trap:
   INTRQ ends it through RST 38h. Since 0038h is in the 8086's memory (the
   INT 0Eh vector), the BIOS points it at its handler for each transfer and
   puts the vector back afterwards. Seeks verify; 10 retries, then restore
-  and retry. Errors go to DOS as its codes (write protect, not ready, seek,
-  sector not found, CRC).
+  and retry; a sector read or write is also re-tried from a fresh restore
+  half-way through its 10 tries. Every controller wait times out after
+  about 3 s (an empty drive gives the WD1770 no index pulses, so it would
+  otherwise wait for ever): DOS then gets "not ready" instead of hanging
+  (added 2026-11-08, after the hardware run; `test_fdtimeout.py`). Errors
+  go to DOS as its codes (write protect, not ready, seek, sector not
+  found, CRC).
 - **Serial:** the FDD3000's WD2123 holds two 8251A-compatible channels
   with their own baud-rate generators: A at ports 80h (data) / 81h
   (control, status), baud register 10h; B at 40h / 41h, 11h. As in CBIOS
