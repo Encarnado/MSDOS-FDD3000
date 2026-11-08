@@ -71,7 +71,9 @@ def main():
     for lst in LSTS:                     # listings, when build.py made them here
         p = os.path.join(B, lst)
         if os.path.exists(p):
-            put('symbols/x86/' + lst, open(p, 'rb').read())
+            # MASM writes DOS text (CR LF); the package keeps its listings
+            # with LF line ends, as the original package did
+            put('symbols/x86/' + lst, open(p, 'rb').read().replace(b'\r\n', b'\n'))
     subprocess.run([sys.executable, os.path.join(HERE, 'mksyms.py')], check=True, stdout=subprocess.DEVNULL)
     subprocess.run([sys.executable, os.path.join(HERE, 'mkx86syms.py'), os.path.join(PKG, 'symbols', 'x86'),
                     os.path.join(PKG, 'symbols', 'x86')], check=True, stdout=subprocess.DEVNULL)
