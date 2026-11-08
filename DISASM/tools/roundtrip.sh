@@ -50,6 +50,9 @@ check iosys   iosys.asm   bin/IO.SYS      nasm
 check format  format.asm  bin/FORMAT.COM  nasm
 check cpmcom  cpmcom.asm  bin/CPM.COM     nasm
 check edit    edit.asm    bin/EDIT.COM    nasm
+check mode    mode.asm    bin/MODE.COM    nasm
+check term    term.asm    bin/TERM.COM    nasm
+check termz80 termz80.asm bin/TERMZ80.BIN z80
 
 echo "----------------------------------------"
 echo "PASS=$PASS FAIL=$FAIL TODO=$TODO"

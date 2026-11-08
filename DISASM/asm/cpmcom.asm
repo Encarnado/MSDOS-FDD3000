@@ -1,5 +1,5 @@
 ;==============================================================================
-;  MS-DOS 1.25 ON THE TIMEX FDD3000  --  THE DISASSEMBLIES  --  6/7
+;  MS-DOS 1.25 ON THE TIMEX FDD3000  --  THE DISASSEMBLIES  --  6/10
 ;  CPM.COM - CP/M 2.2 programs under MS-DOS, run natively on the Z80
 ;  (8086 .COM, 3286 bytes, runs at CS:0100h; carries volume 3 inside)
 ;==============================================================================

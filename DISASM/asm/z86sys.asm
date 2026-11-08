@@ -1,5 +1,5 @@
 ;==============================================================================
-;  MS-DOS 1.25 ON THE TIMEX FDD3000  --  THE DISASSEMBLIES  --  2/7
+;  MS-DOS 1.25 ON THE TIMEX FDD3000  --  THE DISASSEMBLIES  --  2/10
 ;  Z86.SYS - the 8086 interpreter and the Z80 BIOS (Z80, 8 737 bytes, D000h)
 ;==============================================================================
 ;
@@ -79,7 +79,7 @@
 ;  read as CTS (the WD2123 has no DSR pin).  To make room the dead RADVS
 ;  went and FDTOUT moved to a BCORE slot end; one relaxed JP to RADVSD is
 ;  a JR again.  MODE.COM and TERM.COM (with TERMZ80), which use these
-;  calls, are not yet volumes of this corpus.  Same size (8 737 bytes);
+;  calls, are volumes 8-10 of this corpus.  Same size (8 737 bytes);
 ;  everything from SECTIO to the BIOS data moved, SKEW / variables /
 ;  ENDBIOS did not (padding before SKEW), so CPMZ80 and CPM.COM are
 ;  unchanged.  The new code is in the free ends of the EALO and EAHI pages

@@ -1,5 +1,5 @@
 ;==============================================================================
-;  MS-DOS 1.25 ON THE TIMEX FDD3000  --  THE DISASSEMBLIES  --  5/7
+;  MS-DOS 1.25 ON THE TIMEX FDD3000  --  THE DISASSEMBLIES  --  5/10
 ;  FORMAT.COM - the disk formatter (8086, 1 628 bytes, .COM at 0100h)
 ;==============================================================================
 ;

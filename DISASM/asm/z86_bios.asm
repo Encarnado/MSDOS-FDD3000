@@ -1,5 +1,5 @@
 ;==============================================================================
-;  MS-DOS 1.25 ON THE TIMEX FDD3000  --  THE DISASSEMBLIES  --  2/7 (BIOS)
+;  MS-DOS 1.25 ON THE TIMEX FDD3000  --  THE DISASSEMBLIES  --  2/10 (BIOS)
 ;  Included by asm/z86sys.asm, which holds the volume preface, the ORG and
 ;  the shared hardware equates.  Not assembled on its own.  Range: EB46h-F220h
 ;==============================================================================

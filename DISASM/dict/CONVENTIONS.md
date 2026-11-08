@@ -82,3 +82,8 @@ hazards) go in `notes/<file>_findings.md` and the file preface.
 - status: verified (code + BOOT.ASM) | provisional (why)
 - notes: …
 ```
+
+## DOS call equates (8086 volumes), harmonised 2026-11-08
+One name per INT 21h function across iosys / format / cpmcom / edit / mode / term:
+`DOS_PRTSTR` (09h, was DOS_PRINT in edit), `DOS_SETDTA` (1Ah, was DOS_SETDMA),
+`DOS_BLKREAD` (27h, was DOS_BLKRD).

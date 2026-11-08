@@ -1085,7 +1085,7 @@ and the image is byte-identical (tools/roundtrip.sh edit).
 - status: verified (code + EDIT.ASM expression)
 - notes: drive byte + name + extension
 
-### DOS_PRINT — print a $-terminated string at DX
+### DOS_PRTSTR — print a $-terminated string at DX
 - class: constant (INT 21h function)
 - addresses: value 09h
 - aliases: none (the source writes the literal or the number)

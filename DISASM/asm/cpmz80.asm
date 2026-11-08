@@ -1,5 +1,5 @@
 ;==============================================================================
-;  MS-DOS 1.25 ON THE TIMEX FDD3000  --  THE DISASSEMBLIES  --  3/7
+;  MS-DOS 1.25 ON THE TIMEX FDD3000  --  THE DISASSEMBLIES  --  3/10
 ;  CPMZ80.BIN - CPM.COM's Z80 part: a CP/M 2.2 BDOS and BIOS over MS-DOS
 ;  (Z80, 2506 bytes, runs at F12Ch over Z86.SYS's COLD)
 ;==============================================================================

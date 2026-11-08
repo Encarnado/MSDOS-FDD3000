@@ -41,4 +41,16 @@ IMAGES = {
         extern_syms=[PKG + 'symbols/z80/Z86.SYS.sym'],
         extern_equ_src=PKG + 'project/MSDOS/poc/CPMZ80.ASM',
     ),
+    'TERMZ80': dict(
+        bin='bin/TERMZ80.BIN', asm='termz80.asm', org=0xF12C,
+        lst=PKG + 'symbols/z80/TERMZ80.lst', sym=PKG + 'symbols/z80/TERMZ80.sym',
+        # T_TERM (trap 1Ch, BP = 0, AH = function); FTAB: 10 DW, the functions
+        # DCHS, CH1: CH0 pushes them and RETs into the handler (ICHS / DCHS /
+        # ECHS), which returns into CH1 - code reached through LD HL / LD DE
+        seeds=[0xF12C, 0xF903, 0xFE1F, 0xF927],   # + ECHS, the third such handler
+        word_tables=[(0xF13F, 10)],
+        seed_listing_dw=True,   # the ESC / CSI tables: (char, DW handler) pairs
+        extern_syms=[PKG + 'symbols/z80/Z86.SYS.sym'],
+        extern_equ_src=PKG + 'project/MSDOS/poc/TERMZ80.ASM',
+    ),
 }

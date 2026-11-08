@@ -1,5 +1,5 @@
 ;==============================================================================
-;  MS-DOS 1.25 ON THE TIMEX FDD3000  --  THE DISASSEMBLIES  --  1/7
+;  MS-DOS 1.25 ON THE TIMEX FDD3000  --  THE DISASSEMBLIES  --  1/10
 ;  BOOT.BIN - the MS-DOS boot sector (Z80, 254 bytes, runs at 3F00h)
 ;==============================================================================
 ;
