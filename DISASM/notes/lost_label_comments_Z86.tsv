@@ -1,0 +1,19 @@
+O_CMPAL	3C CMP AL,imm8 (the most common one)
+O_POP_AX	POPDE, inline
+O_POP_CX	POPDE, inline
+O_POP_DX	POPDE, inline
+O_POP_BX	POPDE, inline
+O_POP_SP	POPDE, inline
+O_POP_BP	POPDE, inline
+O_POP_SI	POPDE, inline
+O_POP_DI	POPDE, inline
+O_PUSH_SP	the 8086 pushes SP after the decrement
+O_GRP80	80 / 82: r/m8, imm8
+O_GRP81	r/m16, imm16
+O_GRP83	r/m16, imm8 sign-extended
+O_MOV8C	MOV r/m16, sreg
+O_MOV8E	MOV sreg, r/m16
+R_NOTSTR	A8 / A9 after REP: plain TEST
+RNEG_DE	DE = -DE if DF
+O_RETFN	RETF imm16
+BIOSEND	the end of Z86.SYS
