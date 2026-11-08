@@ -23,6 +23,7 @@ SRC = os.path.join(HERE, 'I86.ASM')
 BIOS = os.path.join(HERE, 'BIOS.ASM')
 BOOT = os.path.join(HERE, 'BOOT.ASM')
 CPMZ80 = os.path.join(HERE, 'CPMZ80.ASM')
+TERMZ80 = os.path.join(HERE, 'TERMZ80.ASM')
 R16 = ['AX', 'CX', 'DX', 'BX', 'SP', 'BP', 'SI', 'DI']
 R8 = ['AL', 'CL', 'DL', 'BL', 'AH', 'CH', 'DH', 'BH']
 SEGS = ['ES', 'CS', 'SS', 'DS']
@@ -177,9 +178,12 @@ def _build(bios):
     syms = {k: v for k, v in a.symbols.items() if isinstance(v, int)}
     assert syms['REGS'] == 0xD000 and syms['BOOTJP'] == 0xD0FD
     assert syms['WCORE'] == syms['BCORE'] + 0x100, 'the end of the BCORE page overflows'
+    assert syms['EAHI'] == syms['EALO'] + 0x100 and syms['BCORE'] == syms['EAHI'] + 0x100, \
+        'the end of the EALO or EAHI page overflows'
     if bios:
         assert syms['SKEW'] == syms['SKEWAT'], 'BIOS code runs past SKEWAT (F0F8h)'
     assert syms['BOOTJP'] == 0xD0FD, 'the REGS page slack overflows into BOOTJP'
+    assert 0x10 <= syms['SAVED'] & 0xFF <= 0xFC, 'SAVED: SSET indexes it page-locally'
     for part in ('EALO', 'EAHI'):
         assert syms[part + 'END'] <= syms[part] + 0x100, 'the ;@SLACK block overflows ' + part
     if bios:
@@ -198,6 +202,25 @@ def cpmz80():
     assert syms['BUFEND'] <= 0xFF00, 'CPMZ80 runs into the Z80 stack'
     hdr = len(z).to_bytes(2, 'little') + b''.join(syms[n].to_bytes(2, 'little') for n in names)
     return hdr + z
+
+
+@functools.lru_cache(None)
+def termz80():
+    """-> TERM.COM's Z80 part, as BIOS trap 1Ch takes it (see cpmz80):
+    TERMZ80.ASM assembled after I86.ASM and BIOS.ASM, for ENDBIOS."""
+    code, syms = _build(True)
+    a = z80asm.Assembler()
+    tz = bytes(a.assemble(preprocess(open(SRC).read() + open(BIOS).read().replace('\n        END\n', '\n')
+                                     + open(TERMZ80).read())))
+    ts = {k: v for k, v in a.symbols.items() if isinstance(v, int)}
+    end = syms['BIOSEND'] - 0xD000
+    assert tz[:end] == code[:end], 'TERMZ80.ASM changed Z86.SYS'
+    z = tz[end:]
+    assert len(z) == ts['TERMEND'] - ts['ENDBIOS']
+    assert ts['TERMEND'] <= 0xFF00 - 64, 'TERMZ80 runs into the Z80 stack'
+    names = ('NEXT', 'JPHL', 'PEEKEY', 'GETKEY', 'CONOUT', 'DCSP', 'ENDBIOS')
+    hdr = len(z).to_bytes(2, 'little') + b''.join(syms[n].to_bytes(2, 'little') for n in names)
+    return hdr + z, ts
 
 
 @functools.lru_cache(None)

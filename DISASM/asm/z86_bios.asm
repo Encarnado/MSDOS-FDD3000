@@ -221,7 +221,7 @@ T_OUTP:
 ; ---------------------------------------------------------------------
 T_PRINT:
 	ld	a,(R_AL)	; the character
-	jp	SPRN		; channel A, once DSR and TxRDY are both on
+	jp	SPRN		; channel A, once CTS and TxRDY are both on
 T_AUXOUT:
 	ld	a,(R_AL)	; the character
 	jp	SAUXO		; channel B, the same handshake
@@ -252,7 +252,7 @@ FLUSH_DRAIN:				; (src: FL1)
 ; Exit:   CF=1, A = the key (now held in KBUF for GETKEY); CF=0: none.
 ; Corrupts: A, BC, DE (through CONIN).
 ; Callers: T_STAT, I16A (INT 16h AH=1); CPMZ80's DIO1, F_CST and B_CONST
-;         by absolute address (EBF6h - in the CPMSYM header).
+;         by absolute address (EBE3h - in the CPMSYM header).
 ;
 ; FIXED 2026-11-08: the "no key" exit was `cp KEYRDY / ret nz`, and CP
 ; sets carry when A < 04h: a link value of 00h-03h returned CF=1 - a
@@ -284,7 +284,7 @@ PEEKEY_HELD:				; (src: PK1)
 ; Exit:   A = key; KFLAG = 0.   Corrupts: A, HL, and BC, DE if the
 ;         terminal is asked (CONIN).
 ; Callers: T_INP, T_I16 (INT 16h AH=0); CPMZ80's F_CIN, DIO1, RL1 (read
-;         line) and B_CONIN (EC13h, in CPMSYM).
+;         line) and B_CONIN (EC00h, in CPMSYM).
 ; =====================================================================
 GETKEY:
 	ld	hl,KFLAG	; HL kept for the clear below
@@ -301,7 +301,7 @@ GETKEY:
 ; Entry:  A = character (all 8 bits are sent).
 ; Exit:   A = 0, Z.   Corrupts: A, BC, DE.
 ; Callers: T_OUTP, T_I10 (the VT52 sequences), COLD's message printer
-;         (CB2), CPMZ80 (CONOUT EC21h is in CPMSYM).
+;         (CB2), CPMZ80 (CONOUT EC0Eh is in CPMSYM).
 ;
 ; CBIOS A1.1's TXBYTE (FAA8h per BIOS.ASM).  Kept: the whole retry -
 ; COSEND, and on its failure wait for the terminal to show LINKERR (07h)
@@ -1332,14 +1332,39 @@ T_I14_FUNC:				; (src: I14A)
 	jr	z,I14GET	;   receive
 	dec	a	; 3?
 	jp	z,SSTAT		; 3: status only, straight into AH / AL
-	dec	a	; 4?
-	ret	nz		; 5 and up: nothing
-	jp	I14EXT		; 4: extended set-up (I86.ASM, with 0)
+	dec	a	; 4 (Z), or F0h / F1h, or nothing: I14X decides
+; ---------------------------------------------------------------------
+; I14X - INT 14h AH = 4, F0h, F1h  (João Encarnado's FDD3000 calls)
+; Entry: A = AH - 4, Z when AH = 4; C = the channel's control port.
+;   AH = 4:   PS/2 set-up from BX / CX (I14EXT, BCORE page end)
+;   AH = F0h: AL = the channel's mode byte, AH = its baud code, as last
+;             set (I14RD, WCORE slot end; the WD2123 can't be read back)
+;   AH = F1h: set the channel up: AL = mode byte (bits 1-0 forced to
+;             10b, x16 clock), CL = baud code 0-15 (see SSET) -> status
+;   anything else: nothing.
+; Falls through from T_I14 (the old JP I14EXT went: 3 bytes back).
+; ---------------------------------------------------------------------
+I14X:
+	jp	z,I14EXT	; AH = 4
+	sub	0F0h-4		; AH = F0h?
+	jp	z,I14RD		;   read back
+	dec	a		; AH = F1h?
+	ret	nz		; no: nothing
+	ld	a,(R_CL)	; baud code
+	cp	16		; 0-15 only
+	ret	nc
+	ld	e,a		; E = baud code for SSET
+	ld	a,(R_AL)	; mode byte ...
+	and	0FCh
+	or	2		; ... with the x16 clock, always
+	ld	d,a		; D = mode for SSET
+	call	SSET		; set the channel up (and SAVED)
+	jp	SSTAT		; AH / AL = its status
 I14PUT:
 	ld	a,(R_AL)	; the byte to send
 	ld	e,a		; SPUT sends E
 	ld	hl,0FFFFh	; timeout, about 1.6 s
-	call	SPUT		; CF=1: DSR / TxRDY never came
+	call	SPUT		; CF=1: CTS / TxRDY never came
 	jr	T_I14_STATUS	; status + timeout bit
 I14GET:
 	ld	hl,0FFFFh	; timeout, about 2.3 s
@@ -1366,10 +1391,10 @@ T_I14_STATUS:				; (src: I14T)
 ;   AH 0  print AL (SPUT, ~1.6 s timeout); then the status
 ;   other (1 initialise, 2 status): the status only - set-up is
 ;         COLD's / INT 14h's business
-; Exit:   AH = 90h ready (not busy + selected) when DSR is on, 10h busy
-;         (selected, DSR off); +1 timed out (AH 0 only).
+; Exit:   AH = 90h ready (not busy + selected) when CTS is on, 10h busy
+;         (selected, CTS off); +1 timed out (AH 0 only).
 ; Corrupts A, C, E, HL.  Reached through TTAB.  fddos.py always answers
-; 90h; here DSR, the printer's busy line in CBIOS's wiring, is read.
+; 90h; here CTS, the printer's busy line in CBIOS's wiring, is read.
 ; =====================================================================
 T_I17:
 	ld	c,UART_CMD_CHA	; the printer is channel A
@@ -1385,11 +1410,11 @@ T_I17:
 	and	1	; (AH bit 0)
 	ld	e,a	; E = timeout bit
 T_I17_STATUS:				; (src: I17A)
-	in	a,(c)		; 8251A status: bit 7 = DSR
-	rla	; DSR -> carry
-	ld	a,10h		; DSR off: busy, selected
-	jr	nc,T_I17_SET	; DSR off: busy
-	ld	a,90h		; DSR on: not busy, selected
+	in	a,(c)		; WD2123 status: bit 7 = CTS
+	rla	; CTS -> carry
+	ld	a,10h		; CTS off: busy, selected
+	jr	nc,T_I17_SET	; CTS off: busy
+	ld	a,90h		; CTS on: not busy, selected
 T_I17_SET:				; (src: I17B)
 	or	e	; + timeout
 	ld	(R_AH),a	; AH = printer status
@@ -1502,11 +1527,11 @@ T_RET:
 ; ---------------------------------------------------------------------
 ; CPMSYM - the Z86.SYS addresses CPMZ80 depends on, in z86.py
 ; cpmz80()'s order; T_CPML compares CPM.COM's copy with this.
-;   NEXT D83Bh, JPHL EB60h, PEEKEY EBF6h, GETKEY EC13h, CONOUT EC21h,
+;   NEXT D83Bh, JPHL EB4Dh, PEEKEY EBE3h, GETKEY EC00h, CONOUT EC0Eh,
 ;   DCSP F12Ah, ENDBIOS F12Ch (this build).
 ; ---------------------------------------------------------------------
 CPMSYM:
-	defw	NEXT, JPHL, PEEKEY, GETKEY, CONOUT, DCSP, ENDBIOS	; D83B EB60 EBF6 EC13 EC21 F12A F12C
+	defw	NEXT, JPHL, PEEKEY, GETKEY, CONOUT, DCSP, ENDBIOS	; D83B EB4D EBE3 EC00 EC0E F12A F12C
 CPMSYE:
 
 ; Free bytes (14 in the 2026-11-08 build).  The floppy timeouts made the

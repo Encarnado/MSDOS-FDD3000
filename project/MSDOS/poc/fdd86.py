@@ -38,12 +38,18 @@ class Link:
                         1l -> 4h, 4h -> 50, 50 (done)
     idle:               04 when a key is waiting, else 50
     07 from either side aborts. The terminal answers at once, so the
-    FDD's timeouts never run out here."""
+    FDD's timeouts never run out here; with .clock and .char_t /
+    .scroll_t set it holds back its 0Fh for that long after a character
+    (after LF: scroll_t), like a terminal that is still drawing."""
 
     def __init__(self):
         self.keys = bytearray()
         self.out = bytearray()
         self.echo = None
+        self.clock = None               # with char_t / scroll_t: a slow terminal
+        self.char_t = 0                 # T-states it is busy after a character
+        self.scroll_t = 0               #   and after LF (a scroll, perhaps)
+        self.busy = 0
         self.state = 'idle'
         self.v = 0x50
         self.waits = 0                  # 06 with no key: DOS waits for one
@@ -63,6 +69,8 @@ class Link:
         if v == 0x07:
             self.state = 'abort'
         elif s in ('idle', 'abort') and v == 0x0A:
+            if self.clock is not None and self.clock() < self.busy:
+                return                  # still drawing: no 0Fh yet
             self.state, self.v = 'out1', 0x0F
         elif s in ('idle', 'abort') and v == 0x06:
             if self.keys:
@@ -77,6 +85,8 @@ class Link:
         elif s == 'out3' and v == 0x50:
             ch = self.hi << 4 | self.lo
             self.out.append(ch)
+            if self.clock is not None:
+                self.busy = self.clock() + (self.scroll_t if ch == 10 else self.char_t)
             if self.echo:
                 self.echo(ch)
             self.state = 'idle'
@@ -94,12 +104,28 @@ class Link:
             raise LinkError('link: FDD wrote %02X in state %s' % (v, s))
 
 
+BAUDS = (50, 75, 110, 134.5, 150, 200, 300, 600, 1200, 1800, 2400, 3600, 4800, 7200, 9600, 19200)
+
+
 class WD2123:
     """The FDD3000's WD2123: two 8251A-compatible serial channels (A: data
     80h, control / status 81h; B: 40h, 41h) and their baud registers (10h,
     11h). What a channel transmits is kept in .tx, .rx is what it will
-    receive, .dsr its DSR input. The 8251A's mode / sync / command order is
-    modelled, so a wrong set-up sequence shows."""
+    receive, .cts its CTS input (status bit 7: the WD2123 has no DSR pin;
+    on the FDD3000's connectors CTS is pin 5). The 8251A's mode / sync /
+    command order is modelled, so a wrong set-up sequence shows.
+
+    .rx bytes are there at once. A host sending in real time: .clock = a
+    function giving the Z80's T-states (4 MHz), then .host(data) - its
+    bytes arrive one per character time at the channel's rate and format,
+    the one the 8251A holds is overwritten by the next if it is not read
+    (overrun: status bit 4, .lost counts them). With .flow 'x' the host
+    stops for XOFF and goes on at XON, with 'r' it follows RTS; it sends
+    .lag more bytes before it stops. The receiver takes nothing (.deaf)
+    unless the command has receive enable and CS (bit 1: with 0 the
+    WD2123's receive clock is the SELCLK pin, tied high on the FDD3000).
+    Command bits (WD2123 datasheet): 0 transmit, 1 CS, 2 receive, 3
+    break, 4 error reset, 5 RTS, 6 internal reset, 7 loop-back."""
 
     class Channel:
         def __init__(self):
@@ -108,9 +134,60 @@ class WD2123:
             self.syncs = 0
             self.tx = bytearray()
             self.rx = bytearray()
-            self.dsr = True
+            self.cts = True
             self.errors = 0             # status bits 3-6
             self.dropped = 0            # bytes written with the transmitter off
+            self.clock = None
+            self.src = bytearray()      # what the host has still to send
+            self.hold = None            # the received byte the 8251A holds
+            self.next_t = 0             # when the host's next byte is in
+            self.flow = None
+            self.lag = 2
+            self.paused = False
+            self.left = 0               # bytes the host sends before it stops
+            self.lost = 0
+            self.deaf = 0               # bytes sent while it couldn't receive
+            self.breaks = 0             # breaks sent
+
+        def char_t(self):
+            """T-states per character at the set rate and format."""
+            m = self.mode or 0x4E
+            bits = 1 + 5 + (m >> 2 & 3) + (1 if m & 0x10 else 0) + {1: 1, 2: 1.5, 3: 2}.get(m >> 6, 1)
+            return 4e6 * bits / BAUDS[(self.baud or 0) & 15]
+
+        def host(self, data):
+            if not self.src:
+                self.next_t = max(self.next_t, self.clock()) + self.char_t()
+            self.src += data
+
+        def advance(self):
+            if self.clock is None:
+                return
+            now = self.clock()
+            while self.src and self.next_t <= now:
+                if self.paused and not self.left:
+                    self.next_t = now + self.char_t()
+                    return
+                if self.paused:
+                    self.left -= 1
+                if (self.cmd or 0) & 6 != 6:    # receiver off, or CS 0: its
+                    self.src.pop(0)             #   clock is SELCLK, tied high
+                    self.deaf += 1
+                    self.next_t += self.char_t()
+                    continue
+                if self.hold is not None:
+                    self.lost += 1
+                    self.errors |= 0x10
+                self.hold = self.src.pop(0)
+                self.next_t += self.char_t()
+
+        def pause(self, on):
+            if on and not self.paused:
+                self.paused, self.left = True, self.lag
+            elif not on and self.paused:
+                self.paused = False
+                if self.clock is not None:
+                    self.next_t = max(self.next_t, self.clock() + self.char_t())
 
         def control(self, v):
             if self.state == 'sync':
@@ -126,23 +203,36 @@ class WD2123:
             elif v & 0x40:              # internal reset
                 self.state, self.cmd = 'mode', None
             else:
+                if v & 8 and not (self.cmd or 0) & 8:
+                    self.breaks += 1
                 self.cmd = v
                 if v & 0x10:
                     self.errors = 0
+                if self.flow == 'r':
+                    self.pause(not v & 0x20)
 
         def status(self):
             cmd = self.cmd or 0
-            return (0x01 | 0x04 | (0x02 if self.rx and cmd & 4 else 0) | self.errors
-                    | (0x80 if self.dsr else 0))
+            self.advance()
+            ready = self.rx or self.hold is not None
+            return (0x01 | 0x04 | (0x02 if ready and cmd & 4 else 0) | self.errors
+                    | (0x80 if self.cts else 0))
 
         def write(self, v):
             if self.cmd is not None and self.cmd & 1 and self.state == 'cmd':
                 self.tx.append(v)
+                if self.flow == 'x' and v in (0x11, 0x13):
+                    self.advance()
+                    self.pause(v == 0x13)
             else:
                 self.dropped += 1
 
         def read(self):
-            return self.rx.pop(0) if self.rx else 0
+            if self.rx:
+                return self.rx.pop(0)
+            self.advance()
+            v, self.hold = self.hold, None
+            return v or 0
 
     def __init__(self):
         self.a, self.b = self.Channel(), self.Channel()
@@ -189,6 +279,8 @@ class FDD86(machine.Machine):
                   if d is not None else None for i, d in enumerate(disks)]
         self.link = Link()
         self.wd2123 = WD2123()
+        clock = lambda: self.tstates
+        self.link.clock = self.wd2123.a.clock = self.wd2123.b.clock = clock
         super().__init__(drives, max_instr=1 << 62)
         self.disks = disks
         self.syms = z86.build(bios=True)[1]    # the disk's image must match
@@ -221,9 +313,10 @@ class FDD86(machine.Machine):
         the ROM file, its load of sector 0 to 3F00h is done in Python)."""
         super().boot()
 
-    def run(self, limit=None):
+    def run(self, limit=None, until=None):
         """Run until DOS waits for a key with none typed. limit: Z80
-        instructions (default self.limit, None = no limit)."""
+        instructions (default self.limit, None = no limit); until: stop
+        when the T-state count reaches it."""
         limit = limit or self.limit
         c, m, fdc, link = self.cpu, self.m, self.fdc, self.link
         ops = c.ops
@@ -234,6 +327,8 @@ class FDD86(machine.Machine):
         link.waits = 0
         while True:
             if link.waits > 1 and not link.keys:
+                return
+            if until is not None and self.tstates >= until:
                 return
             self.icount += 1
             if fdc.busy_until is not None or fdc.drq:

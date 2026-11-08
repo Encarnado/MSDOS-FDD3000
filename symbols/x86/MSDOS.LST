@@ -1,4 +1,4 @@
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-1
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-1
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -57,7 +57,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 52	                             C	; 1.25 03/03/82 Put marker (00) at end of directory to speed searches
 53	                             C	;
 54	                             C	; *************************************************************
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-2
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-2
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -116,7 +116,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 107	 0019  ????                  C	FIRCLUS DW      ?       ;First cluster of file
 108	 001B  ????                  C	LSTCLUS DW      ?       ;Last cluster accessed
 109	 001D  ????                  C	CLUSPOS DW      ?       ;Position of last cluster accessed
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-3
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-3
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -175,7 +175,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 162	 0014                        C	DPBLOCK ENDS
 163	                             C	
 164	 = 0014                      C	DPBSIZ  EQU     20      ;Size of the structure in bytes
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-4
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-4
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -234,7 +234,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 217	                    ]        C	
 218	                             C	
 219	 0012     03 [               C	BIOSAUXOUT      DB      3 DUP (?)       ;Output byte to auxilliary
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-5
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-5
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -293,7 +293,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 272	 0018                        C	STKPTRS ENDS
 273	                             C	
 274	                             C	; Start of code
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-6
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-6
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -352,7 +352,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 327	 0054  B0 00                 C	        MOV     AL,0
 328	 0056  CF                    C	IRET:   IRET
 329	                             C	
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-7
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-7
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -411,7 +411,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 382	 00AF  5A                    C	        POP     DX
 383	 00B0  5E                    C	        POP     SI
 384	 00B1  5F                    C	        POP     DI
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-8
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-8
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -470,7 +470,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 437	 0112  0117 R                C	        DW      VERIFY
 438	                             C	
 439	 0114                        C	INUSE:
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-9
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-9
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -529,7 +529,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 492	                             C	;       DS = CS
 493	                             C	;       BX = Cluster number
 494	                             C	;       BP = Base of drive parameters
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-10
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-10
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -588,7 +588,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 547	 0193  D1 E2                 C	        SHL     DX,1
 548	 0195  81 E7 000F            C	        AND     DI,0FH
 549	 0199  EB 04                 C	        JMP     SHORT PACKIN
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-11
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-11
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -647,7 +647,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 602	                             C	;       Carry set if file not found
 603	                             C	;       ELSE
 604	                             C	;       Zero set if attributes match (always except when creating)
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-12
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-12
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -706,7 +706,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 657	 0226  8A 26 0116 R          C	        MOV     AH,[ATTRIB]             ;Attributes of search
 658	 022A  F6 D4                 C	        NOT     AH
 659	 022C  22 24                 C	        AND     AH,[SI]                 ;Compare with attributes of file
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-13
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-13
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -765,7 +765,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 712	                             C	;       Same as outputs of GETENTRY, above
 713	                             C	; Function:
 714	                             C	;       Update AL, BX, and [LASTENT] for next directory entry.
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-14
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-14
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -824,7 +824,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 767	 02DB  74 08                 C	        JZ      DELNXT
 768	 02DD  3B 5E 0D              C	        CMP     BX,[BP.MAXCLUS]
 769	 02E0  77 03                 C	        JA      DELNXT
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-15
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-15
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -883,7 +883,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 822	 0351  C6 06 002B R FF       C	        MOV     BYTE PTR [DIRTYDIR],-1  ;Flag change in directory
 823	 0356  BE 0122 R             C	        MOV     SI,OFFSET DOSGROUP:NAME3
 824	 0359  BF 010B R             C	        MOV     DI,OFFSET DOSGROUP:NAME1
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-16
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-16
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -942,7 +942,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 877	 03A8                        C	MOVCHK:
 878	 03A8  E8 135A R             C	        CALL    GETLET
 879	 03AB  72 C4                 C	        JB      RET5
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-17
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-17
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -1001,7 +1001,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 932	 03F4  0C 40                 C	        OR      AL,40H
 933	 03F6  AA                    C	        STOSB
 934	 03F7  8B C2                 C	        MOV     AX,DX           ;Restore starting cluster
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-18
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-18
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -1060,7 +1060,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 987	 043E  8B 76 12              C	        MOV     SI,[BP.FAT]
 988	 0441  0A 64 FF              C	        OR      AH,[SI-1]       ;Dirty byte for FAT
 989	 0444  78 0A                 C	        JS      NEWDSK          ;If either say new disk, then it's so
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-19
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-19
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -1119,7 +1119,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 1042	 04B8                        C	OKRET1:
 1043	 04B8  B0 00                 C	        MOV     AL,0
 1044	 04BA  C3                    C	        RET
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-20
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-20
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -1178,7 +1178,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 1097	                             C	
 1098	                             C	; Inputs:
 1099	                             C	;       DS = CS
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-21
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-21
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -1237,7 +1237,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 1152	 0569  B9 0001               C	        MOV     CX,1
 1153	 056C  C3                    C	        RET
 1154	                             C	
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-22
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-22
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -1296,7 +1296,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 1207	 05D1  92                    C	        XCHG    AX,DX
 1208	 05D2  AB                    C	        STOSW
 1209	 05D3  92                    C	        XCHG    AX,DX
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-23
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-23
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -1355,7 +1355,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 1262	                             C	
 1263	 05FC  E8 0669 R             C	        CALL    DSKREAD
 1264	 05FF  73 FA                 C	        JNC     RET8
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-24
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-24
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -1414,7 +1414,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 1317	 0662  FB                    C	        STI
 1318	 0663  5D                    C	        POP     BP
 1319	 0664  3C 02                 C	        CMP     AL,2
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-25
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-25
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -1473,7 +1473,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 1372	 0694  55                    C	        PUSH    BP
 1373	 0695  53                    C	        PUSH    BX
 1374	 0696  51                    C	        PUSH    CX
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-26
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-26
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -1532,7 +1532,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 1427	                             C	
 1428	                             C	
 1429	 06F6                        C	SEQRD:  ;System call 20
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-27
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-27
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -1591,7 +1591,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 1482	 075E  26: 89 45 0C          C	        MOV     ES:[DI.EXTENT],AX
 1483	 0762  2E: A0 0138 R         C	        MOV     AL,CS:[DSKERR]
 1484	 0766  C3                    C	        RET
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-28
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-28
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -1650,7 +1650,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 1537	 0790  8B 75 0E              C	        MOV     SI,[DI.RECSIZ]
 1538	 0793  0B F6                 C	        OR      SI,SI
 1539	 0795  75 06                 C	        JNZ     HAVRECSIZ
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-29
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-29
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -1709,7 +1709,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 1592	 0814  F7 E6                 C	        MUL     SI              ;Multiply by bytes per record
 1593	 0816  8B C8                 C	        MOV     CX,AX
 1594	 0818  03 06 0031 R          C	        ADD     AX,[DMAADD]     ;See if it will fit in one segment
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-30
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-30
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -1768,7 +1768,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 1647	 0867  33 D2                 C	        XOR     DX,DX
 1648	 0869  F7 76 02              C	        DIV     [BP.SECSIZ]     ;How many whole sectors?
 1649	 086C  A3 015A R             C	        MOV     [SECCNT],AX
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-31
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-31
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -1827,7 +1827,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 1702	                             C	;       read if necessary.
 1703	                             C	; Outputs:
 1704	                             C	;       SI = Pointer to buffer
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-32
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-32
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -1886,7 +1886,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 1757	 091C  8B 36 0039 R          C	        MOV     SI,[BUFFER]
 1758	 0920  03 36 0150 R          C	        ADD     SI,[BYTSECPOS]
 1759	 0924  C3                    C	        RET
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-33
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-33
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -1945,7 +1945,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 1812	 0986  89 3E 014A R          C	        MOV     [CLUSNUM],DI
 1813	 098A  FF 06 0148 R          C	        INC     [LASTPOS]
 1814	 098E  B0 00                 C	        MOV     AL,0
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-34
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-34
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -2004,7 +2004,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 1867	 09E1  8B 36 002F R          C	        MOV     SI,[CONTPOS]
 1868	 09E5  0B F6                 C	        OR      SI,SI
 1869	 09E7  75 AE                 C	        JNZ     TRANBUF
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-35
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-35
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -2063,7 +2063,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 1922	 0A3F  73 02                 C	        JAE     ENUF
 1923	 0A41  8B C8                 C	        MOV     CX,AX
 1924	 0A43                        C	ENUF:
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-36
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-36
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -2122,7 +2122,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 1977	 0ABA  07                    C	        POP     ES
 1978	 0ABB                        C	NOTBUFFED:
 1979	 0ABB  59                    C	        POP     CX
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-37
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-37
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -2181,7 +2181,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 2032	                             C	
 2033	 0B2D                        C	RDLAST:
 2034	 0B2D  A1 0158 R             C	        MOV     AX,[BYTCNT2]
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-38
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-38
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -2240,7 +2240,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 2087	 0B92                        C	WRTERR:
 2088	 0B92  C6 06 0138 R 01       C	        MOV     BYTE PTR [DSKERR],1
 2089	 0B97                        C	LVDSK:
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-39
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-39
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -2299,7 +2299,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 2142	 0BF8  89 1E 014A R          C	        MOV     [CLUSNUM],BX
 2143	 0BFC  89 16 0148 R          C	        MOV     [LASTPOS],DX
 2144	 0C00  2B C2                 C	        SUB     AX,DX           ;Last cluster minus current cluster
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-40
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-40
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -2358,7 +2358,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 2197	 0C7E  74 0F                 C	        JZ      FINWRT
 2198	 0C80  A3 0156 R             C	        MOV     [BYTCNT1],AX
 2199	 0C83  E8 0965 R             C	        CALL    NEXTSEC
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-41
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-41
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -2417,7 +2417,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 2252	 0D06                        C	KILLFIL:
 2253	 0D06  33 DB                 C	        XOR     BX,BX
 2254	 0D08  26: 87 5D 19          C	        XCHG    BX,ES:[DI.FIRCLUS]
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-42
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-42
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -2476,7 +2476,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 2307	 0D3B  4B                    C	        DEC     BX
 2308	 0D3C                        C	FINCLUS:
 2309	 0D3C  89 1E 014A R          C	        MOV     [CLUSNUM],BX    ;Last cluster accessed
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-43
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-43
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -2535,7 +2535,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 2362	 0D91  D3 E2                 C	        SHL     DX,CL
 2363	 0D93  0A D3                 C	        OR      DL,BL
 2364	 0D95  03 56 0B              C	        ADD     DX,[BP.FIRREC]
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-44
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-44
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -2594,7 +2594,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 2417	                             C	
 2418	 0DBA  FF 34                 C	        PUSH    [SI]
 2419	 0DBC  52                    C	        PUSH    DX
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-45
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-45
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -2653,7 +2653,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 2472	 0E18  5B                    C	        POP     BX
 2473	 0E19  59                    C	        POP     CX              ;Don't need this stuff since we're successful
 2474	 0E1A  5A                    C	        POP     DX
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-46
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-46
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -2712,7 +2712,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 2527	 0E50                        C	SRCHFRST: ;System call 17
 2528	 0E50  E8 01C8 R             C	        CALL    GETFILE
 2529	 0E53                        C	SAVPLCE:
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-47
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-47
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -2771,7 +2771,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 2582	 0EAC  B9 000A               C	        MOV     CX,10
 2583	 0EAF  F3/ AB                C	        REP     STOSW
 2584	 0EB1  AA                    C	        STOSB
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-48
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-48
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -2830,7 +2830,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 2637	 0F07  B0 00                 C	        MOV     AL,0
 2638	 0F09  83 F9 40              C	        CMP     CX,64
 2639	 0F0C  73 A4                 C	        JAE     RET14           ;Only 3-byte field if RECSIZ >= 64
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-49
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-49
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -2889,7 +2889,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 2692	 0F66                        C	WRTFATS:
 2693	                             C	; DS=CS. Writes back all dirty FATs. All registers destroyed.
 2694	 0F66  32 C0                 C	        XOR     AL,AL
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-50
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-50
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -2948,7 +2948,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 2747	 0FCC  8A FD                 C	        MOV     BH,CH
 2748	 0FCE  3A C3                 C	        CMP     AL,BL
 2749	 0FD0  76 05                 C	        JBE     NOEDIT
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-51
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-51
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -3007,7 +3007,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 2802	 1031  B1 0C                 C	        MOV     CL,ESCTABLEN
 2803	 1033  57                    C	        PUSH    DI
 2804	 1034  BF 0004 R             C	        MOV     DI,OFFSET DOSGROUP:ESCTAB
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-52
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-52
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -3066,7 +3066,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 2857	 1093  0A E4                 C	        OR      AH,AH
 2858	 1095  75 07                 C	        JNZ     GETCH1
 2859	 1097  0A FF                 C	        OR      BH,BH
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-53
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-53
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -3125,7 +3125,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 2912	 10EA  8A CB                 C	        MOV     CL,BL
 2913	 10EC  2A CF                 C	        SUB     CL,BH
 2914	 10EE  EB 07                 C	        JMP     SHORT COPYEACH
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-54
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-54
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -3184,7 +3184,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 2967	 113C  F6 D1                 C	        NOT     CL
 2968	 113E  02 CB                 C	        ADD     CL,BL
 2969	 1140  2A CF                 C	        SUB     CL,BH
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-55
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-55
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -3243,7 +3243,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 3022	 1186  B0 5E                 C	        MOV     AL,"^"
 3023	 1188  E8 119F R             C	        CALL    OUT
 3024	 118B  58                    C	        POP     AX
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-56
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-56
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -3302,7 +3302,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 3077	                             C	; allow processing to continue; 2) the original interrupt return address
 3078	                             C	; to the code that performed the function call in the first place. If the
 3079	                             C	; user CTRL-C handler wishes to continue, it must leave all registers
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-57
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-57
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -3361,7 +3361,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 3132	 1237  C3                    C	RET19:  RET
 3133	                             C	
 3134	 1238                        C	ZERPOS:
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-58
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-58
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -3420,7 +3420,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 3187	 128D  50                    C	        PUSH    AX
 3188	 128E  E8 11C4 R             C	        CALL    STATCHK
 3189	 1291  58                    C	        POP     AX
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-59
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-59
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -3479,7 +3479,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 3242	 12E2  E8 1352 R             C	        CALL    SCANB           ;Peel off blanks and tabs
 3243	 12E5  E8 137F R             C	        CALL    DELIM           ;Is it a one-time-only delimiter?
 3244	 12E8  75 04                 C	        JNZ     NOSCAN
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-60
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-60
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -3538,7 +3538,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 3297	 1340  F3/ AA                C	        REP     STOSB
 3298	 1342                        C	NOSTAR:
 3299	 1342  AA                    C	        STOSB
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-61
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-61
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -3597,7 +3597,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 3352	 138B  3C 2C                 C	        CMP     AL,","
 3353	 138D  74 06                 C	        JZ      RET101
 3354	 138F                        C	SPCHK:
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-62
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-62
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -3656,7 +3656,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 3407	 13CB  A5                    C	        MOVSW
 3408	 13CC  A5                    C	        MOVSW
 3409	 13CD  A5                    C	        MOVSW
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-63
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-63
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -3715,7 +3715,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 3462	 1437  A3 0047 R             C	        MOV     [DAYCNT],AX
 3463	 143A  56                    C	        PUSH    SI
 3464	 143B  51                    C	        PUSH    CX
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-64
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-64
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -3774,7 +3774,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 3517	 1496  C8 A5                 C	        DB      200,165
 3518	 1498  C8 A5                 C	        DB      200,165
 3519	                             C	
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-65
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-65
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -3833,7 +3833,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 3572	 14FA  B8 05B5               C	        MOV     AX,FOURYEARS
 3573	 14FD  8B DA                 C	        MOV     BX,DX
 3574	 14FF  F7 E1                 C	        MUL     CX
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-66
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-66
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -3892,7 +3892,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 3627	 1562  73 F3                 C	        JAE     RET26
 3628	 1564  80 FE 3C              C	        CMP     DH,60           ;Check seconds
 3629	 1567  73 EE                 C	        JAE     RET26
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-67
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-67
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -3951,7 +3951,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 3682	 003B  0000                  C	BUFSECNO DW     0
 3683	 003D  FF                    C	BUFDRVNO DB     -1
 3684	 003E  00                    C	DIRTYBUF DB     0
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-68
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-68
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -4010,7 +4010,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 3737	 0138  ??                    C	DSKERR  DB      ?
 3738	 0139  ??                    C	TRANS   DB      ?
 3739	 013A  ??                    C	PREREAD DB      ?       ;0 means preread; 1 means optional
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-69
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-69
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -4069,7 +4069,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 3792	 0012                        C	FLGFAT:
 3793	 0012  26: 8B 7C 12          C	        MOV     DI,ES:[SI.FAT]  ;get pointer to FAT
 3794	 0016  4F                    C	        DEC     DI              ;Point to dirty byte
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-70
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-70
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -4128,7 +4128,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 3847	 006B  AA                    C	        STOSB           ;CLUSSHFT
 3848	 006C  A5                    C	        MOVSW           ;FIRFAT (= number of reserved sectors)
 3849	 006D  A4                    C	        MOVSB           ;FATCNT
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-71
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-71
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -4187,7 +4187,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 3902	 00D5  26: A0 0246 R         C	        MOV     AL,ES:[DRVCNT]
 3903	 00D9  FE C0                 C	        INC     AL
 3904	 00DB  26: A2 0246 R         C	        MOV     ES:[DRVCNT],AL
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-72
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-72
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -4246,7 +4246,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 3957	 0143  8E D9                 C	        MOV     DS,CX
 3958	 0145  8A 07                 C	        MOV     AL,[BX]
 3959	 0147  F6 D0                 C	        NOT     AL
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-73
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-73
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -4305,7 +4305,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 4012	 01BF  91                    C	        XCHG    AX,CX
 4013	 01C0  BF 0259 R             C	        MOV     DI,OFFSET DOSGROUP:MEMSTRT.FAT
 4014	 01C3                        C	FATPOINT:
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-74
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-74
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -4364,7 +4364,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 4067	       0000 0000 0000 0000   C	
 4068	                             C	
 4069	 0246  00                    C	DRVCNT  DB      0
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	1-75
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-75
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -4374,7 +4374,7 @@ MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 4073	 0247                        C	DATA    ENDS
 4074	                             C	        END
 
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	Symbols-1
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols-1
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -4434,7 +4434,7 @@ DOSGROUP . . . . . . . . . . . .	GROUP
   DATA . . . . . . . . . . . . . .	025E	WORD  	NONE	
 SEGBIOS. . . . . . . . . . . . .	002D	AT    	0040	
 
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	Symbols-2
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols-2
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -4493,7 +4493,7 @@ BUFOUT . . . . . . . . . . . . .	L NEAR 	117D	CODE
 BUFRD. . . . . . . . . . . . . .	L NEAR 	0925	CODE
 BUFSEC . . . . . . . . . . . . .	L NEAR 	08A0	CODE
 BUFSECNO . . . . . . . . . . . .	L WORD 	003B	CONSTANTS
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	Symbols-3
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols-3
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -4552,7 +4552,7 @@ DIRBUFID . . . . . . . . . . . .	L WORD 	0041	CONSTANTS
 DIRCOMP. . . . . . . . . . . . .	L NEAR 	0560	CODE
 DIRREAD. . . . . . . . . . . . .	L NEAR 	05E8	CODE
 DIRSEC . . . . . . . . . . . . .	Number	000B	
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	Symbols-4
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols-4
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -4611,7 +4611,7 @@ ESCTAB . . . . . . . . . . . . .	L NEAR 	0004	CODE
 ESCTABLEN. . . . . . . . . . . .	Number	000C	
 EVENFIL. . . . . . . . . . . . .	L NEAR 	0B05	CODE
 EVENMOV. . . . . . . . . . . . .	L NEAR 	0ABA	CODE
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	Symbols-5
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols-5
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -4670,7 +4670,7 @@ GETBUF . . . . . . . . . . . . .	L NEAR 	09F6	CODE
 GETCH. . . . . . . . . . . . . .	L NEAR 	0FEE	CODE
 GETCH1 . . . . . . . . . . . . .	L NEAR 	109E	CODE
 GETCH2 . . . . . . . . . . . . .	L NEAR 	110C	CODE
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	Symbols-6
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols-6
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -4729,7 +4729,7 @@ KILNEW . . . . . . . . . . . . .	L NEAR 	106B	CODE
 LASTENT. . . . . . . . . . . . .	L WORD 	0103	DATA
 LASTPOS. . . . . . . . . . . . .	L WORD 	0148	DATA
 LEAVE. . . . . . . . . . . . . .	L NEAR 	009C	CODE
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	Symbols-7
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols-7
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -4788,7 +4788,7 @@ NORMFCB. . . . . . . . . . . . .	L NEAR 	0E7C	CODE
 NORMFCB1 . . . . . . . . . . . .	L NEAR 	0774	CODE
 NORMFCB2 . . . . . . . . . . . .	L NEAR 	0DA4	CODE
 NORMFCB3 . . . . . . . . . . . .	L NEAR 	04C5	CODE
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	Symbols-8
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols-8
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -4847,7 +4847,7 @@ RDLASTJ. . . . . . . . . . . . .	L NEAR 	0A1B	CODE
 RDLP . . . . . . . . . . . . . .	L NEAR 	0A80	CODE
 RDMID. . . . . . . . . . . . . .	L NEAR 	0A63	CODE
 RDSEC. . . . . . . . . . . . . .	L NEAR 	08DD	CODE
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	Symbols-9
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols-9
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -4906,7 +4906,7 @@ RNDWRT . . . . . . . . . . . . .	L NEAR 	0716	CODE
 SAMSIZ . . . . . . . . . . . . .	L NEAR 	0CB9	CODE
 SAMSTK . . . . . . . . . . . . .	L NEAR 	0097	CODE
 SAVCH. . . . . . . . . . . . . .	L NEAR 	1010	CODE
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	Symbols-10
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols-10
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 
@@ -4965,7 +4965,7 @@ TABBAK . . . . . . . . . . . . .	L NEAR 	10CC	CODE
 TABLP. . . . . . . . . . . . . .	L NEAR 	122F	CODE
 TEMP . . . . . . . . . . . . . .	L WORD 	0131	DATA
 THISDRV. . . . . . . . . . . . .	L BYTE 	013C	DATA
- The Microsoft MACRO Assembler             11-06-<6    	PAGE	Symbols-11
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols-11
 MS-DOS version 1.25 by Tim Paterson     March 3, 1982
 
 

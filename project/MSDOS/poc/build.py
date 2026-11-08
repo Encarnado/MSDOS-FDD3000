@@ -10,7 +10,7 @@ release (../mit/v1.25); the tools from ../src/v20object.
     python3 build.py CPM
     python3 build.py EDIT
 
-Output in build/: MSDOS.SYS, COMMAND.COM, IOFDD.SYS, FORMAT.COM, CPM.COM, EDIT.COM and MSDOS.DSK.
+Output in build/: MSDOS.SYS, COMMAND.COM, IOFDD.SYS, FORMAT.COM, CPM.COM, EDIT.COM, MODE.COM, TERM.COM and MSDOS.DSK.
 MSDOS.DSK also gets MBASIC.CPM and TTT.BAS from ~/Claude/Resources/Disks/galo-basic.dsk
 (BASIC.COM there: MBASIC 5.2), if that disk is there.
 """
@@ -45,7 +45,7 @@ def tool(prog, tail):
 def build(name, main=None):
     """MASM + LINK + EXE2BIN: name.ASM (or main.ASM, which includes it) -> binary."""
     main = main or name
-    ext = '.COM' if name in ('COMMAND', 'FORMAT', 'CPM', 'EDIT') else '.SYS'
+    ext = '.COM' if name in ('COMMAND', 'FORMAT', 'CPM', 'EDIT', 'MODE', 'TERM') else '.SYS'
     out = name + ext
     tool('MASM.EXE', '%s,%s,%s,NUL;' % (main, name, name))
     lst = open(os.path.join(B, name + '.LST'), 'rb').read()
@@ -72,12 +72,17 @@ def main():
     dos_text(os.path.join(HERE, 'FORMAT.ASM'), os.path.join(B, 'FORMAT.ASM'))
     dos_text(os.path.join(HERE, 'CPM.ASM'), os.path.join(B, 'CPM.ASM'))
     dos_text(os.path.join(HERE, 'EDIT.ASM'), os.path.join(B, 'EDIT.ASM'))
+    dos_text(os.path.join(HERE, 'MODE.ASM'), os.path.join(B, 'MODE.ASM'))
+    dos_text(os.path.join(HERE, 'TERM.ASM'), os.path.join(B, 'TERM.ASM'))
     z = z86.cpmz80()                    # CPM.COM's Z80 part, as DB lines
     lines = ['        DB      ' + ','.join('0%02XH' % c for c in z[i:i + 16]) for i in range(0, len(z), 16)]
     open(os.path.join(B, 'CPMZ80.INC'), 'wb').write(('\r\n'.join(lines) + '\r\n\x1a').encode())
+    z = z86.termz80()[0]                # TERM.COM's Z80 part
+    lines = ['        DB      ' + ','.join('0%02XH' % c for c in z[i:i + 16]) for i in range(0, len(z), 16)]
+    open(os.path.join(B, 'TERMZ80.INC'), 'wb').write(('\r\n'.join(lines) + '\r\n\x1a').encode())
 
     only = [a.upper() for a in sys.argv[1:]]
-    for name, main in (('IOFDD', None), ('COMMAND', None), ('FORMAT', None), ('CPM', None), ('EDIT', None),
+    for name, main in (('IOFDD', None), ('COMMAND', None), ('FORMAT', None), ('CPM', None), ('EDIT', None), ('MODE', None), ('TERM', None),
                        ('MSDOS', 'STDDOS')):
         if not only or name in only:
             print(name)
@@ -86,7 +91,7 @@ def main():
     io_sys = open(os.path.join(B, 'IOFDD.SYS'), 'rb').read()
     dos_sys = open(os.path.join(B, 'MSDOS.SYS'), 'rb').read()
     files = [(f, open(os.path.join(B, f), 'rb').read())
-             for f in ('COMMAND.COM', 'EDLIN.COM', 'DEBUG.COM', 'CHKDSK.COM', 'FORMAT.COM', 'CPM.COM', 'EDIT.COM')]
+             for f in ('COMMAND.COM', 'EDLIN.COM', 'DEBUG.COM', 'CHKDSK.COM', 'FORMAT.COM', 'CPM.COM', 'EDIT.COM', 'MODE.COM', 'TERM.COM')]
     if os.path.exists(GALO):            # MBASIC 5.2 for CPM.COM, if it is here
         import fdd
         g = {k[1]: v for k, v in fdd.Disk.load(GALO).files(fdd.A11).items()}

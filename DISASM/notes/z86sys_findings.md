@@ -29,3 +29,12 @@ Cross-region items settled at the join:
 - Retries never moved the head (part 07) - fixed: SECTIO restores half-way.
 - Residual (documented): FORMAT TRACK's write-track loop is not timed; a disk
   pulled while the motor runs still hangs it.  The seek before it is timed.
+
+## Merge with João Encarnado's serial / terminal work (2026-11-08)
+- His package (MODE.COM, TERM.COM + TERMZ80, INT 14h F0h/F1h, CTS) merged
+  onto this branch (git: incoming/joao). Space: his ;@FILL page-end code met
+  this branch's ;@SLACK page-end code; resolved by moving I14X into the BIOS,
+  I14RD / SAVED / FDTOUT into free ALU slot ends, and removing the dead RADVS.
+- All his tests pass on the merged build (test_term.py: flow control, log,
+  XMODEM both ways, /52, /80), as do all of ours.
+- Not yet disassembled: MODE.COM, TERM.COM, TERMZ80.BIN (new binaries).

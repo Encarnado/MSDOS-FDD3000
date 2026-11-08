@@ -28,8 +28,8 @@
 ;  Inside CPM.COM the image sits at file offset 32Ah behind a 16-byte
 ;  header at 31Ah (30Ch / 2FCh in the shipped CPM.COM, before its
 ;  2026-11-08 read check): the length (09CAh) and the Z86.SYS addresses it was
-;  assembled against, NEXT D83Bh, JPHL EB60h, PEEKEY EBF6h, GETKEY
-;  EC13h, CONOUT EC21h, DCSP F12Ah, ENDBIOS F12Ch (BIOS.ASM's CPMSYM).
+;  assembled against, NEXT D83Bh, JPHL EB4Dh, PEEKEY EBE3h, GETKEY
+;  EC00h, CONOUT EC0Eh, DCSP F12Ah, ENDBIOS F12Ch (BIOS.ASM's CPMSYM).
 ;  Trap 1Ch refuses to copy an image whose header differs ("CPM.COM does
 ;  not match Z86.SYS").  At run time the 1 KB buffer BUF follows the
 ;  image at FAF6h-FEF5h; the Z80 stack keeps FF00h-FFFFh.
@@ -77,8 +77,8 @@
 ;  matches the build listing ../symbols/z80/CPMZ80.lst.
 ;
 ;  FILE:    CPMZ80.BIN, 2506 bytes
-;  MD5:     aadcae99452b0f944630ae76dc85d507
-;  SHA256:  69b9f15f894b7b92b04fcf2f3f6f76c15557e5a46dfd0e5368e49e36d3d1448d
+;  MD5:     f4d8c6cec8c7962e19c87e522de87240
+;  SHA256:  7d94cfd8e0c0298bfa9f3c84ec4d263311eb0e9bd8cd692cf964616660a80377
 ;  SOURCE:  ../project/MSDOS/poc/CPMZ80.ASM (z86.py cpmz80(), build.py
 ;           CPMZ80.INC)
 ;
@@ -127,14 +127,14 @@ EASS:		equ	0D022h		; base for SS-relative operands
 SPRN:		equ	0D03Eh		; A to channel A, the printer (CP/M LIST)
 SAUXO:		equ	0D042h		; A to channel B (CP/M PUNCH)
 SAUXI:		equ	0D062h		; A from channel B (CP/M READER)
-SLSTS:		equ	0D085h		; A = FFh if channel A's DSR is on, else 0
+SLSTS:		equ	0D085h		; A = FFh if channel A's CTS is on, else 0
 
 ; ---- interpreter and BIOS entries ----
 NEXT:		equ	0D83Bh		; the 8086 dispatcher: runs from BC = CS:IP
-JPHL:		equ	0EB60h		; JP (HL): CALL JPHL is an indirect call
-PEEKEY:		equ	0EBF6h		; CF=1: a key waits (A, kept for GETKEY)
-GETKEY:		equ	0EC13h		; A = next key, waiting for one
-CONOUT:		equ	0EC21h		; A to the terminal (CBIOS's link send)
+JPHL:		equ	0EB4Dh		; JP (HL): CALL JPHL is an indirect call
+PEEKEY:		equ	0EBE3h		; CF=1: a key waits (A, kept for GETKEY)
+GETKEY:		equ	0EC00h		; A = next key, waiting for one
+CONOUT:		equ	0EC0Eh		; A to the terminal (CBIOS's link send)
 DCSP:		equ	0F12Ah		; Z80 SP saved by DOSCALL for trap 1Dh
 
 ; =====================================================================
@@ -648,7 +648,7 @@ F_PUN:
 	jr	F_ZERO		; A = 0
 F_LST:
 	ld	a,e		; E to channel A, the printer
-	call	SPRN		; waits for the printer (DSR, TxRDY)
+	call	SPRN		; waits for the printer (CTS, TxRDY)
 	jr	F_ZERO		; A = 0
 
 ; =====================================================================
@@ -1849,7 +1849,7 @@ B_RDR:
 	jr	BSER
 B_LSTS:
 	push	hl		; (BSER pops it)
-	ld	hl,SLSTS	; A = FFh ready (DSR on), 0 not
+	ld	hl,SLSTS	; A = FFh ready (CTS on), 0 not
 BSER:
 	push	de		; the routines use C, E, HL
 	push	bc		; C, the byte, is kept
