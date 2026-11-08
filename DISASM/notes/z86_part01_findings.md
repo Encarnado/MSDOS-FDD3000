@@ -68,3 +68,11 @@ New equates (part 01): ACOM SIOWORD IOERR SIORESET IOMASK RXRDY SIOERRS SIO_X16.
 15. **Code in a data page.** The serial routines (D03Eh-D0E0h) and INT 14h set-up
     (D5A2h-D5FAh) only use free page ends. BOOTJP's fixed D0FDh caps the
     REGS page: the serial code cannot grow past D0FCh. *verified.*
+
+## Corrected 2026-11-08 (merge with João Encarnado's serial work)
+- Finding 3 ("CBIOS's comment calls status bit 7 CTS; on an 8251A that bit is
+  DSR") is WRONG for this chip: the WD2123 has no DSR pin; its status bit 7 is
+  CTS (DE-9 pin 5, RTS pin 4) - João Encarnado, from the WD2123 datasheet.
+  CBIOS's "CTS" was right. The narration now says CTS throughout; SSTAT
+  reports it in AL bit 4 (DSR, bit 5, always on).
+- Finding 2 (RTS stays raised): unchanged by the merge.

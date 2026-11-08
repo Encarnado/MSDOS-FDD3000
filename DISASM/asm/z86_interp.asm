@@ -130,7 +130,7 @@ SHORIG:	equ	REGS+60	; operand before a shift (SHR's OF = its old MSB)
 ; and INT 17h, and given a full 8251A reset in SSET that CBIOS lacks.
 ; On real hardware PRN and AUX worked (the 2026-11-07 run,
 ; notes/hardware_run.md).  Not checked there: the baud rates each code
-; really gives (crystal unknown) and how DSR is wired - provisional.
+; really gives (crystal unknown) and how CTS is wired - provisional.
 ; =====================================================================
 
 ; ---------------------------------------------------------------------
@@ -148,7 +148,7 @@ SPUT_FOREVER:				; (src: SPF)
 	ld	e,a		; SPUT wants the byte in E
 	ld	hl,0		; poll limit 0: wait as long as it takes
 ; ---------------------------------------------------------------------
-; SPUT - send E on the channel at C once DSR and TxRDY are both on
+; SPUT - send E on the channel at C once CTS and TxRDY are both on
 ; Entry: C = control port, E = byte, HL = poll limit (0 = for ever).
 ; Exit:  CF = 0 sent; CF = 1 gave up after HL polls (nothing sent).
 ; Corrupts: A, HL, F.  C kept.
@@ -157,11 +157,11 @@ SPUT_FOREVER:				; (src: SPF)
 ; ---------------------------------------------------------------------
 SPUT:
 	ld	a,SIOWORD	; transmitter, receiver, DTR and RTS on - the
-	out	(c),a		;   far end may need RTS/DTR to send DSR back
+	out	(c),a		;   far end may need RTS to send CTS back
 	call	SERR		; drop any stale PE/OE/FE first (once only)
 SPUT_POLL:				; (src: SP1)
-	in	a,(c)		; status: DSR (7) and TxRDY (0) both needed
-	and	IOMASK		;   - DSR is the printer's "on line"
+	in	a,(c)		; status: CTS (7) and TxRDY (0) both needed
+	and	IOMASK		;   - CTS is the printer's "on line"
 	cp	IOMASK		; Z only if both bits are set
 	jr	z,SPUT_SEND	; both on: send (Z, and CF = 0 from the CP)
 	call	SWAIT		; count one poll against the limit
@@ -213,17 +213,17 @@ SGET_TAKE:				; (src: SG2)
 	ret		; CF = 0, Z = byte was 00h
 
 ; ---------------------------------------------------------------------
-; SLSTS - printer status: A = FFh if channel A's DSR is on, else 00h
-; Exit: A, CF = DSR.  Corrupts: C, F.
+; SLSTS - printer status: A = FFh if channel A's CTS is on, else 00h
+; Exit: A, CF = CTS.  Corrupts: C, F.
 ; Callers: CPMZ80 B_LSTS (CP/M LISTST).  Mirrors CBIOS A1.1 LISTST.
 ; ---------------------------------------------------------------------
 SLSTS:
 	ld	c,UART_CMD_CHA	; channel A
 	call	SERR		; clear errors first, as CBIOS (ERROA)
-	in	a,(c)		; DSR is status bit 7 ...
+	in	a,(c)		; CTS is status bit 7 ...
 	rla			; ... into carry
 	sbc	a,a		; FFh if on, 00h if off
-	ret		; A = DSR as a flag byte, CF = DSR
+	ret		; A = CTS as a flag byte, CF = CTS
 
 ; ---------------------------------------------------------------------
 ; SWAIT - charge one poll to the limit in HL
@@ -300,8 +300,15 @@ SSET:
 	push	bc		; borrow C for the port, keep the caller's
 	ld	c,a		; C = baud register for the OUT
 	out	(c),e		; baud code to the channel's own generator
+	ld	hl,SAVED-10h	; and a copy for INT 14h F0h - the chip
+	add	a,l		;   can't be read back: A = 10h / 11h picks
+	ld	l,a		;   SAVED+0 / +1 (page-local: SAVED's low
+	ld	(hl),d		;   byte is 10h-FCh, z86.py asserts it)
+	inc	l		; mode byte stored; the baud code goes
+	inc	l		;   two further on (SAVED+2 / +3)
+	ld	(hl),e
 	pop	bc		; C = the control port again
-	ret		; A corrupted; channel ready
+	ret		; A, HL corrupted; channel ready
 
 ; ---------------------------------------------------------------------
 ; SSTAT - INT 14h status of the channel at C, in the PC's format
@@ -310,8 +317,9 @@ SSET:
 ;        AH: 0 data ready, 1 overrun, 2 parity, 3 framing, 4 break,
 ;            5 holding register empty (TxRDY), 6 transmitter empty
 ;            (TxEMPTY), 7 = 0 (timeout is OR-ed in by I14T).
-;        AL: 5 DSR; 4 CTS, always reported on - the 8251A gates its
-;            transmitter on CTS itself and does not show it in status.
+;        AL: 4 CTS, from status bit 7; 5 DSR, always reported on.  The
+;            WD2123 has no DSR pin: its status bit 7 is CTS (DE-9 pin 5,
+;            RTS pin 4) - corrected from the datasheet by João Encarnado.
 ; Corrupts: A, B (0), DE, HL, F.  C kept.
 ; Callers: T_I14 (AH = 3, JP), I14T (after AH = 1 / 2), I14SET (JP,
 ; after AH = 0 / 4).
@@ -331,11 +339,12 @@ SSTAT_MAP:				; (src: SS1)
 	ld	a,e		; bit 7 still holds a stale bit of E: clear it
 	and	7Fh		;   (no timeout here)
 	ld	(R_AH),a		; AH = line status
-	ld	a,d		; DSR (status bit 7) ...
-	and	80h		; DSR alone
-	rrca			; ... to bit 5, the PC's MSR DSR position
-	rrca		; 80h -> 40h -> 20h
-	or	10h		; CTS (bit 4) always on
+	ld	a,d		; CTS (status bit 7) ...
+	and	80h		; CTS alone
+	rrca			; ... to bit 4, the PC's MSR CTS position
+	rrca
+	rrca		; 80h -> 40h -> 20h -> 10h
+	or	20h		; DSR (bit 5) always on: the WD2123 has none
 	ld	(R_AL),a		; AL = modem status
 	ret		; (B = 0, D = raw status, E = AH)
 
@@ -348,22 +357,6 @@ LSMAP:
 ; AH=4's CL) -> WD2123 baud code (see SSET).
 BAUDT:
 	defb	2,4,6,7,8,10,12,14,15	; 110 150 300 600 1200 2400 4800 9600 19200
-; ---------------------------------------------------------------------
-; FDTOUT  (BIOS code in the REGS page's free end, D0F1h; ;@SLACK REGS)
-; ---------------------------------------------------------------------
-; FDTOUT - a floppy wait timed out (FDCCMD, FHOME, XFER, FMT's seek).
-; Force Interrupt with no condition (D0h) stops the command and raises no
-; INTRQ; DI because the hook at 0038h must not fire any more.  Returns
-; NZ, A = 20h: never a WD177x status here (those leave ANDed with 5Ch),
-; and DFAIL's ERRTAB maps it to DOS error 2, "Not ready".  Reached by JP
-; from the waits, so the RET goes straight to their caller.
-FDTOUT:
-	di
-	ld	a,0D0h		; Force Interrupt, no condition
-	out	(FDCMD),a
-	ld	a,20h		; "not ready"
-	or	a		; NZ
-	ret
 	defs	REGS+253-$	; the rest, to BOOTJP at D0FDh: free (zero)
 
 ; =====================================================================
@@ -708,6 +701,22 @@ BCORE:
 	ld	(hl),a		; store; the Z80 flags are already the 8086's
 	ex	af,af'		; flags and result byte become AF'
 	jp	(ix)		; next instruction
+; ---------------------------------------------------------------------
+; FDTOUT  (BIOS code in BCORE slot 0's free end, D506h; ;@SLACK BGAP0)
+; ---------------------------------------------------------------------
+; FDTOUT - a floppy wait timed out (FDCCMD, FHOME, XFER, FMT's seek).
+; Force Interrupt with no condition (D0h) stops the command and raises no
+; INTRQ; DI because the hook at 0038h must not fire any more.  Returns
+; NZ, A = 20h: never a WD177x status here (those leave ANDed with 5Ch),
+; and DFAIL's ERRTAB maps it to DOS error 2, "Not ready".  Reached by JP
+; from the waits, so the RET goes straight to their caller.
+FDTOUT:
+	di
+	ld	a,0D0h		; Force Interrupt, no condition
+	out	(FDCMD),a
+	ld	a,20h		; "not ready"
+	or	a		; NZ
+	ret
 	defs	BCORE+16-$
 	ld	a,(hl)	; 1 OR   (D510h)
 	or	e		; (Z80 OR: H = 0, V = parity)
@@ -715,6 +724,12 @@ BCORE:
 	ld	(hl),a		;   (V held parity after OR; ADD clears it)
 	ex	af,af'		; flags + result to AF'
 	jp	(ix)		; next instruction
+; SAVED - the WD2123 settings SSET last wrote, for INT 14h F0h (the chip
+; can't be read back): mode byte of channel A, of B, then their baud
+; codes.  Data in BCORE slot 1's free end, D518h (;@SLACK BGAP1); SSET
+; indexes it page-locally from SAVED-10h.  João Encarnado's INT 14h F0h.
+SAVED:
+	defs	4
 	defs	BCORE+32-$
 	ex	af,af'	; 2 ADC  (D520h) - 8086 CF into the Z80 carry
 	ld	a,(hl)		;   (A' is about to be replaced anyway)
@@ -1014,6 +1029,25 @@ WCORE:
 	ld	a,l		; difference's low byte for PF
 	ex	af,af'		; flags out
 	jp	(ix)		; next instruction
+; ---------------------------------------------------------------------
+; I14RD - INT 14h AH = F0h: the channel's mode byte and baud code as SSET
+; last set them (AL, AH).  BIOS code in WCORE slot 7's free end, D6EBh
+; (;@SLACK WGAP7); reached by I14X's JP Z.  C = control port: 81h (A)
+; or 41h (B).  João Encarnado's INT 14h extension.
+; ---------------------------------------------------------------------
+I14RD:
+	ld	hl,SAVED+1	; channel B's mode byte ...
+	bit	7,c		; ... unless this is channel A (81h)
+	jr	z,I14RD_GET
+	dec	l		; channel A: SAVED+0
+I14RD_GET:				; (src: I14R1)
+	ld	a,(hl)		; mode byte -> AL
+	ld	(R_AL),a
+	inc	l		; two on: the baud code
+	inc	l
+	ld	a,(hl)		; baud code -> AH
+	ld	(R_AH),a
+	ret
 	defs	WCORE+256-$
 
 ; =====================================================================
@@ -3767,30 +3801,12 @@ RADVDN:
 	jr	RADVD		; DI += DE, CX = 0, done
 
 ; ---------------------------------------------------------------------
-; RADVS - DEAD CODE (E25Dh-E26Eh, 18 bytes).  Nothing refers to it: not
-; the binary, not I86.ASM, where its only occurrence is its own label
-; (notes/partition_findings.md: the one piece of listing code the
-; recursive descent never reaches).  It is the SI-only sibling of
-; RADVDN, the shape a block REP LODS would have needed (load the last
-; element, then move SI by the count); R_LODSB/R_LODSW loop instead.
-; That purpose is inferred, not documented (provisional).  Kept for
-; byte identity.
-; ---------------------------------------------------------------------
-RADVS:
-	call	RNEG_DE		; DE = -DE if DF
-	ld	hl,(R_SI)	; SI += DE
-	add	hl,de		; SI +-= the count
-	ld	(R_SI),hl	; (mod 64K)
-	ld	hl,0		; CX = 0
-	ld	(R_CX),hl	; (all as RADVSD, DI excepted)
-	jp	(ix)		; (never reached)
-
-; ---------------------------------------------------------------------
 ; RNEG_DE - DE = -DE if DF = 1 (the source's own gloss, lost from the
 ; listing skeleton), else unchanged.
 ; DF is taken from STEP1's high byte (FFh when STEP1 = -1, 00h when +1)
 ; so the flag never has to be fetched from FLAGHI.  Corrupts A, F.
-; Callers: RADVSD, RADVDN, RADVS (dead), the R_SCASB CPIR path.
+; Callers: RADVSD, RADVDN, the R_SCASB CPIR path.  (Its dead sibling
+; RADVS was removed in the 2026-11-08 merge, to make room.)
 ; ---------------------------------------------------------------------
 RNEG_DE:
 	ld	a,(STEP1+1)	; 00h or FFh: bit 7 = DF
@@ -3881,7 +3897,8 @@ RMOVSW_DONE:				; (src: RMW3)
 	ld	hl,(R_CX)	; DE = 2 * CX bytes moved
 	add	hl,hl		; (2 * CX, mod 64K)
 	ex	de,hl		; into DE for RADVSD
-	jp	RADVSD		; (JR in the source, relaxed to JP: 136 back)
+	jr	RADVSD		; (a JR again: until the 2026-11-08 merge removed
+				;   RADVS it was out of range, relaxed to JP)
 
 ; =====================================================================
 ; R_STOSB - REP STOSB: one store, then LDIR / LDDR copies it along

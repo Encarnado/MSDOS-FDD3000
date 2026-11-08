@@ -10,7 +10,8 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FILES = [('IOFDD.LST', 'IO.SYS'), ('MSDOS.LST', 'MSDOS.SYS'), ('COMMAND.LST', 'COMMAND.COM'),
-         ('FORMAT.LST', 'FORMAT.COM'), ('CPM.LST', 'CPM.COM'), ('EDIT.LST', 'EDIT.COM')]
+         ('FORMAT.LST', 'FORMAT.COM'), ('CPM.LST', 'CPM.COM'), ('EDIT.LST', 'EDIT.COM'),
+         ('MODE.LST', 'MODE.COM'), ('TERM.LST', 'TERM.COM')]
 ROW = re.compile(r'^(\S+?)\s*(?:\. ?)*\.?\t(L NEAR|L FAR|L BYTE|L WORD|L DWORD|V BYTE|V WORD|V DWORD|Number)\s*\t([0-9A-F]{4})')
 
 

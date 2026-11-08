@@ -1,5 +1,6 @@
 """Write the Z80 listings and symbol tables of the package's symbols/z80/:
-Z86.SYS.lst / .sym, CPMZ80.lst / .sym, BOOT.lst / .sym.
+Z86.SYS.lst / .sym, CPMZ80.lst / .sym, and (when TERMZ80.ASM is there)
+TERMZ80.lst / .sym.
 
     python3 mksyms.py OUTDIR          (default: ../../../symbols/z80)
 
@@ -85,7 +86,8 @@ def symtab(lines, lo, hi, syms):
             kind = 'data' if DATA.match(rest) else 'code'
         else:                       # a label alone: the very next line decides
             nxt = statement(lines[i + 1]) if i + 1 < hi else (None, '', '')
-            kind = 'data' if not nxt[0] and DATA.match(nxt[1]) else 'code'
+            kind = 'data' if DATA.match(nxt[1]) else 'code'   # (also through a
+                                                               #  labelled DB line)
         res[lab] = (syms[lab], kind)
     return res
 
@@ -128,7 +130,31 @@ def main():
     write_sym(os.path.join(outdir, 'CPMZ80.sym'),
               '; CPMZ80.BIN at %04Xh\n'
               '; address  kind  name   (kind: code / data / equ, from the source line)\n' % lo_c, ct)
+    if os.path.exists(getattr(z86, 'TERMZ80', '')):
+        term(outdir)
     print('wrote', outdir)
+
+
+def term(outdir):
+    """TERMZ80.lst / .sym: TERMZ80.ASM assembled after I86.ASM and BIOS.ASM
+    (z86.termz80); the listing from its ORG on, the table with every
+    label and EQU of TERMZ80.ASM."""
+    bios = open(z86.BIOS).read().replace('\n        END\n', '\n')
+    head = z86.preprocess(open(z86.SRC).read() + bios)
+    text = z86.preprocess(open(z86.SRC).read() + bios + open(z86.TERMZ80).read())
+    lines, addr, out, syms = assemble_with_lines(text)
+    first = len(head.split('\n')) - 1          # TERMZ80.ASM's first line
+    split = next(i for i in range(first, len(lines))
+                 if statement(lines[i])[2] == 'ORG' and 'ENDBIOS' in lines[i])
+    ptr = syms['BIOSEND'] - 0xD000
+    rows, _ = listing(lines, addr, out, split, len(lines), ptr)
+    with open(os.path.join(outdir, 'TERMZ80.lst'), 'w') as f:
+        f.write("; TERMZ80.BIN: TERM.COM's Z80 part, loaded at %04Xh (over COLD)\n"
+                '; address  bytes  source\n' % syms['ENDBIOS'] + '\n'.join(rows) + '\n')
+    write_sym(os.path.join(outdir, 'TERMZ80.sym'),
+              '; TERMZ80.BIN at %04Xh, and the EQUs of TERMZ80.ASM\n'
+              '; address  kind  name   (kind: code / data / equ, from the source line)\n' % syms['ENDBIOS'],
+              symtab(lines, first, len(lines), syms))
 
 
 if __name__ == '__main__':

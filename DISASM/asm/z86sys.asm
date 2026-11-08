@@ -73,7 +73,13 @@
 ;
 ;  VERSION.  This volume is the 2026-11-08 build: the 2026-11-07 Z86.SYS
 ;  plus the floppy timeouts and the re-seek, the REP MOVSW and the PEEKEY
-;  fixes above.  Same size (8 737 bytes);
+;  fixes above, merged with João Encarnado's serial work of the same day:
+;  INT 14h AH = F0h / F1h (I14X in the BIOS, I14RD and SAVED in ALU slot
+;  ends), SSET keeping a copy of each channel's settings, and status bit 7
+;  read as CTS (the WD2123 has no DSR pin).  To make room the dead RADVS
+;  went and FDTOUT moved to a BCORE slot end; one relaxed JP to RADVSD is
+;  a JR again.  MODE.COM and TERM.COM (with TERMZ80), which use these
+;  calls, are not yet volumes of this corpus.  Same size (8 737 bytes);
 ;  everything from SECTIO to the BIOS data moved, SKEW / variables /
 ;  ENDBIOS did not (padding before SKEW), so CPMZ80 and CPM.COM are
 ;  unchanged.  The new code is in the free ends of the EALO and EAHI pages
@@ -102,8 +108,8 @@
 ;  `; (src: OLD)`, and dict/z86_part01..08.md hold the alias entries.
 ;
 ;  FILE:    Z86.SYS, 8 737 bytes
-;  MD5:     fd255e1e97d8ecd64257638776b6317b
-;  SHA256:  66c8ae07a51a46b702c5fc63dd564ea921548a2ca14d11334b0527f0e2c27117
+;  MD5:     adaa64d4663138e0dc9f16935f24f60f
+;  SHA256:  e1c9f69bc5c993d0e529a324356fbe3a4f4f6c076e8da013ef5a2f0a6485343b
 ;  SOURCE:  project/MSDOS/poc/I86.ASM + BIOS.ASM (z86.py build(bios=True))
 ;
 ;  CREDITS.  Original code: the FDD3000-MSDOS project (2026).  Console link,
@@ -163,9 +169,10 @@ ACOM:		equ	07h		; TxEN + DTR + RxE, RTS off   (CBIOS ACOM)
 SIOWORD:	equ	27h		; ACOM + RTS                  (CBIOS SIOWORD)
 IOERR:		equ	37h		; SIOWORD + ER: clear PE/OE/FE (CBIOS IOERR)
 SIORESET:	equ	40h		; IR: back to "expecting a mode byte"
-IOMASK:		equ	81h		; status DSR + TxRDY: both needed to send
-					;   (CBIOS IOMASK; CBIOS's comment calls
-					;   bit 7 "CTS" - it is DSR on an 8251A)
+IOMASK:		equ	81h		; status CTS + TxRDY: both needed to send
+					;   (CBIOS IOMASK).  Bit 7 is CTS: the
+					;   WD2123 has no DSR pin (datasheet; João
+					;   Encarnado) - CBIOS's "CTS" was right
 RXRDY:		equ	1		; status bit number of RxRDY  (CBIOS RXRDY)
 SIOERRS:	equ	78h		; status bits 3-6: PE OE FE BRKDET (CBIOS
 					;   ERR, renamed: ERR is BOOT.BIN's label)

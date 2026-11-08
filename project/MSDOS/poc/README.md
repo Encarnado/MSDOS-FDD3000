@@ -43,7 +43,11 @@ TC2068 stays the terminal.
 - **Serial ports:** the FDD3000's WD2123 (two 8251A-compatible channels)
   is PRN (channel A) and AUX (channel B), as CP/M's LIST and
   PUNCH/READER are on CBIOS A1.1; INT 14h and INT 17h work, and so do
-  LIST, PUNCH and READER for CP/M programs. See [Serial](#serial-ports-wd2123).
+  LIST, PUNCH and READER for CP/M programs. `MODE` (MODE.COM) changes a
+  channel's speed and format. See [Serial](#serial-ports-wd2123).
+- **TERM:** `TERM` (TERM.COM) is a serial terminal, like PuTTY's serial
+  mode: a VT100 (or VT52) for the host on the other end, a log to a file,
+  XMODEM both ways. See [TERM](#term-termasm-termz80asm).
 - **Real hardware:** not tried by me; the disk boots and runs on FUSE.
 
 ```
@@ -80,14 +84,18 @@ A:CHKDSK
 | `fuzz_z86.py` | Random single instructions (all opcodes, prefixes, REP) on both, compared. |
 | `BIOS.ASM` | The BIOS traps in Z80 code (step 3), assembled after `I86.ASM`. |
 | `BOOT.ASM` | The boot sector (step 4): loads the interpreter and BIOS and jumps to `COLD`. `z86.bootcode()` assembles it. |
-| `fdd86.py` | DOS on cpm80ds's FDD3000 model, all in Z80 code, booted from the boot ROM. `Link` models the terminal's end of the 2Fh link byte by byte; `WD2123` models the two serial channels (mode, sync and command order, status, DSR; what they send and receive). |
+| `fdd86.py` | DOS on cpm80ds's FDD3000 model, all in Z80 code, booted from the boot ROM. `Link` models the terminal's end of the 2Fh link byte by byte; `WD2123` models the two serial channels (mode, sync and command order, status, CTS; what they send and receive; optionally a host sending in real time, overruns, XON / XOFF and RTS). The link can also model a terminal that takes time to draw. |
 | `FORMAT.ASM` | FORMAT.COM (MASM source), built like IO.SYS. |
 | `CPM.ASM` | CPM.COM (MASM source): loads a CP/M program and runs it on the Z80. |
 | `CPMZ80.ASM` | CPM.COM's Z80 part: the BDOS and BIOS a CP/M program sees. Assembled after `BIOS.ASM` with its symbols; `build.py` puts it in CPM.COM as `CPMZ80.INC`. |
 | `EDIT.ASM` | EDIT.COM (MASM source): the full-screen text editor. |
+| `MODE.ASM` | MODE.COM (MASM source): sets and shows the serial channels' speed and format. |
+| `TERM.ASM` | TERM.COM (MASM source): the terminal's command line, menu, log and XMODEM. |
+| `TERMZ80.ASM` | TERM.COM's Z80 part: the session, the VT100 / VT52 screen, the channel. Assembled after `BIOS.ASM` like `CPMZ80.ASM`; `build.py` puts it in TERM.COM as `TERMZ80.INC`. |
+| `test_term.py` | TERM.COM on `fdd86.py` against a Python VT100 model, with a host sending in real time: codes, random codes, keys, load and flow control, the log, XMODEM. |
 | `test_edit.py` | EDIT.COM on `fdd86.py`, checked after every step against a model of the terminal's screen and a Python model of the editing keys. |
 | `BDOSTEST.MAC` | M80 source of a CP/M program that prints the results of BDOS calls (random records, file size, search, rename, BIOS CONOUT), for the test. |
-| `test_fdd86.py` | The session on `fdd86.py` against `fddos.py` (screens and disk must match), plus two drives, write protect, a missing drive, booting (random RAM at power-on, unreadable boot tracks), FORMAT, CP/M programs and MBASIC under CPM.COM (against CP/M itself), and the serial ports. |
+| `test_fdd86.py` | The session on `fdd86.py` against `fddos.py` (screens and disk must match), plus two drives, write protect, a missing drive, booting (random RAM at power-on, unreadable boot tracks), FORMAT, CP/M programs and MBASIC under CPM.COM (against CP/M itself), the serial ports and MODE.COM. |
 
 ## Use
 
@@ -106,7 +114,7 @@ python3 fddos.py build/MSDOS.DSK
 - `build.py` builds `build/` from source in about 6 minutes;
   `python3 build.py FORMAT` rebuilds only FORMAT.COM and the disk (30 s),
   `python3 build.py CPM` only CPM.COM, `python3 build.py EDIT` only
-  EDIT.COM. Z86.SYS and CPM.COM must come from
+  EDIT.COM, `python3 build.py MODE` only MODE.COM, `python3 build.py TERM` only TERM.COM. Z86.SYS and CPM.COM must come from
   the same build (see below).
 - `test_dos.py` runs the regression test in under a second.
 - `fddos.py` runs DOS interactively. Ctrl-] quits.
@@ -143,6 +151,7 @@ python3 fdd86.py build/MSDOS.DSK
 
 - `test_fdd86.py` takes about 3 minutes.
 - `test_edit.py` (EDIT.COM) takes about 1.5 minutes.
+- `test_term.py` (TERM.COM) takes about 10 minutes.
 - `fdd86.py` resets the FDD3000 model and boots the disk through the boot
   ROM (`../../roms/fdd_boot.rom`), then runs DOS interactively; a second
   disk image is drive B:, `--keys` and `--save` work as in `fddos.py`. A
@@ -239,14 +248,15 @@ Memory map of the FDD3000 while DOS runs:
 | Address | Contents |
 |---|---|
 | 0000h-CFFFh | the 8086's 52 KB |
-| D000h-EB45h | the interpreter: registers, tables, code (D03Eh-D0F0h, the end of the register page, and D5A2h-D5FFh, the end of the 8-bit ALU page, hold the serial routines) |
-| EB46h-F12Bh | the BIOS: code and variables |
+| D000h-EB45h | the interpreter: registers, tables, code (unused page and slot ends hold BIOS code: D03Eh-D0FAh serial routines, the register page; D3C0h-D3FCh and D4C0h-D4FBh floppy and REP MOVSW code, the EALO / EAHI pages; D506h FDTOUT, D518h the settings INT 14h F0h returns, D6EBh their reader I14RD, slot ends of the ALU blocks; D5A2h-D5FAh INT 14h's set-up, the 8-bit ALU page) |
+| EB46h-F12Ch | the BIOS: code and variables |
 | F12Ch-F220h | the BIOS's `COLD`, needed only at boot |
 | F221h-FFFFh | free (3.5 KB), and the Z80 stack from FFFFh down |
 
 While a CP/M program runs, F12Ch-FAF5h (over `COLD`) holds CPM.COM's Z80
 part and FAF6h-FEF5h its 1 KB file buffer. The Z80 stack needs about 30
-bytes; `z86.py` checks that the buffer ends below FF00h.
+bytes; `z86.py` checks that the buffer ends below FF00h. TERM.COM's Z80
+part goes there too, F12Ch-FEB7h (its buffers are in the 8086's memory).
 
 D0FDh, at the end of the register page, holds `JP COLD`: the boot sector
 jumps there, so it works with any build of `Z86.SYS`.
@@ -565,17 +575,53 @@ this BIOS does the same:
 | Baud-rate register | 10h | 11h |
 | CP/M (CBIOS A1.1) | LIST | PUNCH, READER |
 | DOS | PRN (and `^P` echo, INT 17h), INT 14h port 0 | AUX, INT 14h port 1 |
+| Connector | J4 (DE-9) | J5 (DE-9) |
+
+**The connectors** (from the FDD3000's schematic, `fdd3-ula64kb.sch`
+rev 1.1; SN75188 drivers, SN75189 receivers). Both DE-9s are wired the
+same way, and **not** as a PC's:
+
+| Pin | FDD3000 | PC (DE-9, DTE) |
+|---|---|---|
+| 1 | +5 V | DCD |
+| 2 | TxD, out | RxD |
+| 3 | RxD, in | TxD |
+| 4 | RTS, out | DTR |
+| 5 | CTS, in (status bit 7) | GND |
+| 6 | - | DSR |
+| 7 | GND | RTS |
+| 8 | - | CTS |
+| 9 | +12 V through 1 kΩ | RI |
+
+The WD2123 has no DSR, DTR or DCD pins. A plain DE-9 cable to a PC
+would join the PC's RTS output to the FDD3000's ground and leave no
+common ground, and the FDD3000 would put +5 V and +12 V on the PC's DCD
+and RI, so use a cable made for it. To a PC: FDD3000 2 to PC 2,
+3 to 3, 7 to 5 (ground), 4 to 8 (the PC's CTS), 5 to 7 (the PC's RTS).
+FDD3000 pin 9 can instead be joined to pin 5 to hold CTS on; on the PC
+side, 4 to 6 if its software wants DSR. The crystal
+is 1.8432 MHz, the WD2123's standard one, so the baud codes give the
+rates below.
 
 - **Set-up at boot:** as CBIOS A1.1 sets them: 8 data bits, no parity,
   1.5 stop bits, ×16 clock (mode byte 8Eh), baud code 8 (1200 baud).
-  The sequence is 00h 00h 00h 40h (the 8251A's reset from any state), the
-  mode, command 07h (transmitter, receiver, DTR on), then the baud code.
+  The sequence is 00h 00h 00h 40h (40h, internal reset, makes the next
+  control write the mode; the 00h before it are CBIOS A1.1's and do no
+  harm), the mode, command 07h (transmitter, CS, receiver on), then the
+  baud code.
+- **Commands** (WD2123 datasheet): bit 0 transmit, 1 CS, 2 receive, 3
+  break, 4 error reset, 5 RTS, 6 internal reset, 7 loop-back. CS is an
+  8251A's DTR bit, but here it selects the clocks, and it must stay 1:
+  with 1 and SELCLK high (it is tied high on the FDD3000) both come from
+  the baud-rate generator; with 0 the receiver's clock is SELCLK itself,
+  and nothing is received. Every command written here and in CBIOS A1.1
+  has it.
 - **Baud codes** (the order TMX CONFIGUR lists them, its 4-bit code for
   the WD2123): 0 = 50, 1 = 75, 2 = 110, 3 = 134.5, 4 = 150, 5 = 200,
   6 = 300, 7 = 600, 8 = 1200, 9 = 1800, 10 = 2400, 11 = 3600, 12 = 4800,
   13 = 7200, 14 = 9600, 15 = 19200.
 - **Sending** (PRN, AUX, CP/M's LIST and PUNCH): command 27h (RTS on too),
-  clear any error flags (command 37h), wait for DSR and TxRDY, send. DOS's
+  clear any error flags (command 37h), wait for CTS and TxRDY, send. DOS's
   PRINT and AUXOUT have no way to report an error, so like CP/M they wait
   as long as it takes: a printer that is off holds DOS until it is on.
 - **Receiving** (AUX, READER): command 27h, wait for RxRDY (clearing
@@ -587,31 +633,173 @@ this BIOS does the same:
   CX in the PS/2 format (adds 19200 baud). Sending and receiving give up
   after about 1.5 s and set bit 7 of AH. AH returns the line status (data
   ready, overrun, parity, framing, break, transmitter empty), AL the modem
-  status: DSR, and CTS always on (the 8251A holds the transmitter for CTS
-  itself and doesn't report it).
+  status: CTS (status bit 7), and DSR always on (there is no DSR line).
+  Two FDD3000 calls reach what the PC
+  formats can't (50 to 7200 baud, 1.5 stop bits): AH = F0h returns the
+  channel's mode byte in AL and baud code in AH, as the BIOS last set them
+  (the chip can't be read back, so `SSET` keeps a copy); AH = F1h sets
+  the channel up from AL (mode byte; bits 1-0 are forced to the ×16 clock)
+  and CL (baud code 0-15) and returns the status.
 - **INT 17h:** AH = 0 prints AL on channel A (giving up after about
-  1.5 s), 2 returns the status: 90h ready (DSR on), 10h busy, +1 timed out.
+  1.5 s), 2 returns the status: 90h ready (CTS on), 10h busy, +1 timed out.
 - **Where the code is:** the shared routines (`SPRN`, `SAUXO`, `SAUXI`,
   `SLSTS`, `SPUT`, `SGET`, `SSET`, `SSTAT`) are in the unused end of the
-  interpreter's register page, and INT 14h's set-up in the unused end of
-  its 8-bit ALU page, so that they take no room from CPM.COM's Z80 part
-  above the BIOS. The BIOS has only the trap entries.
+  interpreter's register page, INT 14h's set-up in the unused end of
+  its 8-bit ALU page, the F0h reader (`I14RD`) and the copy of the
+  settings (`SAVED`) in free slot ends of the ALU blocks, so that they
+  take no room from CPM.COM's Z80 part above the BIOS; the F0h / F1h
+  entry `I14X` follows `T_I14` in the BIOS. (`z86.py`'s `;@SLACK` blocks
+  put code in a free page or slot end; the merge with the floppy-timeout
+  and REP MOVSW fixes moved these from his `;@FILL` page ends, which
+  those now fill, and the build checks that none of these page ends
+  overflows.)
+
+**MODE.COM** sets a channel up and shows its settings:
+
+```
+MODE port[:] [baud][,[parity][,[data bits][,stop bits]]]
+MODE [port[:]]
+```
+
+- port: `PRN`, `LPT1` or `COM1` for channel A, `AUX` or `COM2` for
+  channel B (COM1 and COM2 are INT 14h's ports 0 and 1).
+- baud: any of the 16 codes' rates, `50` to `19200` (`134.5` or `134`),
+  or the PC's short forms `11 15 30 60 12 24 48 96 19`.
+- parity `N`, `O` or `E`; data bits `5` to `8`; stop bits `1`, `1.5` or
+  `2`. A field left out keeps its setting (the PC's MODE puts in defaults
+  instead), so `MODE COM1:,E` changes only the parity.
+- With a port alone it shows that channel, with nothing both:
+  `PRN: 1200 baud, no parity, 8 data bits, 1.5 stop bits`. After a
+  change it shows the new settings; on a bad parameter it shows its usage
+  and changes nothing.
+- It works through INT 14h F0h and F1h, so the settings hold for DOS's
+  PRN and AUX and for CP/M programs under CPM.COM. Each boot goes back to
+  1200 baud, 8N1.5: for others, put MODE lines in `AUTOEXEC.BAT`.
 
 **The test** (`test_fdd86.py` group 8) runs on `fdd86.WD2123`, a model of
 the chip that follows the 8251A's order of mode, sync characters and
 commands, so a wrong set-up sequence would show: the boot set-up,
-`COPY` to PRN, to AUX and from AUX, `^P` echo, a printer without DSR (DOS
+`COPY` to PRN, to AUX and from AUX, `^P` echo, a printer without CTS (DOS
 waits, then prints), and INT 14h / INT 17h from a small program (both
 set-up forms, send, receive, a time-out, status, printer busy). Under
 CPM.COM, `PIP LST:=`, `PIP PUN:=` and `PIP R.TXT=RDR:` send and write the
 same bytes as under CP/M itself with its own CBIOS on the same model.
 (That test found an older bug in CPM.COM, fixed: PIP could not close a
 file it had copied from a device, CON: or RDR:, because of the S1 byte.)
+Group 9 runs MODE.COM: every port name, all four fields, fields left
+out, the PC's baud names, showing the settings, and nine bad command
+lines; after each it checks the mode byte and baud code the model's
+WD2123 received, and that the model saw no write out of order.
 
-**Not known:** the baud rates are the WD2123's codes as TMX CONFIGUR
-names them; the crystal, and so the real rates, and the DSR wiring of
-the FDD3000's connectors are not checked, and nothing has been tried on
-the hardware.
+**Checked against the WD2123 datasheet** (Western Digital, "WD2123
+DEUCE", pages 177-192): status bit 7 is CTS; the status, mode and command
+bits; the register addressing (rate register: C/D low channel A, high B,
+so ports 10h and 11h); the baud table (1.8432 MHz, x16); reprogramming
+with 40h; no minimum time between writes is given. **Not known:**
+nothing has been tried on the hardware.
+
+## TERM (`TERM.ASM`, `TERMZ80.ASM`)
+
+A serial terminal: the host on one of the WD2123's channels (another
+computer, a modem, a serial console) gets a VT100, or a VT52, of 24 lines
+by 64 (or 80) columns; the Timex terminal shows it and its keyboard types
+to it.
+
+```
+TERM [port[:] [baud][,[parity][,[data bits][,stop bits]]]] [/80] [/52] [/X|/R|/N] [/E] [/C]
+```
+
+- port and settings as for MODE; with none, AUX as it is set now.
+- `/80` an 80-column terminal; `/52` a host that sends VT52 codes;
+  flow control `/X` XON / XOFF (the default), `/R` RTS / CTS, `/N` none;
+  `/E` local echo: what is typed shows on the screen too (Enter as CR
+  LF; not ESC and the arrow keys), for a host that doesn't echo, such as
+  another terminal; `/C` an implicit LF after each CR received (as
+  PuTTY's "Implicit LF in every CR"), for one that ends lines with CR
+  alone.
+- **Ctrl-A** shows the menu on the bottom line: `Q` quit, `L` log to a
+  file, `E` local echo, `C` implicit LF, `R` receive a file by XMODEM,
+  `S` send one, `B` a break (250 ms), Ctrl-A a Ctrl-A; any other key goes
+  back. `+` and `-` after L, E and C show which are on, and it
+  shows how many received bytes were lost, if any.
+- **With PuTTY** (on a PC, cable as in "The connectors"): Connection
+  type Serial, the same speed, 8 data bits, 1 stop bit, no parity, flow
+  control XON/XOFF (RTS/CTS with `/R` and those wires). Two terminals
+  face each other: what is typed on one shows on the other. Terminal →
+  "Implicit LF in every CR" on, and `/E /C` on TERM's side (PuTTY's
+  "Local echo: Force on" for the other way) show each side its own
+  typing, a line at a time. Tried on a real FDD3000. **PuTTY has no
+  XMODEM**: for files use Tera Term (File → Transfer → XMODEM, CRC or
+  checksum, *not* 1K: TERM takes 128-byte blocks), with its flow control
+  set to none (or RTS/CTS with `/R`): with XON/XOFF on, the PC's serial
+  driver takes the XON / XOFF bytes out of a binary file TERM sends.
+- **On the host:** tell it the size and the terminal, for instance
+  `stty rows 24 cols 64` and `TERM=vt100` (or `vt102`; `vt52` with
+  `/52`), and use `LANG=C`: other characters show as `?`. The Timex
+  terminal's arrow keys (ESC A-D) go out as ESC [ A-D (ESC O A-D in
+  cursor key mode); DEL as DEL. For XMODEM, `sx file` / `rx file`.
+
+**How it works.** TERM.COM (8086) reads the command line, has BIOS trap
+1Ch copy its Z80 part over `COLD` (as CPM.COM does) and calls it; the
+buffers are in TERM.COM's own memory, over the copy of the Z80 part. The
+Z80 part does everything that has to be quick:
+
+- **The channel.** The WD2123 holds one received byte; the next one,
+  about 2 100 T-states later at 19 200 baud, overwrites it. Every loop
+  that waits, for the terminal's link or for the channel, calls `RXPOLL`,
+  which moves a received byte to a 2 KB ring; long block moves go in
+  32-byte pieces with `RXPOLL` between them, and a character drawn or a
+  line scrolled calls it on the way. Measured on the emulator, the
+  longest time between two calls is under 1 800 T-states. At 1 KB in the ring the host
+  is asked to stop (XOFF, or RTS off), below 256 it is let go (XON, RTS
+  on). The menu and a full log buffer stop the host the same way first.
+- **The screen.** The Timex terminal knows only ESC H I J K L M Y and
+  wraps as soon as the last column is written. TERM keeps a copy of the
+  host's screen and turns the host's codes into those: the cursor goes by
+  ESC Y, a scroll of the whole screen is the terminal's own (LF on its
+  bottom line, ESC I on its top), a scroll inside a region and inserted
+  or deleted lines are drawn again from the copy. The bottom right cell
+  is never written (the terminal would scroll); TERM draws it again when
+  the screen scrolls up and it moves into view.
+- **Codes:** text with VT100 wrapping; CR LF BS TAB VT FF; ESC [ A B C D
+  e a H f G ` d (cursor), J K (erase), m (only inverse: 0 7 27), r
+  (scrolling region), L M (lines), @ P X (characters), h l (4 insert mode;
+  ?1 cursor keys, ?7 autowrap), n (5, 6: answers), c (answers "VT100"),
+  s u; ESC 7 8 D E M c Z, ESC ( ) 0 / B with SO SI (line drawing as
+  + - |), ESC # x ignored, CAN SUB. UTF-8 and 8-bit characters show
+  as `?`. With `/52`: ESC A B C D H I J K Y Z.
+- **The log** collects the raw bytes in an 8 KB buffer; when it is
+  nearly full TERM stops the host, writes it (DOS random block write, so
+  the file is exact) and goes on.
+- **XMODEM** (CRC-16 or checksums, 128-byte blocks; receive tries `C`
+  three times, then NAK): the protocol is in the 8086 part, the bytes in
+  the Z80 part (RECV takes a whole block in one call, sending the answer
+  to the last one first; CRC in Z80 code).
+
+**The test** (`test_term.py`) runs TERM on the FDD3000 model with a host
+on channel B that sends at the real rate (`fdd86.WD2123`: a byte the
+chip holds is lost when the next one comes in), and checks the terminal
+model's screen, cell by cell and the cursor, against `VT`, a Python
+model of the VT100 / VT52 above: 21 cases of codes, then 60 batches of
+random ones; keys; the log (12 KB at 19 200 baud, through the 8 KB
+buffer); XMODEM receive (CRC with a corrupted block sent again, at 9 600
+and 19 200; checksums) and send (CRC; checksums): the files are the same
+bytes. With a terminal model that takes 2 ms a character and 20 ms a
+scroll (a guess: the real terminal's speed isn't known), 6 KB of text:
+
+| | lost | chars/s |
+|---|---|---|
+| 9 600 or 19 200 baud, XON / XOFF | 0 | 325 |
+| 9 600 or 19 200 baud, RTS / CTS | 0 | 325 |
+| 9 600 baud, no flow control | 1 637 | - |
+| a terminal that takes no time, 9 600 / 19 200 baud | 0 | 861 / 1 048 |
+
+So the terminal's speed sets the pace; flow control keeps it from losing
+anything. With a terminal that takes no time, TERM itself manages about
+1 050 characters a second of text.
+
+**Not known:** the real terminal's speed over the link, and anything on
+real hardware.
 
 ## The boot (`BOOT.ASM`, `COLD`)
 
@@ -642,8 +830,8 @@ the FDD's timeouts are never tested.
 ### Speed
 
 Measured on the emulator, with T-states from tmxcobol's Z80 timing tables.
-The seconds assume a 4 MHz clock; nothing here documents the FDD3000's
-crystal.
+The seconds assume a 4 MHz clock: the schematic has a 16 MHz crystal,
+divided by 4 (74LS393) for the Z80.
 
 Step 2, the interpreter alone (BIOS calls in Python, not counted):
 

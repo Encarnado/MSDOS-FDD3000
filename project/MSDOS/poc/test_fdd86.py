@@ -30,7 +30,7 @@
    the files must be the same and so must FILE.BAS's output.
 8. The serial channels (WD2123, modelled by fdd86.WD2123): both set up at
    boot as CBIOS A1.1 sets them; COPY to PRN (channel A) and AUX (channel
-   B), COPY from AUX, ^P printer echo, a printer without DSR (DOS waits);
+   B), COPY from AUX, ^P printer echo, a printer without CTS (DOS waits);
    INT 14h (set up in PC and PS/2 form, send, receive, time-out, status)
    and INT 17h from a small program; PIP to LST: and PUN: and from RDR:
    under CPM.COM, against the same under CP/M with the same model.
@@ -477,6 +477,7 @@ def main():
     cpm_programs()
     mbasic()
     serial()
+    mode()
     print('FAILED: %d' % len(FAILS) if FAILS else 'all ok')
     sys.exit(1 if FAILS else 0)
 
@@ -544,16 +545,16 @@ def serial():
           '^P echo: %r' % bytes(A.tx)[-40:])
     print('  set up at boot; COPY to PRN, to AUX, from AUX; ^P echo: done')
     A.tx.clear()
-    A.dsr = False                       # the printer is off: DOS waits for it
+    A.cts = False                       # the printer is off: DOS waits for it
     try:
         out = step(m, 'COPY T.TXT PRN\r', limit=3_000_000)
     except RuntimeError:                # the instruction limit: still waiting
         out = m.out.decode('latin-1')
-    check(not A.tx and not out.endswith('A:'), 'no DSR: sent %r, %r' % (bytes(A.tx), out[-20:]))
-    A.dsr = True
+    check(not A.tx and not out.endswith('A:'), 'no CTS: sent %r, %r' % (bytes(A.tx), out[-20:]))
+    A.cts = True
     out = step(m, '')
-    check(bytes(A.tx) == b'Hello printer\r\nline 2\r\n' and out.endswith('A:'), 'DSR back: %r' % bytes(A.tx))
-    print('  printer without DSR: DOS waits, then prints: done')
+    check(bytes(A.tx) == b'Hello printer\r\nline 2\r\n' and out.endswith('A:'), 'CTS back: %r' % bytes(A.tx))
+    print('  printer without CTS: DOS waits, then prints: done')
     A.tx.clear()
     B.rx[:] = b'Q'
     step(m, 'SER\r', limit=60_000_000)
@@ -562,13 +563,13 @@ def serial():
     check(r == want, 'INT 14h / 17h: %s, want %s' % (r and ['%04X' % v for v in r], ['%04X' % v for v in want]))
     check((A.mode, A.baud, B.mode, B.baud) == (0x4E, 14, 0xFA, 15) and bytes(A.tx) == b'XP',
           'INT 14h set-up and output: A %02X %d B %02X %d %r' % (A.mode, A.baud, B.mode, B.baud, bytes(A.tx)))
-    A.dsr = False
+    A.cts = False
     B.rx[:] = b'Q'
     step(m, 'SER\r', limit=60_000_000)
     r = int14_results(m)
-    want = [0x6010, 0xE058, 0x6010, 0x6130, 0x6051, 0xE000, 0x1150, 0x1050]
-    check(r == want, 'INT 14h / 17h without DSR: %s, want %s' % (r and ['%04X' % v for v in r], ['%04X' % v for v in want]))
-    A.dsr = True
+    want = [0x6020, 0xE058, 0x6020, 0x6130, 0x6051, 0xE000, 0x1150, 0x1050]
+    check(r == want, 'INT 14h / 17h without CTS: %s, want %s' % (r and ['%04X' % v for v in r], ['%04X' % v for v in want]))
+    A.cts = True
     print('  INT 14h (AH 0-4, time-outs), INT 17h (ready, busy, time-out): done')
     if not have_cpm:
         print('  (no %s: CP/M devices skipped)' % CPMREF)
@@ -593,6 +594,47 @@ def serial():
     check(df.get('R.TXT') == cf.get('R.TXT') and cf.get('R.TXT', b'').startswith(feed[:-1]),
           'PIP R.TXT=RDR: %r, CP/M %r' % (df.get('R.TXT', b'')[:40], cf.get('R.TXT', b'')[:40]))
     print('  CPM PIP LST:, PUN:, RDR: the same bytes as under CP/M: done')
+
+
+def mode():
+    print('9. MODE.COM')
+    b = test_z86.B
+    files = [(f, open(os.path.join(b, f), 'rb').read()) for f in ('COMMAND.COM', 'MODE.COM')]
+    files.append(('T.TXT', b'Hello printer\r\n\x1a'))
+    d = mkfat.make(files, open(os.path.join(b, 'IOFDD.SYS'), 'rb').read(),
+                   open(os.path.join(b, 'MSDOS.SYS'), 'rb').read())
+    m = booted([d])
+    A, B = m.wd2123.a, m.wd2123.b
+    boot = 'PRN: 1200 baud, no parity, 8 data bits, 1.5 stop bits\r\n' \
+           'AUX: 1200 baud, no parity, 8 data bits, 1.5 stop bits\r\n'
+    out = step(m, 'MODE\r')
+    check(boot in out, 'MODE: %r' % out)
+    # command, the channel's mode byte and baud code after it, MODE's line
+    for cmd, ch, mb, bc, line in (
+            ('MODE PRN:9600,N,8,1', A, 0x4E, 14, 'PRN: 9600 baud, no parity, 8 data bits, 1 stop bit\r\n'),
+            ('mode aux 19200,e,7,2', B, 0xFA, 15, 'AUX: 19200 baud, even parity, 7 data bits, 2 stop bits\r\n'),
+            ('MODE COM1:,O', A, 0x5E, 14, 'PRN: 9600 baud, odd parity, 8 data bits, 1 stop bit\r\n'),
+            ('MODE LPT1: 134.5 , , 5 , 1.5', A, 0x92, 3, 'PRN: 134.5 baud, odd parity, 5 data bits, 1.5 stop bits\r\n'),
+            ('MODE COM2:11', B, 0xFA, 2, 'AUX: 110 baud, even parity, 7 data bits, 2 stop bits\r\n'),
+            ('MODE AUX:50,N,6,1', B, 0x46, 0, 'AUX: 50 baud, no parity, 6 data bits, 1 stop bit\r\n'),
+            ('MODE PRN:', A, 0x92, 3, 'PRN: 134.5 baud, odd parity, 5 data bits, 1.5 stop bits\r\n')):
+        out = step(m, cmd + '\r')
+        check((ch.mode, ch.baud, ch.cmd) == (mb, bc, 7) and line in out and 'Invalid' not in out,
+              '%s: mode %02X baud %d cmd %02X, %r' % (cmd, ch.mode, ch.baud, ch.cmd, out))
+    check(A.dropped + B.dropped == 0, 'writes the WD2123 model did not expect: %d' % (A.dropped + B.dropped))
+    print('  ports, all fields, fields left out, PC baud names, settings shown: done')
+    state = (A.mode, A.baud, B.mode, B.baud)
+    for cmd in ('MODE COM3', 'MODE PRN 9601', 'MODE PRN 9600,X', 'MODE PRN 9600,N,9', 'MODE PRN 9600,N,8,3',
+                'MODE PRN 9600,N,8,1,1', 'MODE PRN 9600,N,8,1.4', 'MODE PRNTR', 'MODE PRN 1234567'):
+        out = step(m, cmd + '\r')
+        check('Invalid parameter' in out and 'Usage: MODE' in out and (A.mode, A.baud, B.mode, B.baud) == state,
+              '%s: %r' % (cmd, out[-80:]))
+    print('  bad parameters: usage, nothing changed: done')
+    step(m, 'MODE PRN:9600,N,8,1\r')
+    A.tx.clear()
+    step(m, 'COPY T.TXT PRN\r')
+    check(bytes(A.tx) == b'Hello printer\r\n', 'COPY to PRN after MODE: %r' % bytes(A.tx))
+    print('  PRN after MODE: done')
 
 
 if __name__ == '__main__':

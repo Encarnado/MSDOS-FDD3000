@@ -78,8 +78,8 @@
 ;  are not recorded.
 ;
 ;  FILE:    CPM.COM, 3316 bytes (2026-11-08 build; the shipped one was 3286)
-;  MD5:     df11f3d21c20ce16b6abdfbe6528f587
-;  SHA256:  39952ecc4db26115bb9032dd3adb3ce438f1f4811591c40227662db8abe0d9db
+;  MD5:     1c52ad31ae2edb8d70a39e77a857a9ed
+;  SHA256:  4e45e24109f3ae8147b3b08e3faa8bf87bc4e7ef6f665ed3e0d6d28bd133db3c
 ;  SOURCE:  ../project/MSDOS/poc/CPM.ASM (MASM 1.10), with CPMZ80.INC
 ;           (z86.py cpmz80(): header + CPMZ80.ASM's code) by build.py
 ;
@@ -192,10 +192,10 @@ FCB_RR		equ	33	; random record (3-4 bytes, two words here)
 ; The author's names; the header at 041Ah carries them in BIOS.ASM's
 ; CPMSYM order and T_CPML compares them with its own CPMSYM.
 NEXT		equ	0D83Bh	; the 8086 dispatcher (interpreter main loop)
-JPHL		equ	0EB60h	; JP (HL): CPMZ80's indirect CALL
-PEEKEY		equ	0EBF6h	; console: CF=1 when a key waits
-GETKEY		equ	0EC13h	; console: A = next key, waiting
-CONOUT		equ	0EC21h	; console: A to the terminal
+JPHL		equ	0EB4Dh	; JP (HL): CPMZ80's indirect CALL
+PEEKEY		equ	0EBE3h	; console: CF=1 when a key waits
+GETKEY		equ	0EC00h	; console: A = next key, waiting
+CONOUT		equ	0EC0Eh	; console: A to the terminal
 DCSP		equ	0F12Ah	; Z80 SP that DOSCALL leaves for trap 1Dh
 ENDBIOS		equ	0F12Ch	; end of the resident BIOS: CPMZ80 goes here
 
@@ -522,10 +522,10 @@ Z80_LEN:
 	dw Z80_CODE_END-Z80_CODE	; 09CAh = 2506 bytes of code to copy
 Z80_SYMS:
 	dw NEXT		; D83Bh  must equal Z86.SYS NEXT
-	dw JPHL		; EB60h  must equal Z86.SYS JPHL
-	dw PEEKEY	; EBF6h  must equal Z86.SYS PEEKEY
-	dw GETKEY	; EC13h  must equal Z86.SYS GETKEY
-	dw CONOUT	; EC21h  must equal Z86.SYS CONOUT
+	dw JPHL		; EB4Dh  must equal Z86.SYS JPHL
+	dw PEEKEY	; EBE3h  must equal Z86.SYS PEEKEY
+	dw GETKEY	; EC00h  must equal Z86.SYS GETKEY
+	dw CONOUT	; EC0Eh  must equal Z86.SYS CONOUT
 	dw DCSP		; F12Ah  must equal Z86.SYS DCSP
 	dw ENDBIOS	; F12Ch  must equal Z86.SYS ENDBIOS (the copy target)
 

@@ -246,7 +246,7 @@ F317  7E                                LD A,(HL)
 F318  23                                INC HL
 F319  66                                LD H,(HL)
 F31A  6F                                LD L,A
-F31B  CD 60 EB                          CALL JPHL
+F31B  CD 4D EB                          CALL JPHL
 F31E  7D                        BD1:    LD A,L
 F31F  44                                LD B,H
 F320  ED 7B 86 FA                       LD SP,(USRSP)
@@ -269,7 +269,7 @@ F378  6F                        RETA:   LD L,A
 F379  26 00                             LD H,0
 F37B  C9                                RET
                                 
-F37C  CD 13 EC                  F_CIN:  CALL GETKEY
+F37C  CD 00 EC                  F_CIN:  CALL GETKEY
 F37F  F5                                PUSH AF
 F380  FE 20                             CP 20h
 F382  D4 93 F4                          CALL NC,OUTCH
@@ -299,12 +299,12 @@ F3A8  28 09                             JR Z,DIO1               ; FFh: a key or 
 F3AA  3C                                INC A
 F3AB  28 28                             JR Z,F_CST              ; FEh: status
 F3AD  7B                                LD A,E
-F3AE  CD 21 EC                          CALL CONOUT
+F3AE  CD 0E EC                          CALL CONOUT
 F3B1  18 C4                             JR F_ZERO
-F3B3  CD F6 EB                  DIO1:   CALL PEEKEY
+F3B3  CD E3 EB                  DIO1:   CALL PEEKEY
 F3B6  3E 00                             LD A,0
 F3B8  30 BE                             JR NC,RETA
-F3BA  CD 13 EC                          CALL GETKEY
+F3BA  CD 00 EC                          CALL GETKEY
 F3BD  18 B9                             JR RETA
                                 
 F3BF  3A 03 00                  F_GIOB: LD A,(0003h)
@@ -321,7 +321,7 @@ F3CF  CD 93 F4                          CALL OUTCH
 F3D2  13                                INC DE
 F3D3  18 F5                             JR F_PRT
                                 
-F3D5  CD F6 EB                  F_CST:  CALL PEEKEY
+F3D5  CD E3 EB                  F_CST:  CALL PEEKEY
 F3D8  3E 00                             LD A,0
 F3DA  30 9C                             JR NC,RETA
 F3DC  3D                                DEC A
@@ -368,7 +368,7 @@ F422  23                                INC HL
 F423  E5                                PUSH HL                 ; -> count
 F424  06 00                             LD B,0
 F426  C5                        RL1:    PUSH BC
-F427  CD 13 EC                          CALL GETKEY
+F427  CD 00 EC                          CALL GETKEY
 F42A  C1                                POP BC
 F42B  E1                                POP HL
 F42C  E5                                PUSH HL
@@ -467,7 +467,7 @@ F4C7  B7                                OR A
 F4C8  28 01                             JR Z,OC7
 F4CA  35                                DEC (HL)
 F4CB  F1                        OC7:    POP AF
-F4CC  C3 21 EC                          JP CONOUT
+F4CC  C3 0E EC                          JP CONOUT
                                 
                                 ; FCB calls other than sequential read / write: open, close, delete,
                                 ; make, rename, random read / write, file size, set random record
@@ -1167,7 +1167,7 @@ FA08                            B_CONST:
 FA08  C5                                PUSH BC
 FA09  D5                                PUSH DE
 FA0A  E5                                PUSH HL
-FA0B  CD F6 EB                          CALL PEEKEY
+FA0B  CD E3 EB                          CALL PEEKEY
 FA0E  3E 00                             LD A,0
 FA10  30 01                             JR NC,BC1
 FA12  3D                                DEC A
@@ -1179,14 +1179,14 @@ FA17                            B_CONIN:
 FA17  C5                                PUSH BC
 FA18  D5                                PUSH DE
 FA19  E5                                PUSH HL
-FA1A  CD 13 EC                          CALL GETKEY
+FA1A  CD 00 EC                          CALL GETKEY
 FA1D  18 F4                             JR BC1
 FA1F                            B_CONOUT:
 FA1F  C5                                PUSH BC
 FA20  D5                                PUSH DE
 FA21  E5                                PUSH HL
 FA22  79                                LD A,C
-FA23  CD 21 EC                          CALL CONOUT
+FA23  CD 0E EC                          CALL CONOUT
 FA26  18 EB                             JR BC1
 FA28  E5                        B_LIST: PUSH HL                 ; LIST, PUNCH, READER, LISTST: the serial
 FA29  21 3E D0                          LD HL,SPRN              ;   routines (I86.ASM), with C the byte;
@@ -1202,7 +1202,7 @@ FA3B  21 85 D0                          LD HL,SLSTS
 FA3E  D5                        BSER:   PUSH DE
 FA3F  C5                                PUSH BC
 FA40  79                                LD A,C
-FA41  CD 60 EB                          CALL JPHL
+FA41  CD 4D EB                          CALL JPHL
 FA44  C1                                POP BC
 FA45  D1                                POP DE
 FA46  E1                                POP HL

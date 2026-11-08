@@ -1,0 +1,2806 @@
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-1
+
+
+
+1	 	 	 	 	; TERM.COM for MS-DOS 1.25 on the Timex
+	 	 	 	 FDD3000: a serial terminal on one
+2	 	 	 	 	; of the WD2123's channels, with the Ti
+	 	 	 	mex terminal as screen and keyboard.
+3	 	 	 	 	;
+4	 	 	 	 	;       TERM [port[:] [baud][,[parity][
+	 	 	 	,[data bits][,stop bits]]]] [/opts]
+5	 	 	 	 	;
+6	 	 	 	 	; port and settings as for MODE (defaul
+	 	 	 	t: AUX, as it is set now). Options:
+7	 	 	 	 	;       /80     an 80-column terminal (
+	 	 	 	default 64)
+8	 	 	 	 	;       /52     the host sends VT52 cod
+	 	 	 	es (default VT100 / ANSI)
+9	 	 	 	 	;       /X      XON / XOFF flow control
+	 	 	 	 (the default), /R RTS / CTS, /N none
+10	 	 	 	 	;       /E      local echo: what is typ
+	 	 	 	ed shows on the screen too
+11	 	 	 	 	;       /C      a CR received also goes
+	 	 	 	 to the next line (an implicit LF)
+12	 	 	 	 	;
+13	 	 	 	 	; Ctrl-A brings up the menu on the bott
+	 	 	 	om line: Q quit, L log to a file
+14	 	 	 	 	; (on / off), E local echo (on / off), 
+	 	 	 	C implicit LF (on / off), R
+15	 	 	 	 	; receive a file by XMODEM, S send one,
+	 	 	 	 B send a break, Ctrl-A send a
+16	 	 	 	 	; Ctrl-A; any other key goes back.
+17	 	 	 	 	;
+18	 	 	 	 	; The work is done by the Z80 part (TER
+	 	 	 	MZ80.ASM, here as TERMZ80.INC),
+19	 	 	 	 	; which BIOS trap 1CH copies over the B
+	 	 	 	IOS's COLD and then calls: the
+20	 	 	 	 	; session itself, the screen, and the c
+	 	 	 	hannel's bytes for XMODEM. This
+21	 	 	 	 	; part reads the command line, keeps th
+	 	 	 	e files and runs the menu and the
+22	 	 	 	 	; XMODEM protocol. The buffers the Z80 
+	 	 	 	part uses are here, over the copy
+23	 	 	 	 	; of it, once it is loaded.
+24	 	 	 	 	
+25	 = 0018	 	 	 	ROWS    EQU     24
+26	 = 0800	 	 	 	RINGSZ  EQU     2048
+27	 = 2000	 	 	 	LOGSZ   EQU     8192
+28	 = 0001	 	 	 	MENUK   EQU     1               ; Ctrl-
+	 	 	 	A
+29	 	 	 	 	
+30	 = 0001	 	 	 	SOH     EQU     1
+31	 = 0004	 	 	 	EOT     EQU     4
+32	 = 0006	 	 	 	ACK     EQU     6
+33	 = 0015	 	 	 	NAK     EQU     15H
+34	 = 0018	 	 	 	CAN     EQU     18H
+35	 	 	 	 	
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-2
+
+
+
+36	 0000	 	 	 	CODE    SEGMENT
+37	 	 	 	 	        ASSUME  CS:CODE,DS:CODE,ES:CODE
+	 	 	 	,SS:CODE
+38	 0100	 	 	 	        ORG     100H
+39	 	 	 	 	
+40	 0100  E9 0518 R	 	BEGIN:  JMP     START
+41	 	 	 	 	
+42	 0103  0000	 	 	BASE    DW      0               ; CS * 
+	 	 	 	16: this program's linear address
+43	 0105  0001	 	 	CHAN    DW      1               ; INT 1
+	 	 	 	4H's port: 0 channel A, 1 channel B
+44	 0107  00	 	 	MODEB   DB      0               ; the c
+	 	 	 	hannel's settings
+45	 0108  00	 	 	BAUDC   DB      0
+46	 0109  20 20 20 20	 	NAMBUF  DB      "    "          ; the p
+	 	 	 	ort's name, then a field
+47	 010D  20 20 20 20 20 20	TOKEN   DB      "      "
+48	 	 	 	 	
+49	 	 	 	 	; the parameter block for the Z80 part'
+	 	 	 	s INIT (TERMZ80.ASM)
+50	 0113	 	 	 	PBLK    LABEL   BYTE
+51	 0113  00	 	 	PCTL    DB      0
+52	 0114  40	 	 	PCOLS   DB      64
+53	 0115  18	 	 	PROWS   DB      ROWS
+54	 0116  02	 	 	PFLAGS  DB      2               ; 1 VT5
+	 	 	 	2, 2 XON / XOFF, 4 RTS / CTS, 8 echo,
+55	 	 	 	 	                                ;   10h
+	 	 	 	 CR as CR LF
+56	 0117  01	 	 	PMENU   DB      MENUK
+57	 0118  0000	 	 	PSCR    DW      0
+58	 011A  0000	 	 	PRING   DW      0
+59	 011C  0000	 	 	PLOG    DW      0
+60	 011E  2000	 	 	PLOGSZ  DW      LOGSZ
+61	 	 	 	 	
+62	 0120  00	 	 	LOGON   DB      0               ; 1: lo
+	 	 	 	gging to LFCB
+63	 0121  0000	 	 	LOGN    DW      0               ; bytes
+	 	 	 	 in the log buffer
+64	 0123  0000	 	 	LOST    DW      0               ; bytes
+	 	 	 	 the Z80 part could not take
+65	 	 	 	 	
+66	 	 	 	 	; XMODEM
+67	 0125  00	 	 	BLK     DB      0               ; the b
+	 	 	 	lock number expected / sent
+68	 0126  00	 	 	CRCM    DB      0               ; 1: CR
+	 	 	 	C-16, 0: checksum
+69	 0127  00	 	 	TRIES   DB      0
+70	 0128  00	 	 	GOT     DB      0               ; 1: a 
+	 	 	 	block has come
+71	 0129  00	 	 	XREPLY  DB      0               ; what 
+	 	 	 	to send before the next byte
+72	 012A  0000	 	 	XLEN    DW      0
+73	 012C  0000	 	 	XCNT    DW      0               ; bytes
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-3
+
+
+
+	 	 	 	 in the block being sent
+74	 012E  0000	 	 	XMSG    DW      0               ; Recei
+	 	 	 	ving: / Sending:
+75	 0130  0000 0000	 	NBYTES  DW      0,0             ; bytes
+	 	 	 	 moved
+76	 0134  00	 	 	ANSB    DB      0
+77	 0135  04	 	 	EOTB    DB      EOT
+78	 0136  18 18 18	 	 	CANS    DB      CAN,CAN,CAN
+79	 0139  01	 	 	MENUKB  DB      MENUK
+80	 	 	 	 	
+81	 013A  00 20 20 20 20 20	LFCB    DB      0,"           "
+82	       20 20 20 20 20 20	
+83	 0146     19 [	 	 	        DB      25 DUP (0)
+84	                00	 	
+85	                    ]	 	
+86	 	 	 	 	
+87	 015F  00 20 20 20 20 20	XFCB    DB      0,"           "
+88	       20 20 20 20 20 20	
+89	 016B     19 [	 	 	        DB      25 DUP (0)
+90	                00	 	
+91	                    ]	 	
+92	 	 	 	 	
+93	 0184     20 [	 	 	LINE    DB      32 DUP (0)
+94	                00	 	
+95	                    ]	 	
+96	 	 	 	 	
+97	 	 	 	 	
+98	 01A4  50 52 4E 20 00 4C	PORTS   DB      "PRN ",0,"LPT1",0,"COM1
+	 	 	 	",0,"AUX ",1,"COM2",1
+99	       50 54 31 00 43 4F	
+100	       4D 31 00 41 55 58	
+101	       20 01 43 4F 4D 32	
+102	       01	 	 	
+103	 = 0005	 	 	 	NPORTS  EQU     5
+104	 01BD  35 30 20 20 20 20	BAUDS   DB      "50    75    110   134.
+	 	 	 	5 150   200   300   600   "
+105	       37 35 20 20 20 20	
+106	       31 31 30 20 20 20	
+107	       31 33 34 2E 35 20	
+108	       31 35 30 20 20 20	
+109	       32 30 30 20 20 20	
+110	       33 30 30 20 20 20	
+111	       36 30 30 20 20 20	
+112	 01ED  31 32 30 30 20 20	        DB      "1200  1800  2400  3600
+	 	 	 	  4800  7200  9600  19200 "
+113	       31 38 30 30 20 20	
+114	       32 34 30 30 20 20	
+115	       33 36 30 30 20 20	
+116	       34 38 30 30 20 20	
+117	       37 32 30 30 20 20	
+118	       39 36 30 30 20 20	
+119	       31 39 32 30 30 20	
+120	 021D  31 33 34 20 20 20	ABAUDS  DB      "134   ",3,"11    ",2,"
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-4
+
+
+
+	 	 	 	15    ",4,"30    ",6
+121	       03 31 31 20 20 20	
+122	       20 02 31 35 20 20	
+123	       20 20 04 33 30 20	
+124	       20 20 20 06	 	
+125	 0239  36 30 20 20 20 20	        DB      "60    ",7,"12    ",8,"
+	 	 	 	24    ",10,"48    ",12
+126	       07 31 32 20 20 20	
+127	       20 08 32 34 20 20	
+128	       20 20 0A 34 38 20	
+129	       20 20 20 0C	 	
+130	 0255  39 36 20 20 20 20	        DB      "96    ",14,"19    ",15
+131	       0E 31 39 20 20 20	
+132	       20 0F	 	 	
+133	 = 000A	 	 	 	NABAUDS EQU     10
+134	 	 	 	 	
+135	 0263  49 6E 76 61 6C 69	USEMSG  DB      "Invalid parameter",13,
+	 	 	 	10,13,10
+136	       64 20 70 61 72 61	
+137	       6D 65 74 65 72 0D	
+138	       0A 0D 0A	 	 	
+139	 0278  55 73 61 67 65 3A	        DB      "Usage: TERM [port[:] [
+	 	 	 	baud][,[N|O|E][,[5-8][,[1|1.5|2]]]]]",13,10
+140	       20 54 45 52 4D 20	
+141	       5B 70 6F 72 74 5B	
+142	       3A 5D 20 5B 62 61	
+143	       75 64 5D 5B 2C 5B	
+144	       4E 7C 4F 7C 45 5D	
+145	       5B 2C 5B 35 2D 38	
+146	       5D 5B 2C 5B 31 7C	
+147	       31 2E 35 7C 32 5D	
+148	       5D 5D 5D 5D 0D 0A	
+149	 02B4  20 20 20 20 20 20	        DB      "            [/80] [/52
+	 	 	 	] [/X|/R|/N] [/E] [/C]",13,10
+150	       20 20 20 20 20 20	
+151	       5B 2F 38 30 5D 20	
+152	       5B 2F 35 32 5D 20	
+153	       5B 2F 58 7C 2F 52	
+154	       7C 2F 4E 5D 20 5B	
+155	       2F 45 5D 20 5B 2F	
+156	       43 5D 0D 0A	 	
+157	 02E2  20 20 70 6F 72 74	        DB      "  port: PRN, LPT1 or C
+	 	 	 	OM1 (channel A), AUX or COM2 (channel B)",13,10
+158	       3A 20 50 52 4E 2C	
+159	       20 4C 50 54 31 20	
+160	       6F 72 20 43 4F 4D	
+161	       31 20 28 63 68 61	
+162	       6E 6E 65 6C 20 41	
+163	       29 2C 20 41 55 58	
+164	       20 6F 72 20 43 4F	
+165	       4D 32 20 28 63 68	
+166	       61 6E 6E 65 6C 20	
+167	       42 29 0D 0A	 	
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-5
+
+
+
+168	 0322  20 20 2F 38 30 20	        DB      "  /80 80 columns, /52 
+	 	 	 	VT52 host, /X XON/XOFF, /R RTS/CTS, /N none",13
+	 	 	 	,10
+169	       38 30 20 63 6F 6C	
+170	       75 6D 6E 73 2C 20	
+171	       2F 35 32 20 56 54	
+172	       35 32 20 68 6F 73	
+173	       74 2C 20 2F 58 20	
+174	       58 4F 4E 2F 58 4F	
+175	       46 46 2C 20 2F 52	
+176	       20 52 54 53 2F 43	
+177	       54 53 2C 20 2F 4E	
+178	       20 6E 6F 6E 65 0D	
+179	       0A	 	 	
+180	 0365  20 20 2F 45 20 6C	        DB      "  /E local echo, /C LF
+	 	 	 	 after each CR received",13,10
+181	       6F 63 61 6C 20 65	
+182	       63 68 6F 2C 20 2F	
+183	       43 20 4C 46 20 61	
+184	       66 74 65 72 20 65	
+185	       61 63 68 20 43 52	
+186	       20 72 65 63 65 69	
+187	       76 65 64 0D 0A	 	
+188	 0394  20 20 43 74 72 6C	        DB      "  Ctrl-A: the menu$"
+189	       2D 41 3A 20 74 68	
+190	       65 20 6D 65 6E 75	
+191	       24	 	 	
+192	 03A7  0D 0A 24	 	 	CRLF    DB      13,10,"$"
+193	 03AA  54 45 52 4D 2E 43	VERMSG  DB      "TERM.COM does not matc
+	 	 	 	h Z86.SYS",13,10,"$"
+194	       4F 4D 20 64 6F 65	
+195	       73 20 6E 6F 74 20	
+196	       6D 61 74 63 68 20	
+197	       5A 38 36 2E 53 59	
+198	       53 0D 0A 24	 	
+199	 03CC  54 45 52 4D 3A 20	HELLO   DB      "TERM: Ctrl-A for the m
+	 	 	 	enu"
+200	       43 74 72 6C 2D 41	
+201	       20 66 6F 72 20 74	
+202	       68 65 20 6D 65 6E	
+203	       75	 	 	
+204	 03E5	 	 	 	HELLOE  LABEL   BYTE
+205	 	 	 	 	
+206	 03E5  1B 59 37 20 1B 4C	BOTL    DB      27,"Y",32+ROWS-1,32,27,
+	 	 	 	"L$"     ; the bottom line, inverse
+207	       24	 	 	
+208	 	 	 	 	; (what goes there stays under 63 chara
+	 	 	 	cters: the last column of the
+209	 	 	 	 	; bottom line would scroll the terminal
+	 	 	 	)
+210	 03EC  1B 4D 1B 4B 24	 	BOTE    DB      27,"M",27,"K$"         
+	 	 	 	         ; normal, the rest blank
+211	 03F1  51 20 71 75 69 74	MENU1   DB      "Q quit L log$"
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-6
+
+
+
+212	       20 4C 20 6C 6F 67	
+213	       24	 	 	
+214	 03FE  20 45 20 65 63 68	MENUE   DB      " E echo$"
+215	       6F 24	 	 	
+216	 0406  20 43 20 6C 66 24	MENUC   DB      " C lf$"
+217	 040C  2B 24	 	 	MENUON  DB      "+$"                   
+	 	 	 	 ; on
+218	 040E  2D 24	 	 	MENUOF  DB      "-$"                   
+	 	 	 	 ; off
+219	 0410  20 52 20 72 63 76	MENU2   DB      " R rcv S snd B brk ^A 
+	 	 	 	^A$"
+220	       20 53 20 73 6E 64	
+221	       20 42 20 62 72 6B	
+222	       20 5E 41 20 5E 41	
+223	       24	 	 	
+224	 0429  20 6C 6F 73 74 20	LOSTM   DB      " lost $"
+225	       24	 	 	
+226	 0430  4C 6F 67 20 74 6F	LOGASK  DB      "Log to file: $"
+227	       20 66 69 6C 65 3A	
+228	       20 24	 	 	
+229	 043E  52 65 63 65 69 76	RCVASK  DB      "Receive (XMODEM) as fi
+	 	 	 	le: $"
+230	       65 20 28 58 4D 4F	
+231	       44 45 4D 29 20 61	
+232	       73 20 66 69 6C 65	
+233	       3A 20 24	 	 	
+234	 0459  53 65 6E 64 20 28	SNDASK  DB      "Send (XMODEM) file: $"
+235	       58 4D 4F 44 45 4D	
+236	       29 20 66 69 6C 65	
+237	       3A 20 24	 	 	
+238	 046E  43 61 6E 6E 6F 74	CRMSG   DB      "Cannot create the file
+	 	 	 	$"
+239	       20 63 72 65 61 74	
+240	       65 20 74 68 65 20	
+241	       66 69 6C 65 24	 	
+242	 0485  46 69 6C 65 20 6E	NFMSG   DB      "File not found$"
+243	       6F 74 20 66 6F 75	
+244	       6E 64 24	 	 	
+245	 0494  44 69 73 6B 20 66	FULLM   DB      "Disk full: log stopped
+	 	 	 	$"
+246	       75 6C 6C 3A 20 6C	
+247	       6F 67 20 73 74 6F	
+248	       70 70 65 64 24	 	
+249	 04AB  52 65 63 65 69 76	XRMSG   DB      "Receiving: $"
+250	       69 6E 67 3A 20 24	
+251	 04B7  53 65 6E 64 69 6E	XSMSG   DB      "Sending: $"
+252	       67 3A 20 24	 	
+253	 04C1  20 62 79 74 65 73	BYTESM  DB      " bytes$"
+254	       24	 	 	
+255	 04C8  20 62 79 74 65 73	DONEM   DB      " bytes: done$"
+256	       3A 20 64 6F 6E 65	
+257	       24	 	 	
+258	 04D5  43 61 6E 63 65 6C	CANM    DB      "Cancelled$"
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-7
+
+
+
+259	       6C 65 64 24	 	
+260	 04DF  43 61 6E 63 65 6C	RCANM   DB      "Cancelled by the other
+	 	 	 	 side$"
+261	       6C 65 64 20 62 79	
+262	       20 74 68 65 20 6F	
+263	       74 68 65 72 20 73	
+264	       69 64 65 24	 	
+265	 04FB  54 72 61 6E 73 66	FAILM   DB      "Transfer failed$"
+266	       65 72 20 66 61 69	
+267	       6C 65 64 24	 	
+268	 050B  20 2D 20 61 20 6B	KEYM    DB      " - a key$"
+269	       65 79 24	 	 	
+270	 0514  08 20 08 24	 	BSSTR   DB      8," ",8,"$"
+271	 	 	 	 	
+272	 0518  BC 0D7B R	 	START:  MOV     SP,OFFSET STKTOP
+273	 051B  FC	 	 	        CLD
+274	 051C  8C C8	 	 	        MOV     AX,CS
+275	 051E  B1 04	 	 	        MOV     CL,4
+276	 0520  D3 E0	 	 	        SHL     AX,CL
+277	 0522  A3 0103 R	 	        MOV     [BASE],AX
+278	 	 	 	 	;
+279	 	 	 	 	; the command line, in upper case, endi
+	 	 	 	ng with a 0; the options first
+280	 	 	 	 	;
+281	 0525  BE 0081	 	 	        MOV     SI,81H
+282	 0528  8A 0E 0080	 	        MOV     CL,DS:[80H]
+283	 052C  32 ED	 	 	        XOR     CH,CH
+284	 052E  8B FE	 	 	        MOV     DI,SI
+285	 0530  E3 0E	 	 	UPPER:  JCXZ    UPX
+286	 0532  AC	 	 	        LODSB
+287	 0533  3C 61	 	 	        CMP     AL,"a"
+288	 0535  72 06	 	 	        JB      UP1
+289	 0537  3C 7A	 	 	        CMP     AL,"z"
+290	 0539  77 02	 	 	        JA      UP1
+291	 053B  2C 20	 	 	        SUB     AL,20H
+292	 053D  AA	 	 	UP1:    STOSB
+293	 053E  E2 F0	 	 	        LOOP    UPPER
+294	 0540  C6 05 00	 	 	UPX:    MOV     BYTE PTR [DI],0
+295	 0543  BE 0081	 	 	        MOV     SI,81H
+296	 0546  AC	 	 	OPT:    LODSB
+297	 0547  0A C0	 	 	        OR      AL,AL
+298	 0549  74 6C	 	 	        JZ      OPTX
+299	 054B  3C 2F	 	 	        CMP     AL,"/"
+300	 054D  75 F7	 	 	        JNZ     OPT
+301	 054F  C6 44 FF 20	 	        MOV     BYTE PTR [SI-1]," "
+302	 0553  8B 04	 	 	        MOV     AX,[SI]
+303	 0555  B3 02	 	 	        MOV     BL,2            ; BL: t
+	 	 	 	he option's length
+304	 0557  3D 3038	 	 	        CMP     AX,"0"*256+"8"  ; "80"
+305	 055A  74 33	 	 	        JZ      OPT80
+306	 055C  3D 3436	 	 	        CMP     AX,"4"*256+"6"  ; "64"
+307	 055F  74 35	 	 	        JZ      OPT64
+308	 0561  3D 3235	 	 	        CMP     AX,"2"*256+"5"  ; "52"
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-8
+
+
+
+309	 0564  74 37	 	 	        JZ      OPT52
+310	 0566  B3 01	 	 	        MOV     BL,1
+311	 0568  B4 02	 	 	        MOV     AH,2
+312	 056A  3C 58	 	 	        CMP     AL,"X"
+313	 056C  74 36	 	 	        JZ      OPTF
+314	 056E  B4 04	 	 	        MOV     AH,4
+315	 0570  3C 52	 	 	        CMP     AL,"R"
+316	 0572  74 30	 	 	        JZ      OPTF
+317	 0574  B4 00	 	 	        MOV     AH,0
+318	 0576  3C 4E	 	 	        CMP     AL,"N"
+319	 0578  74 2A	 	 	        JZ      OPTF
+320	 057A  B4 08	 	 	        MOV     AH,8
+321	 057C  3C 45	 	 	        CMP     AL,"E"
+322	 057E  74 06	 	 	        JZ      OPTM
+323	 0580  B4 10	 	 	        MOV     AH,10H
+324	 0582  3C 43	 	 	        CMP     AL,"C"
+325	 0584  75 06	 	 	        JNZ     BADO
+326	 0586  08 26 0116 R	 	OPTM:   OR      [PFLAGS],AH
+327	 058A  EB 21	 	 	        JMP     SHORT OPTB
+328	 058C  E9 0754 R	 	BADO:   JMP     BAD
+329	 058F  C6 06 0114 R 50	 	OPT80:  MOV     [PCOLS],80
+330	 0594  EB 17	 	 	        JMP     SHORT OPTB
+331	 0596  C6 06 0114 R 40	 	OPT64:  MOV     [PCOLS],64
+332	 059B  EB 10	 	 	        JMP     SHORT OPTB
+333	 059D  80 0E 0116 R 01	 	OPT52:  OR      [PFLAGS],1
+334	 05A2  EB 09	 	 	        JMP     SHORT OPTB
+335	 05A4  80 26 0116 R 19	 	OPTF:   AND     [PFLAGS],19H    ; VT52,
+	 	 	 	 echo and LF stay
+336	 05A9  08 26 0116 R	 	        OR      [PFLAGS],AH
+337	 05AD  C6 04 20	 	 	OPTB:   MOV     BYTE PTR [SI]," "      
+	 	 	 	 ; the option blanked out
+338	 05B0  46	 	 	        INC     SI
+339	 05B1  FE CB	 	 	        DEC     BL
+340	 05B3  75 F8	 	 	        JNZ     OPTB
+341	 05B5  EB 8F	 	 	        JMP     OPT
+342	 05B7  BE 0081	 	 	OPTX:   MOV     SI,81H
+343	 05BA  E8 0CB4 R	 	        CALL    BLANKS
+344	 05BD  75 03	 	 	        JNZ     PORT0
+345	 05BF  E9 06D1 R	 	        JMP     LOAD
+346	 05C2	 	 	 	PORT0:
+347	 	 	 	 	;
+348	 	 	 	 	; the port, then the settings (as MODE)
+349	 	 	 	 	;
+350	 05C2  BF 0109 R	 	        MOV     DI,OFFSET NAMBUF
+351	 05C5  B9 0004	 	 	        MOV     CX,4
+352	 05C8  E8 0CC1 R	 	        CALL    GETW
+353	 05CB  75 1A	 	 	        JNZ     BAD0
+354	 05CD  BB 01A4 R	 	        MOV     BX,OFFSET PORTS
+355	 05D0  B2 05	 	 	        MOV     DL,NPORTS
+356	 05D2  56	 	 	PORT1:  PUSH    SI
+357	 05D3  BE 0109 R	 	        MOV     SI,OFFSET NAMBUF
+358	 05D6  8B FB	 	 	        MOV     DI,BX
+359	 05D8  B9 0004	 	 	        MOV     CX,4
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-9
+
+
+
+360	 05DB  F3/ A6	 	 	        REPE    CMPSB
+361	 05DD  5E	 	 	        POP     SI
+362	 05DE  74 0A	 	 	        JZ      PORT2
+363	 05E0  83 C3 05	 	 	        ADD     BX,5
+364	 05E3  FE CA	 	 	        DEC     DL
+365	 05E5  75 EB	 	 	        JNZ     PORT1
+366	 05E7  E9 0754 R	 	BAD0:   JMP     BAD
+367	 05EA  8A 47 04	 	 	PORT2:  MOV     AL,[BX+4]
+368	 05ED  A2 0105 R	 	        MOV     BYTE PTR [CHAN],AL
+369	 05F0  80 3C 3A	 	 	        CMP     BYTE PTR [SI],":"
+370	 05F3  75 01	 	 	        JNZ     PORT3
+371	 05F5  46	 	 	        INC     SI
+372	 05F6  E8 0CB4 R	 	PORT3:  CALL    BLANKS
+373	 05F9  75 03	 	 	        JNZ     PORT4
+374	 05FB  E9 06D1 R	 	        JMP     LOAD
+375	 05FE	 	 	 	PORT4:
+376	 05FE  B4 F0	 	 	        MOV     AH,0F0H         ; the s
+	 	 	 	ettings of now
+377	 0600  8B 16 0105 R	 	        MOV     DX,[CHAN]
+378	 0604  CD 14	 	 	        INT     20
+379	 0606  A2 0107 R	 	        MOV     [MODEB],AL
+380	 0609  88 26 0108 R	 	        MOV     [BAUDC],AH
+381	 060D  80 3C 2C	 	 	        CMP     BYTE PTR [SI],","      
+	 	 	 	 ; baud
+382	 0610  74 3A	 	 	        JZ      PAR
+383	 0612  BF 010D R	 	        MOV     DI,OFFSET TOKEN
+384	 0615  B9 0006	 	 	        MOV     CX,6
+385	 0618  E8 0CC1 R	 	        CALL    GETW
+386	 061B  75 CA	 	 	        JNZ     BAD0
+387	 061D  BB 01BD R	 	        MOV     BX,OFFSET BAUDS
+388	 0620  32 D2	 	 	        XOR     DL,DL
+389	 0622  E8 0CEE R	 	BAUD1:  CALL    SAME6
+390	 0625  74 21	 	 	        JZ      BAUD3
+391	 0627  83 C3 06	 	 	        ADD     BX,6
+392	 062A  FE C2	 	 	        INC     DL
+393	 062C  80 FA 10	 	 	        CMP     DL,16
+394	 062F  72 F1	 	 	        JB      BAUD1
+395	 0631  BB 021D R	 	        MOV     BX,OFFSET ABAUDS
+396	 0634  B6 0A	 	 	        MOV     DH,NABAUDS
+397	 0636  E8 0CEE R	 	BAUD2:  CALL    SAME6
+398	 0639  74 0A	 	 	        JZ      BAUD4
+399	 063B  83 C3 07	 	 	        ADD     BX,7
+400	 063E  FE CE	 	 	        DEC     DH
+401	 0640  75 F4	 	 	        JNZ     BAUD2
+402	 0642  E9 0754 R	 	        JMP     BAD
+403	 0645  8A 57 06	 	 	BAUD4:  MOV     DL,[BX+6]
+404	 0648  88 16 0108 R	 	BAUD3:  MOV     [BAUDC],DL
+405	 064C  E8 0C9C R	 	PAR:    CALL    COMMA           ; parit
+	 	 	 	y
+406	 064F  72 71	 	 	        JB      SETX
+407	 0651  74 1C	 	 	        JZ      DBITS
+408	 0653  B4 00	 	 	        MOV     AH,0
+409	 0655  3C 4E	 	 	        CMP     AL,"N"
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-10
+
+
+
+410	 0657  74 0C	 	 	        JZ      PAR1
+411	 0659  B4 10	 	 	        MOV     AH,10H
+412	 065B  3C 4F	 	 	        CMP     AL,"O"
+413	 065D  74 06	 	 	        JZ      PAR1
+414	 065F  B4 30	 	 	        MOV     AH,30H
+415	 0661  3C 45	 	 	        CMP     AL,"E"
+416	 0663  75 5A	 	 	        JNZ     BAD1
+417	 0665  46	 	 	PAR1:   INC     SI
+418	 0666  80 26 0107 R CF	 	        AND     [MODEB],0CFH
+419	 066B  08 26 0107 R	 	        OR      [MODEB],AH
+420	 066F  E8 0C9C R	 	DBITS:  CALL    COMMA           ; data 
+	 	 	 	bits
+421	 0672  72 4E	 	 	        JB      SETX
+422	 0674  74 14	 	 	        JZ      SBITS
+423	 0676  2C 35	 	 	        SUB     AL,"5"
+424	 0678  3C 04	 	 	        CMP     AL,4
+425	 067A  73 43	 	 	        JNB     BAD1
+426	 067C  46	 	 	        INC     SI
+427	 067D  D0 E0	 	 	        SHL     AL,1
+428	 067F  D0 E0	 	 	        SHL     AL,1
+429	 0681  80 26 0107 R F3	 	        AND     [MODEB],0F3H
+430	 0686  08 06 0107 R	 	        OR      [MODEB],AL
+431	 068A  E8 0C9C R	 	SBITS:  CALL    COMMA           ; stop 
+	 	 	 	bits
+432	 068D  72 33	 	 	        JB      SETX
+433	 068F  74 29	 	 	        JZ      SBEND
+434	 0691  B4 40	 	 	        MOV     AH,40H
+435	 0693  3C 32	 	 	        CMP     AL,"2"
+436	 0695  75 04	 	 	        JNZ     SBIT1
+437	 0697  B4 C0	 	 	        MOV     AH,0C0H
+438	 0699  EB 15	 	 	        JMP     SHORT SBIT2
+439	 069B  3C 31	 	 	SBIT1:  CMP     AL,"1"
+440	 069D  75 20	 	 	        JNZ     BAD1
+441	 069F  80 7C 01 2E	 	        CMP     BYTE PTR [SI+1],"."    
+	 	 	 	 ; "1.5"
+442	 06A3  75 0B	 	 	        JNZ     SBIT2
+443	 06A5  80 7C 02 35	 	        CMP     BYTE PTR [SI+2],"5"
+444	 06A9  75 14	 	 	        JNZ     BAD1
+445	 06AB  83 C6 02	 	 	        ADD     SI,2
+446	 06AE  B4 80	 	 	        MOV     AH,80H
+447	 06B0  46	 	 	SBIT2:  INC     SI
+448	 06B1  80 26 0107 R 3F	 	        AND     [MODEB],3FH
+449	 06B6  08 26 0107 R	 	        OR      [MODEB],AH
+450	 06BA  E8 0CB4 R	 	SBEND:  CALL    BLANKS
+451	 06BD  74 03	 	 	        JZ      SETX
+452	 06BF  E9 0754 R	 	BAD1:   JMP     BAD
+453	 06C2  B4 F1	 	 	SETX:   MOV     AH,0F1H
+454	 06C4  A0 0107 R	 	        MOV     AL,[MODEB]
+455	 06C7  8A 0E 0108 R	 	        MOV     CL,[BAUDC]
+456	 06CB  8B 16 0105 R	 	        MOV     DX,[CHAN]
+457	 06CF  CD 14	 	 	        INT     20
+458	 	 	 	 	;
+459	 	 	 	 	; the Z80 part to its place (BIOS trap 
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-11
+
+
+
+	 	 	 	1CH), the buffers over its copy
+460	 	 	 	 	;
+461	 06D1  8B 2E 0103 R	 	LOAD:   MOV     BP,[BASE]
+462	 06D5  81 C5 0D7B R	 	        ADD     BP,OFFSET Z80IMG
+463	 06D9  0F 1C	 	 	        DB      0FH,1CH
+464	 06DB  73 09	 	 	        JNB     LOAD1
+465	 06DD  BA 03AA R	 	        MOV     DX,OFFSET VERMSG
+466	 06E0  B4 09	 	 	        MOV     AH,9
+467	 06E2  CD 21	 	 	        INT     33
+468	 06E4  CD 20	 	 	        INT     32
+469	 06E6  B0 81	 	 	LOAD1:  MOV     AL,81H
+470	 06E8  83 3E 0105 R 00	 	        CMP     [CHAN],0
+471	 06ED  74 02	 	 	        JZ      LOAD2
+472	 06EF  B0 41	 	 	        MOV     AL,41H
+473	 06F1  A2 0113 R	 	LOAD2:  MOV     [PCTL],AL
+474	 06F4  A1 0103 R	 	        MOV     AX,[BASE]
+475	 06F7  05 0D7B R	 	        ADD     AX,OFFSET SCRBUF
+476	 06FA  A3 0118 R	 	        MOV     [PSCR],AX
+477	 06FD  A1 0103 R	 	        MOV     AX,[BASE]
+478	 0700  05 14FB R	 	        ADD     AX,OFFSET RINGBUF
+479	 0703  A3 011A R	 	        MOV     [PRING],AX
+480	 0706  A1 0103 R	 	        MOV     AX,[BASE]
+481	 0709  05 1CFB R	 	        ADD     AX,OFFSET LOGBUF
+482	 070C  A3 011C R	 	        MOV     [PLOG],AX
+483	 070F  BE 0113 R	 	        MOV     SI,OFFSET PBLK
+484	 0712  03 36 0103 R	 	        ADD     SI,[BASE]
+485	 0716  B4 00	 	 	        MOV     AH,0            ; INIT:
+	 	 	 	 the screen cleared
+486	 0718  E8 074F R	 	        CALL    Z80
+487	 071B  BE 03CC R	 	        MOV     SI,OFFSET HELLO ; a lin
+	 	 	 	e on the host's screen till it
+488	 071E  BF 0D7B R	 	        MOV     DI,OFFSET SCRBUF       
+	 	 	 	 ;   writes there
+489	 0721  B9 0019	 	 	        MOV     CX,OFFSET HELLOE-OFFSET
+	 	 	 	 HELLO
+490	 0724  F3/ A4	 	 	        REP     MOVSB
+491	 0726  B1 00	 	 	        MOV     CL,0
+492	 0728  B4 02	 	 	        MOV     AH,2            ; DRAW
+493	 072A  E8 074F R	 	        CALL    Z80
+494	 	 	 	 	;
+495	 	 	 	 	; the session; back here for the menu a
+	 	 	 	nd a full log buffer
+496	 	 	 	 	;
+497	 072D  B4 01	 	 	SESS:   MOV     AH,1
+498	 072F  E8 074F R	 	        CALL    Z80
+499	 0732  89 0E 0121 R	 	        MOV     [LOGN],CX
+500	 0736  89 16 0123 R	 	        MOV     [LOST],DX
+501	 073A  3C 02	 	 	        CMP     AL,2
+502	 073C  75 05	 	 	        JNZ     SESS1
+503	 073E  E8 0870 R	 	        CALL    LOGWR           ; the l
+	 	 	 	og buffer to the file
+504	 0741  EB EA	 	 	        JMP     SESS
+505	 0743  E8 0764 R	 	SESS1:  CALL    MENU
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-12
+
+
+
+506	 0746  B1 17	 	 	        MOV     CL,ROWS-1       ; the b
+	 	 	 	ottom line again
+507	 0748  B4 02	 	 	        MOV     AH,2
+508	 074A  E8 074F R	 	        CALL    Z80
+509	 074D  EB DE	 	 	        JMP     SESS
+510	 	 	 	 	
+511	 	 	 	 	; Z80: the Z80 part's function AH (BIOS
+	 	 	 	 trap 1CH, BP = 0)
+512	 074F  33 ED	 	 	Z80:    XOR     BP,BP
+513	 0751  0F 1C	 	 	        DB      0FH,1CH
+514	 0753  C3	 	 	        RET
+515	 	 	 	 	
+516	 0754  BA 0263 R	 	BAD:    MOV     DX,OFFSET USEMSG
+517	 0757  B4 09	 	 	        MOV     AH,9
+518	 0759  CD 21	 	 	        INT     33
+519	 075B  BA 03A7 R	 	        MOV     DX,OFFSET CRLF
+520	 075E  B4 09	 	 	        MOV     AH,9
+521	 0760  CD 21	 	 	        INT     33
+522	 0762  CD 20	 	 	        INT     32
+523	 	 	 	 	
+524	 	 	 	 	; -------------------------------------
+	 	 	 	--------------------------- the menu
+525	 0764  E8 0C5B R	 	MENU:   CALL    BOTTOM
+526	 0767  BA 03F1 R	 	        MOV     DX,OFFSET MENU1
+527	 076A  E8 0C63 R	 	        CALL    PUTS
+528	 076D  A0 0120 R	 	        MOV     AL,[LOGON]
+529	 0770  E8 07FB R	 	        CALL    ONOFF
+530	 0773  BA 03FE R	 	        MOV     DX,OFFSET MENUE
+531	 0776  E8 0C63 R	 	        CALL    PUTS
+532	 0779  A0 0116 R	 	        MOV     AL,[PFLAGS]
+533	 077C  24 08	 	 	        AND     AL,8
+534	 077E  E8 07FB R	 	        CALL    ONOFF
+535	 0781  BA 0406 R	 	        MOV     DX,OFFSET MENUC
+536	 0784  E8 0C63 R	 	        CALL    PUTS
+537	 0787  A0 0116 R	 	        MOV     AL,[PFLAGS]
+538	 078A  24 10	 	 	        AND     AL,10H
+539	 078C  E8 07FB R	 	        CALL    ONOFF
+540	 078F  BA 0410 R	 	        MOV     DX,OFFSET MENU2
+541	 0792  E8 0C63 R	 	        CALL    PUTS
+542	 0795  A1 0123 R	 	        MOV     AX,[LOST]
+543	 0798  0B C0	 	 	        OR      AX,AX
+544	 079A  74 09	 	 	        JZ      MENU1A
+545	 079C  BA 0429 R	 	        MOV     DX,OFFSET LOSTM
+546	 079F  E8 0C63 R	 	        CALL    PUTS
+547	 07A2  E8 0C82 R	 	        CALL    PUTNUM
+548	 07A5  E8 0C60 R	 	MENU1A: CALL    BOTEND
+549	 07A8  B4 07	 	 	        MOV     AH,7
+550	 07AA  CD 21	 	 	        INT     33
+551	 07AC  3C 61	 	 	        CMP     AL,"a"
+552	 07AE  72 02	 	 	        JB      MENU2A
+553	 07B0  2C 20	 	 	        SUB     AL,20H
+554	 07B2  3C 51	 	 	MENU2A: CMP     AL,"Q"
+555	 07B4  74 52	 	 	        JZ      QUIT
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-13
+
+
+
+556	 07B6  3C 4C	 	 	        CMP     AL,"L"
+557	 07B8  75 03	 	 	        JNZ     MENU3
+558	 07BA  EB 64 90	 	 	        JMP     LOGSW
+559	 07BD  3C 52	 	 	MENU3:  CMP     AL,"R"
+560	 07BF  75 03	 	 	        JNZ     MENU4
+561	 07C1  E9 08AB R	 	        JMP     XRECV
+562	 07C4  3C 53	 	 	MENU4:  CMP     AL,"S"
+563	 07C6  75 03	 	 	        JNZ     MENU5
+564	 07C8  E9 09EB R	 	        JMP     XSEND
+565	 07CB  3C 42	 	 	MENU5:  CMP     AL,"B"
+566	 07CD  75 05	 	 	        JNZ     MENU8
+567	 07CF  B4 05	 	 	        MOV     AH,5
+568	 07D1  E9 074F R	 	        JMP     Z80
+569	 07D4  B4 08	 	 	MENU8:  MOV     AH,8            ; E loc
+	 	 	 	al echo, C implicit LF: on / off
+570	 07D6  3C 45	 	 	        CMP     AL,"E"
+571	 07D8  74 06	 	 	        JZ      MENU9
+572	 07DA  B4 10	 	 	        MOV     AH,10H
+573	 07DC  3C 43	 	 	        CMP     AL,"C"
+574	 07DE  75 0D	 	 	        JNZ     MENU6
+575	 07E0  30 26 0116 R	 	MENU9:  XOR     [PFLAGS],AH
+576	 07E4  8A 16 0116 R	 	        MOV     DL,[PFLAGS]
+577	 07E8  B4 09	 	 	        MOV     AH,9            ; MODE:
+	 	 	 	 flags 8 and 10h
+578	 07EA  E9 074F R	 	        JMP     Z80
+579	 07ED  3C 01	 	 	MENU6:  CMP     AL,MENUK
+580	 07EF  75 09	 	 	        JNZ     MENU7
+581	 07F1  BE 0139 R	 	        MOV     SI,OFFSET MENUKB
+582	 07F4  B9 0001	 	 	        MOV     CX,1
+583	 07F7  E9 0B97 R	 	        JMP     SEND
+584	 07FA  C3	 	 	MENU7:  RET
+585	 	 	 	 	
+586	 	 	 	 	; ONOFF: + if AL <> 0, else -
+587	 07FB  BA 040C R	 	ONOFF:  MOV     DX,OFFSET MENUON
+588	 07FE  0A C0	 	 	        OR      AL,AL
+589	 0800  75 03	 	 	        JNZ     ONOFF1
+590	 0802  BA 040E R	 	        MOV     DX,OFFSET MENUOF
+591	 0805  E9 0C63 R	 	ONOFF1: JMP     PUTS
+592	 	 	 	 	
+593	 0808  80 3E 0120 R 00	 	QUIT:   CMP     [LOGON],0
+594	 080D  74 03	 	 	        JZ      QUIT1
+595	 080F  E8 085C R	 	        CALL    LOGOFF
+596	 0812  E8 0C5B R	 	QUIT1:  CALL    BOTTOM          ; DOS g
+	 	 	 	oes on from the bottom line
+597	 0815  E8 0C60 R	 	        CALL    BOTEND
+598	 0818  B2 0D	 	 	        MOV     DL,13
+599	 081A  B4 02	 	 	        MOV     AH,2
+600	 081C  CD 21	 	 	        INT     33
+601	 081E  CD 20	 	 	        INT     32
+602	 	 	 	 	
+603	 	 	 	 	; -------------------------------------
+	 	 	 	--------------------------- the log
+604	 0820  80 3E 0120 R 00	 	LOGSW:  CMP     [LOGON],0
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-14
+
+
+
+605	 0825  75 35	 	 	        JNZ     LOGOFF
+606	 0827  BA 0430 R	 	        MOV     DX,OFFSET LOGASK
+607	 082A  BF 013A R	 	        MOV     DI,OFFSET LFCB
+608	 082D  E8 0BE9 R	 	        CALL    ASKF
+609	 0830  72 3D	 	 	        JB      LOGX
+610	 0832  BA 013A R	 	        MOV     DX,OFFSET LFCB
+611	 0835  B4 16	 	 	        MOV     AH,22           ; creat
+	 	 	 	e
+612	 0837  CD 21	 	 	        INT     33
+613	 0839  0A C0	 	 	        OR      AL,AL
+614	 083B  74 06	 	 	        JZ      LOGON1
+615	 083D  BA 046E R	 	        MOV     DX,OFFSET CRMSG
+616	 0840  E9 0BD3 R	 	        JMP     SHOW
+617	 0843  BB 013A R	 	LOGON1: MOV     BX,OFFSET LFCB
+618	 0846  E8 0C4B R	 	        CALL    RECSZ1
+619	 0849  C6 06 0120 R 01	 	        MOV     [LOGON],1
+620	 084E  BA 0001	 	 	        MOV     DX,1
+621	 0851  33 C9	 	 	LOGSET: XOR     CX,CX
+622	 0853  89 0E 0121 R	 	        MOV     [LOGN],CX
+623	 0857  B4 06	 	 	        MOV     AH,6
+624	 0859  E9 074F R	 	        JMP     Z80
+625	 085C  E8 0870 R	 	LOGOFF: CALL    LOGWR
+626	 085F  BA 013A R	 	        MOV     DX,OFFSET LFCB
+627	 0862  B4 10	 	 	        MOV     AH,16           ; close
+628	 0864  CD 21	 	 	        INT     33
+629	 0866  C6 06 0120 R 00	 	        MOV     [LOGON],0
+630	 086B  33 D2	 	 	        XOR     DX,DX
+631	 086D  EB E2	 	 	        JMP     LOGSET
+632	 086F  C3	 	 	LOGX:   RET
+633	 	 	 	 	
+634	 	 	 	 	; LOGWR: the log buffer to the file (ra
+	 	 	 	ndom block write, records of 1)
+635	 0870  8B 0E 0121 R	 	LOGWR:  MOV     CX,[LOGN]
+636	 0874  E3 30	 	 	        JCXZ    LOGW1
+637	 0876  BA 1CFB R	 	        MOV     DX,OFFSET LOGBUF
+638	 0879  B4 1A	 	 	        MOV     AH,26           ; DTA
+639	 087B  CD 21	 	 	        INT     33
+640	 087D  BA 013A R	 	        MOV     DX,OFFSET LFCB
+641	 0880  B4 28	 	 	        MOV     AH,40
+642	 0882  CD 21	 	 	        INT     33
+643	 0884  0A C0	 	 	        OR      AL,AL
+644	 0886  74 1E	 	 	        JZ      LOGW1
+645	 0888  BA 013A R	 	        MOV     DX,OFFSET LFCB  ; disk 
+	 	 	 	full: the log stops
+646	 088B  B4 10	 	 	        MOV     AH,16
+647	 088D  CD 21	 	 	        INT     33
+648	 088F  C6 06 0120 R 00	 	        MOV     [LOGON],0
+649	 0894  33 D2	 	 	        XOR     DX,DX
+650	 0896  E8 0851 R	 	        CALL    LOGSET
+651	 0899  BA 0494 R	 	        MOV     DX,OFFSET FULLM
+652	 089C  E8 0BD3 R	 	        CALL    SHOW
+653	 089F  B1 17	 	 	        MOV     CL,ROWS-1
+654	 08A1  B4 02	 	 	        MOV     AH,2
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-15
+
+
+
+655	 08A3  E9 074F R	 	        JMP     Z80
+656	 08A6  BA 0001	 	 	LOGW1:  MOV     DX,1
+657	 08A9  EB A6	 	 	        JMP     LOGSET
+658	 	 	 	 	
+659	 	 	 	 	; -------------------------------------
+	 	 	 	--------------------------- XMODEM
+660	 	 	 	 	; XRECV: a file from the host: CRC-16 i
+	 	 	 	f the sender takes 'C', else
+661	 	 	 	 	; checksums. The answer to each block g
+	 	 	 	oes out with the wait for the next.
+662	 08AB  BA 043E R	 	XRECV:  MOV     DX,OFFSET RCVASK
+663	 08AE  BF 015F R	 	        MOV     DI,OFFSET XFCB
+664	 08B1  E8 0BE9 R	 	        CALL    ASKF
+665	 08B4  72 11	 	 	        JB      XRX
+666	 08B6  BA 015F R	 	        MOV     DX,OFFSET XFCB
+667	 08B9  B4 16	 	 	        MOV     AH,22
+668	 08BB  CD 21	 	 	        INT     33
+669	 08BD  0A C0	 	 	        OR      AL,AL
+670	 08BF  74 07	 	 	        JZ      XR0
+671	 08C1  BA 046E R	 	        MOV     DX,OFFSET CRMSG
+672	 08C4  E9 0BD3 R	 	        JMP     SHOW
+673	 08C7  C3	 	 	XRX:    RET
+674	 08C8  BB 015F R	 	XR0:    MOV     BX,OFFSET XFCB
+675	 08CB  E8 0C4B R	 	        CALL    RECSZ1
+676	 08CE  BA 04AB R	 	        MOV     DX,OFFSET XRMSG
+677	 08D1  E8 0B0F R	 	        CALL    XSTART
+678	 08D4  C6 06 0125 R 01	 	        MOV     [BLK],1
+679	 08D9  C6 06 0126 R 01	 	        MOV     [CRCM],1
+680	 08DE  C6 06 0128 R 00	 	        MOV     [GOT],0
+681	 08E3  C6 06 0129 R 43	 	        MOV     [XREPLY],"C"
+682	 08E8  8A 1E 0129 R	 	XR1:    MOV     BL,[XREPLY]     ; the a
+	 	 	 	nswer, then a block, its first
+683	 08EC  8A FB	 	 	        MOV     BH,BL           ;   byt
+	 	 	 	e within 3 s, the others 1 s apart
+684	 08EE  B9 0084	 	 	        MOV     CX,132
+685	 08F1  02 0E 0126 R	 	        ADD     CL,[CRCM]
+686	 08F5  89 0E 012A R	 	        MOV     [XLEN],CX
+687	 08F9  BA 012C	 	 	        MOV     DX,300
+688	 08FC  E8 0B68 R	 	        CALL    XGET
+689	 08FF  72 1E	 	 	        JB      XRUSR
+690	 0901  E3 1F	 	 	        JCXZ    XRTO
+691	 0903  A0 3CFB R	 	        MOV     AL,[XBUF]
+692	 0906  3C 01	 	 	        CMP     AL,SOH
+693	 0908  74 47	 	 	        JZ      XRSOH
+694	 090A  3C 04	 	 	        CMP     AL,EOT
+695	 090C  75 03	 	 	        JNZ     XR2
+696	 090E  E9 09DA R	 	        JMP     XREOT
+697	 0911  3C 18	 	 	XR2:    CMP     AL,CAN
+698	 0913  75 03	 	 	        JNZ     XR3
+699	 0915  E9 09E5 R	 	        JMP     XRCAN
+700	 0918  C6 06 0129 R 00	 	XR3:    MOV     [XREPLY],0      ; noise
+	 	 	 	: wait on
+701	 091D  EB C9	 	 	        JMP     XR1
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-16
+
+
+
+702	 091F  E9 0BB7 R	 	XRUSR:  JMP     XUSER
+703	 0922  FE 06 0127 R	 	XRTO:   INC     [TRIES]
+704	 0926  80 3E 0127 R 0A	 	        CMP     [TRIES],10
+705	 092B  77 21	 	 	        JA      XRFL
+706	 092D  80 3E 0128 R 00	 	        CMP     [GOT],0         ; nothi
+	 	 	 	ng yet: 'C' three times, then
+707	 0932  75 0C	 	 	        JNZ     XRNAK           ;   che
+	 	 	 	cksums (NAK)
+708	 0934  80 3E 0127 R 03	 	        CMP     [TRIES],3
+709	 0939  72 0C	 	 	        JB      XRC
+710	 093B  C6 06 0126 R 00	 	        MOV     [CRCM],0
+711	 0940  C6 06 0129 R 15	 	XRNAK:  MOV     [XREPLY],NAK
+712	 0945  EB A1	 	 	        JMP     XR1
+713	 0947  C6 06 0129 R 43	 	XRC:    MOV     [XREPLY],"C"
+714	 094C  EB 9A	 	 	        JMP     XR1
+715	 094E  E9 0BBC R	 	XRFL:   JMP     XFAIL
+716	 0951  3B 0E 012A R	 	XRSOH:  CMP     CX,[XLEN]
+717	 0955  75 6F	 	 	        JNZ     XRBAD
+718	 0957  A1 3CFC R	 	        MOV     AX,WORD PTR [XBUF+1]
+719	 095A  F6 D4	 	 	        NOT     AH
+720	 095C  3A C4	 	 	        CMP     AL,AH
+721	 095E  75 66	 	 	        JNZ     XRBAD
+722	 0960  E8 0B78 R	 	        CALL    XCHECK
+723	 0963  80 3E 0126 R 00	 	        CMP     [CRCM],0
+724	 0968  74 0E	 	 	        JZ      XRS1
+725	 096A  3A 36 3D7E R	 	        CMP     DH,[XBUF+131]
+726	 096E  75 56	 	 	        JNZ     XRBAD
+727	 0970  3A 16 3D7F R	 	        CMP     DL,[XBUF+132]
+728	 0974  75 50	 	 	        JNZ     XRBAD
+729	 0976  EB 06	 	 	        JMP     SHORT XRS2
+730	 0978  3A 06 3D7E R	 	XRS1:   CMP     AL,[XBUF+131]
+731	 097C  75 48	 	 	        JNZ     XRBAD
+732	 097E  C6 06 0128 R 01	 	XRS2:   MOV     [GOT],1
+733	 0983  C6 06 0127 R 00	 	        MOV     [TRIES],0
+734	 0988  A0 3CFC R	 	        MOV     AL,[XBUF+1]
+735	 098B  3A 06 0125 R	 	        CMP     AL,[BLK]
+736	 098F  74 0B	 	 	        JZ      XRS3
+737	 0991  FE C0	 	 	        INC     AL              ; the l
+	 	 	 	ast block again: its ACK was lost
+738	 0993  3A 06 0125 R	 	        CMP     AL,[BLK]
+739	 0997  74 25	 	 	        JZ      XRACK
+740	 0999  E9 0BBC R	 	        JMP     XFAIL
+741	 099C  BA 3CFE R	 	XRS3:   MOV     DX,OFFSET XBUF+3
+742	 099F  B4 1A	 	 	        MOV     AH,26
+743	 09A1  CD 21	 	 	        INT     33
+744	 09A3  B9 0080	 	 	        MOV     CX,128
+745	 09A6  BA 015F R	 	        MOV     DX,OFFSET XFCB
+746	 09A9  B4 28	 	 	        MOV     AH,40
+747	 09AB  CD 21	 	 	        INT     33
+748	 09AD  0A C0	 	 	        OR      AL,AL
+749	 09AF  74 03	 	 	        JZ      XRS4
+750	 09B1  E9 0BBC R	 	        JMP     XFAIL
+751	 09B4  FE 06 0125 R	 	XRS4:   INC     [BLK]
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-17
+
+
+
+752	 09B8  B8 0080	 	 	        MOV     AX,128
+753	 09BB  E8 0B34 R	 	        CALL    XPROG
+754	 09BE  C6 06 0129 R 06	 	XRACK:  MOV     [XREPLY],ACK
+755	 09C3  E9 08E8 R	 	        JMP     XR1
+756	 09C6  E8 0B87 R	 	XRBAD:  CALL    PURGE           ; when 
+	 	 	 	the line is quiet: NAK
+757	 09C9  FE 06 0127 R	 	        INC     [TRIES]
+758	 09CD  80 3E 0127 R 0A	 	        CMP     [TRIES],10
+759	 09D2  76 03	 	 	        JNA     XRBAD1
+760	 09D4  E9 0BBC R	 	        JMP     XFAIL
+761	 09D7	 	 	 	XRBAD1:
+762	 09D7  E9 0940 R	 	        JMP     XRNAK
+763	 09DA  BB 0606	 	 	XREOT:  MOV     BX,ACK*256+ACK
+764	 09DD  33 C9	 	 	        XOR     CX,CX
+765	 09DF  E8 0B68 R	 	        CALL    XGET
+766	 09E2  E9 0BA0 R	 	        JMP     XDONE
+767	 09E5  BA 04DF R	 	XRCAN:  MOV     DX,OFFSET RCANM
+768	 09E8  E9 0BCA R	 	        JMP     XEND
+769	 	 	 	 	
+770	 	 	 	 	; XSEND: a file to the host
+771	 09EB  BA 0459 R	 	XSEND:  MOV     DX,OFFSET SNDASK
+772	 09EE  BF 015F R	 	        MOV     DI,OFFSET XFCB
+773	 09F1  E8 0BE9 R	 	        CALL    ASKF
+774	 09F4  72 11	 	 	        JB      XSX
+775	 09F6  BA 015F R	 	        MOV     DX,OFFSET XFCB
+776	 09F9  B4 0F	 	 	        MOV     AH,15           ; open
+777	 09FB  CD 21	 	 	        INT     33
+778	 09FD  0A C0	 	 	        OR      AL,AL
+779	 09FF  74 07	 	 	        JZ      XS0
+780	 0A01  BA 0485 R	 	        MOV     DX,OFFSET NFMSG
+781	 0A04  E9 0BD3 R	 	        JMP     SHOW
+782	 0A07  C3	 	 	XSX:    RET
+783	 0A08  BB 015F R	 	XS0:    MOV     BX,OFFSET XFCB
+784	 0A0B  E8 0C4B R	 	        CALL    RECSZ1
+785	 0A0E  BA 04B7 R	 	        MOV     DX,OFFSET XSMSG
+786	 0A11  E8 0B0F R	 	        CALL    XSTART
+787	 0A14  33 DB	 	 	XS1:    XOR     BX,BX           ; the r
+	 	 	 	eceiver's 'C' or NAK, a minute
+788	 0A16  B9 0001	 	 	        MOV     CX,1
+789	 0A19  BA 1770	 	 	        MOV     DX,6000
+790	 0A1C  E8 0B68 R	 	        CALL    XGET
+791	 0A1F  72 1D	 	 	        JB      XSUSR
+792	 0A21  E3 1E	 	 	        JCXZ    XSFL
+793	 0A23  A0 3CFB R	 	        MOV     AL,[XBUF]
+794	 0A26  C6 06 0126 R 01	 	        MOV     [CRCM],1
+795	 0A2B  3C 43	 	 	        CMP     AL,"C"
+796	 0A2D  74 15	 	 	        JZ      XS2
+797	 0A2F  C6 06 0126 R 00	 	        MOV     [CRCM],0
+798	 0A34  3C 15	 	 	        CMP     AL,NAK
+799	 0A36  74 0C	 	 	        JZ      XS2
+800	 0A38  3C 18	 	 	        CMP     AL,CAN
+801	 0A3A  75 D8	 	 	        JNZ     XS1
+802	 0A3C  EB A7	 	 	        JMP     XRCAN
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-18
+
+
+
+803	 0A3E  E9 0BB7 R	 	XSUSR:  JMP     XUSER
+804	 0A41  E9 0BBC R	 	XSFL:   JMP     XFAIL
+805	 0A44  C6 06 0125 R 01	 	XS2:    MOV     [BLK],1
+806	 0A49  BA 3CFE R	 	XS3:    MOV     DX,OFFSET XBUF+3       
+	 	 	 	 ; the next 128 bytes
+807	 0A4C  B4 1A	 	 	        MOV     AH,26
+808	 0A4E  CD 21	 	 	        INT     33
+809	 0A50  B9 0080	 	 	        MOV     CX,128
+810	 0A53  BA 015F R	 	        MOV     DX,OFFSET XFCB
+811	 0A56  B4 27	 	 	        MOV     AH,39           ; rando
+	 	 	 	m block read
+812	 0A58  CD 21	 	 	        INT     33
+813	 0A5A  0B C9	 	 	        OR      CX,CX
+814	 0A5C  75 03	 	 	        JNZ     XS31
+815	 0A5E  E9 0AE4 R	 	        JMP     XSEOT
+816	 0A61  89 0E 012C R	 	XS31:   MOV     [XCNT],CX
+817	 0A65  BF 3CFE R	 	        MOV     DI,OFFSET XBUF+3
+818	 0A68  03 F9	 	 	        ADD     DI,CX
+819	 0A6A  F7 D9	 	 	        NEG     CX
+820	 0A6C  81 C1 0080	 	        ADD     CX,128
+821	 0A70  B0 1A	 	 	        MOV     AL,1AH          ; the l
+	 	 	 	ast block filled with ^Z
+822	 0A72  F3/ AA	 	 	        REP     STOSB
+823	 0A74  C6 06 3CFB R 01 90	        MOV     [XBUF],SOH
+824	 0A7A  A0 0125 R	 	        MOV     AL,[BLK]
+825	 0A7D  A2 3CFC R	 	        MOV     [XBUF+1],AL
+826	 0A80  F6 D0	 	 	        NOT     AL
+827	 0A82  A2 3CFD R	 	        MOV     [XBUF+2],AL
+828	 0A85  E8 0B78 R	 	        CALL    XCHECK
+829	 0A88  A2 3D7E R	 	        MOV     [XBUF+131],AL
+830	 0A8B  C7 06 012A R 0084	        MOV     [XLEN],132
+831	 0A91  80 3E 0126 R 00	 	        CMP     [CRCM],0
+832	 0A96  74 0E	 	 	        JZ      XS4
+833	 0A98  88 36 3D7E R	 	        MOV     [XBUF+131],DH
+834	 0A9C  88 16 3D7F R	 	        MOV     [XBUF+132],DL
+835	 0AA0  C7 06 012A R 0085	        MOV     [XLEN],133
+836	 0AA6  C6 06 0127 R 00	 	XS4:    MOV     [TRIES],0
+837	 0AAB  BE 3CFB R	 	XS5:    MOV     SI,OFFSET XBUF
+838	 0AAE  8B 0E 012A R	 	        MOV     CX,[XLEN]
+839	 0AB2  E8 0B97 R	 	        CALL    SEND
+840	 0AB5  0A C0	 	 	        OR      AL,AL
+841	 0AB7  75 1B	 	 	        JNZ     XSFL1
+842	 0AB9  E8 0B50 R	 	        CALL    XANS
+843	 0ABC  72 80	 	 	        JB      XSUSR
+844	 0ABE  3C 06	 	 	        CMP     AL,ACK
+845	 0AC0  74 15	 	 	        JZ      XS6
+846	 0AC2  3C 18	 	 	        CMP     AL,CAN
+847	 0AC4  75 03	 	 	        JNZ     XS51
+848	 0AC6  E9 09E5 R	 	        JMP     XRCAN
+849	 0AC9  FE 06 0127 R	 	XS51:   INC     [TRIES]
+850	 0ACD  80 3E 0127 R 0A	 	        CMP     [TRIES],10
+851	 0AD2  72 D7	 	 	        JB      XS5
+852	 0AD4  E9 0BBC R	 	XSFL1:  JMP     XFAIL
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-19
+
+
+
+853	 0AD7  FE 06 0125 R	 	XS6:    INC     [BLK]
+854	 0ADB  A1 012C R	 	        MOV     AX,[XCNT]
+855	 0ADE  E8 0B34 R	 	        CALL    XPROG
+856	 0AE1  E9 0A49 R	 	        JMP     XS3
+857	 0AE4  C6 06 0127 R 00	 	XSEOT:  MOV     [TRIES],0
+858	 0AE9  BE 0135 R	 	XSE1:   MOV     SI,OFFSET EOTB
+859	 0AEC  B9 0001	 	 	        MOV     CX,1
+860	 0AEF  E8 0B97 R	 	        CALL    SEND
+861	 0AF2  E8 0B50 R	 	        CALL    XANS
+862	 0AF5  73 03	 	 	        JNB     XSE11
+863	 0AF7  E9 0BB7 R	 	        JMP     XUSER
+864	 0AFA  3C 06	 	 	XSE11:  CMP     AL,ACK
+865	 0AFC  74 0E	 	 	        JZ      XSE2
+866	 0AFE  FE 06 0127 R	 	        INC     [TRIES]
+867	 0B02  80 3E 0127 R 0A	 	        CMP     [TRIES],10
+868	 0B07  72 E0	 	 	        JB      XSE1
+869	 0B09  E9 0BBC R	 	        JMP     XFAIL
+870	 0B0C  E9 0BA0 R	 	XSE2:   JMP     XDONE
+871	 	 	 	 	
+872	 	 	 	 	; XSTART: the bottom line for a transfe
+	 	 	 	r, DX = what it is
+873	 0B0F  89 16 012E R	 	XSTART: MOV     [XMSG],DX
+874	 0B13  52	 	 	        PUSH    DX
+875	 0B14  E8 0C5B R	 	        CALL    BOTTOM
+876	 0B17  5A	 	 	        POP     DX
+877	 0B18  E8 0C63 R	 	        CALL    PUTS
+878	 0B1B  E8 0C60 R	 	        CALL    BOTEND
+879	 0B1E  C7 06 0130 R 0000	        MOV     WORD PTR [NBYTES],0
+880	 0B24  C7 06 0132 R 0000	        MOV     WORD PTR [NBYTES+2],0
+881	 0B2A  C6 06 0127 R 00	 	        MOV     [TRIES],0
+882	 0B2F  B4 08	 	 	        MOV     AH,8            ; FLUSH
+	 	 	 	 what came before
+883	 0B31  E9 074F R	 	        JMP     Z80
+884	 	 	 	 	
+885	 	 	 	 	; XPROG: AX more bytes moved; their cou
+	 	 	 	nt on the bottom line
+886	 0B34  01 06 0130 R	 	XPROG:  ADD     WORD PTR [NBYTES],AX
+887	 0B38  83 16 0132 R 00	 	        ADC     WORD PTR [NBYTES+2],0
+888	 0B3D  E8 0C5B R	 	        CALL    BOTTOM
+889	 0B40  8B 16 012E R	 	        MOV     DX,[XMSG]
+890	 0B44  E8 0C68 R	 	        CALL    PUTNB
+891	 0B47  BA 04C1 R	 	        MOV     DX,OFFSET BYTESM
+892	 0B4A  E8 0C63 R	 	        CALL    PUTS
+893	 0B4D  E9 0C60 R	 	        JMP     BOTEND
+894	 	 	 	 	
+895	 	 	 	 	; XANS: AL = the answer to what was sen
+	 	 	 	t (0 if none in 10 s); CF=1 a key
+896	 0B50  33 DB	 	 	XANS:   XOR     BX,BX
+897	 0B52  B9 0001	 	 	        MOV     CX,1
+898	 0B55  BA 03E8	 	 	        MOV     DX,1000
+899	 0B58  BF 0134 R	 	        MOV     DI,OFFSET ANSB
+900	 0B5B  E8 0B6B R	 	        CALL    XGETDI
+901	 0B5E  72 07	 	 	        JB      XANS1
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-20
+
+
+
+902	 0B60  B0 00	 	 	        MOV     AL,0
+903	 0B62  E3 03	 	 	        JCXZ    XANS1
+904	 0B64  A0 0134 R	 	        MOV     AL,[ANSB]
+905	 0B67  C3	 	 	XANS1:  RET
+906	 	 	 	 	
+907	 	 	 	 	; XGET / XGETDI: send BL if BH <> 0, th
+	 	 	 	en up to CX bytes to XBUF / DI,
+908	 	 	 	 	; DX x 10 ms each; CX = bytes received,
+	 	 	 	 CF=1 if a key was pressed
+909	 0B68  BF 3CFB R	 	XGET:   MOV     DI,OFFSET XBUF
+910	 0B6B  03 3E 0103 R	 	XGETDI: ADD     DI,[BASE]
+911	 0B6F  B4 03	 	 	        MOV     AH,3
+912	 0B71  E8 074F R	 	        CALL    Z80
+913	 0B74  3C 01	 	 	        CMP     AL,1
+914	 0B76  F5	 	 	        CMC
+915	 0B77  C3	 	 	        RET
+916	 	 	 	 	
+917	 	 	 	 	; XCHECK: the block's data: DX = CRC-16
+	 	 	 	, AL = checksum
+918	 0B78  BE 3CFE R	 	XCHECK: MOV     SI,OFFSET XBUF+3
+919	 0B7B  B9 0080	 	 	        MOV     CX,128
+920	 0B7E  03 36 0103 R	 	        ADD     SI,[BASE]
+921	 0B82  B4 07	 	 	        MOV     AH,7
+922	 0B84  E9 074F R	 	        JMP     Z80
+923	 	 	 	 	
+924	 	 	 	 	; PURGE: wait till nothing comes for 0.
+	 	 	 	3 s
+925	 0B87  B9 0085	 	 	PURGE:  MOV     CX,133
+926	 0B8A  BA 001E	 	 	        MOV     DX,30
+927	 0B8D  33 DB	 	 	        XOR     BX,BX
+928	 0B8F  E8 0B68 R	 	        CALL    XGET
+929	 0B92  E3 02	 	 	        JCXZ    PURGE1
+930	 0B94  EB F1	 	 	        JMP     PURGE
+931	 0B96  C3	 	 	PURGE1: RET
+932	 	 	 	 	
+933	 	 	 	 	; SEND: CX bytes at SI to the channel; 
+	 	 	 	AL = 1 if CTS stayed off
+934	 0B97  03 36 0103 R	 	SEND:   ADD     SI,[BASE]
+935	 0B9B  B4 04	 	 	        MOV     AH,4
+936	 0B9D  E9 074F R	 	        JMP     Z80
+937	 	 	 	 	
+938	 0BA0  BA 015F R	 	XDONE:  MOV     DX,OFFSET XFCB
+939	 0BA3  B4 10	 	 	        MOV     AH,16
+940	 0BA5  CD 21	 	 	        INT     33
+941	 0BA7  E8 0C5B R	 	        CALL    BOTTOM
+942	 0BAA  8B 16 012E R	 	        MOV     DX,[XMSG]
+943	 0BAE  E8 0C68 R	 	        CALL    PUTNB
+944	 0BB1  BA 04C8 R	 	        MOV     DX,OFFSET DONEM
+945	 0BB4  EB 22 90	 	 	        JMP     SHOW1
+946	 0BB7  BA 04D5 R	 	XUSER:  MOV     DX,OFFSET CANM
+947	 0BBA  EB 03	 	 	        JMP     SHORT XCAN
+948	 0BBC  BA 04FB R	 	XFAIL:  MOV     DX,OFFSET FAILM
+949	 0BBF  52	 	 	XCAN:   PUSH    DX
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-21
+
+
+
+950	 0BC0  BE 0136 R	 	        MOV     SI,OFFSET CANS
+951	 0BC3  B9 0003	 	 	        MOV     CX,3
+952	 0BC6  E8 0B97 R	 	        CALL    SEND
+953	 0BC9  5A	 	 	        POP     DX
+954	 0BCA  52	 	 	XEND:   PUSH    DX
+955	 0BCB  BA 015F R	 	        MOV     DX,OFFSET XFCB
+956	 0BCE  B4 10	 	 	        MOV     AH,16
+957	 0BD0  CD 21	 	 	        INT     33
+958	 0BD2  5A	 	 	        POP     DX
+959	 	 	 	 	;
+960	 	 	 	 	; SHOW: the message DX on the bottom li
+	 	 	 	ne until a key is pressed
+961	 	 	 	 	;
+962	 0BD3  52	 	 	SHOW:   PUSH    DX
+963	 0BD4  E8 0C5B R	 	        CALL    BOTTOM
+964	 0BD7  5A	 	 	        POP     DX
+965	 0BD8  E8 0C63 R	 	SHOW1:  CALL    PUTS
+966	 0BDB  BA 050B R	 	        MOV     DX,OFFSET KEYM
+967	 0BDE  E8 0C63 R	 	        CALL    PUTS
+968	 0BE1  E8 0C60 R	 	        CALL    BOTEND
+969	 0BE4  B4 07	 	 	        MOV     AH,7
+970	 0BE6  CD 21	 	 	        INT     33
+971	 0BE8  C3	 	 	        RET
+972	 	 	 	 	
+973	 	 	 	 	; -------------------------------------
+	 	 	 	--------------------------- helpers
+974	 	 	 	 	; ASKF: DX = the question; a file name 
+	 	 	 	from the keyboard into the FCB at
+975	 	 	 	 	; DI. CF=1: none given (or ESC)
+976	 0BE9  57	 	 	ASKF:   PUSH    DI
+977	 0BEA  52	 	 	        PUSH    DX
+978	 0BEB  E8 0C5B R	 	        CALL    BOTTOM
+979	 0BEE  5A	 	 	        POP     DX
+980	 0BEF  E8 0C63 R	 	        CALL    PUTS
+981	 0BF2  E8 0C60 R	 	        CALL    BOTEND
+982	 0BF5  33 DB	 	 	        XOR     BX,BX
+983	 0BF7  B4 07	 	 	ASK1:   MOV     AH,7
+984	 0BF9  CD 21	 	 	        INT     33
+985	 0BFB  3C 0D	 	 	        CMP     AL,13
+986	 0BFD  74 2F	 	 	        JZ      ASK4
+987	 0BFF  3C 1B	 	 	        CMP     AL,27
+988	 0C01  74 45	 	 	        JZ      ASKNO
+989	 0C03  3C 08	 	 	        CMP     AL,8
+990	 0C05  74 1A	 	 	        JZ      ASK3
+991	 0C07  3C 7F	 	 	        CMP     AL,7FH
+992	 0C09  74 16	 	 	        JZ      ASK3
+993	 0C0B  3C 20	 	 	        CMP     AL," "
+994	 0C0D  72 E8	 	 	        JB      ASK1
+995	 0C0F  83 FB 1C	 	 	        CMP     BX,28
+996	 0C12  73 E3	 	 	        JNB     ASK1
+997	 0C14  88 87 0184 R	 	        MOV     LINE[BX],AL
+998	 0C18  43	 	 	        INC     BX
+999	 0C19  8A D0	 	 	        MOV     DL,AL
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-22
+
+
+
+1000	 0C1B  B4 02	 	 	        MOV     AH,2
+1001	 0C1D  CD 21	 	 	        INT     33
+1002	 0C1F  EB D6	 	 	        JMP     ASK1
+1003	 0C21  0B DB	 	 	ASK3:   OR      BX,BX
+1004	 0C23  74 D2	 	 	        JZ      ASK1
+1005	 0C25  4B	 	 	        DEC     BX
+1006	 0C26  BA 0514 R	 	        MOV     DX,OFFSET BSSTR
+1007	 0C29  E8 0C63 R	 	        CALL    PUTS
+1008	 0C2C  EB C9	 	 	        JMP     ASK1
+1009	 0C2E  C6 87 0184 R 0D	 	ASK4:   MOV     LINE[BX],13
+1010	 0C33  5F	 	 	        POP     DI
+1011	 0C34  BE 0184 R	 	        MOV     SI,OFFSET LINE
+1012	 0C37  B8 2900	 	 	        MOV     AX,2900H        ; parse
+	 	 	 	 the name
+1013	 0C3A  CD 21	 	 	        INT     33
+1014	 0C3C  3C FF	 	 	        CMP     AL,0FFH
+1015	 0C3E  74 09	 	 	        JZ      ASKNO1
+1016	 0C40  80 7D 01 20	 	        CMP     BYTE PTR [DI+1]," "
+1017	 0C44  74 03	 	 	        JZ      ASKNO1
+1018	 0C46  F8	 	 	        CLC
+1019	 0C47  C3	 	 	        RET
+1020	 0C48  5F	 	 	ASKNO:  POP     DI
+1021	 0C49  F9	 	 	ASKNO1: STC
+1022	 0C4A  C3	 	 	        RET
+1023	 	 	 	 	
+1024	 	 	 	 	; RECSZ1: the FCB at BX for random bloc
+	 	 	 	k I/O, records of 1 byte, from 0
+1025	 0C4B  C7 47 0E 0001	 	RECSZ1: MOV     WORD PTR [BX+14],1
+1026	 0C50  C7 47 21 0000	 	        MOV     WORD PTR [BX+33],0
+1027	 0C55  C7 47 23 0000	 	        MOV     WORD PTR [BX+35],0
+1028	 0C5A  C3	 	 	        RET
+1029	 	 	 	 	
+1030	 	 	 	 	; BOTTOM / BOTEND: to the bottom line, 
+	 	 	 	inverse / back to normal
+1031	 0C5B  BA 03E5 R	 	BOTTOM: MOV     DX,OFFSET BOTL
+1032	 0C5E  EB 03	 	 	        JMP     SHORT PUTS
+1033	 0C60  BA 03EC R	 	BOTEND: MOV     DX,OFFSET BOTE
+1034	 0C63  B4 09	 	 	PUTS:   MOV     AH,9
+1035	 0C65  CD 21	 	 	        INT     33
+1036	 0C67  C3	 	 	        RET
+1037	 	 	 	 	
+1038	 	 	 	 	; PUTNB: DX, then NBYTES in decimal (up
+	 	 	 	 to 655359)
+1039	 0C68  E8 0C63 R	 	PUTNB:  CALL    PUTS
+1040	 0C6B  A1 0130 R	 	        MOV     AX,WORD PTR [NBYTES]
+1041	 0C6E  8B 16 0132 R	 	        MOV     DX,WORD PTR [NBYTES+2]
+1042	 0C72  BB 000A	 	 	        MOV     BX,10
+1043	 0C75  F7 F3	 	 	        DIV     BX              ; DX:AX
+	 	 	 	 / 10 (NBYTES < 655360)
+1044	 0C77  52	 	 	        PUSH    DX
+1045	 0C78  0B C0	 	 	        OR      AX,AX
+1046	 0C7A  74 03	 	 	        JZ      PUTNB1
+1047	 0C7C  E8 0C82 R	 	        CALL    PUTNUM
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-23
+
+
+
+1048	 0C7F  58	 	 	PUTNB1: POP     AX
+1049	 0C80  EB 10	 	 	        JMP     SHORT PUTN2
+1050	 	 	 	 	; PUTNUM: AX in decimal
+1051	 0C82  33 D2	 	 	PUTNUM: XOR     DX,DX
+1052	 0C84  BB 000A	 	 	        MOV     BX,10
+1053	 0C87  F7 F3	 	 	        DIV     BX
+1054	 0C89  52	 	 	        PUSH    DX
+1055	 0C8A  0B C0	 	 	        OR      AX,AX
+1056	 0C8C  74 03	 	 	        JZ      PUTN1
+1057	 0C8E  E8 0C82 R	 	        CALL    PUTNUM
+1058	 0C91  58	 	 	PUTN1:  POP     AX
+1059	 0C92  8A D0	 	 	PUTN2:  MOV     DL,AL
+1060	 0C94  80 C2 30	 	 	        ADD     DL,"0"
+1061	 0C97  B4 02	 	 	        MOV     AH,2
+1062	 0C99  CD 21	 	 	        INT     33
+1063	 0C9B  C3	 	 	        RET
+1064	 	 	 	 	
+1065	 	 	 	 	; COMMA: after a field: CF=1 if the lin
+	 	 	 	e ends there; otherwise past the
+1066	 	 	 	 	; comma, ZF=1 if the next field is empt
+	 	 	 	y too, AL = its first character
+1067	 0C9C  E8 0CB4 R	 	COMMA:  CALL    BLANKS
+1068	 0C9F  F9	 	 	        STC
+1069	 0CA0  74 0E	 	 	        JZ      CMX
+1070	 0CA2  3C 2C	 	 	        CMP     AL,","
+1071	 0CA4  75 0B	 	 	        JNZ     CMBAD
+1072	 0CA6  46	 	 	        INC     SI
+1073	 0CA7  E8 0CB4 R	 	        CALL    BLANKS
+1074	 0CAA  3C 2C	 	 	        CMP     AL,","
+1075	 0CAC  74 02	 	 	        JZ      CMX
+1076	 0CAE  0A C0	 	 	        OR      AL,AL
+1077	 0CB0  C3	 	 	CMX:    RET
+1078	 0CB1  E9 0754 R	 	CMBAD:  JMP     BAD
+1079	 	 	 	 	
+1080	 	 	 	 	; BLANKS: past spaces and tabs; AL = th
+	 	 	 	e next character, ZF=1 at the end
+1081	 0CB4  AC	 	 	BLANKS: LODSB
+1082	 0CB5  3C 20	 	 	        CMP     AL," "
+1083	 0CB7  74 FB	 	 	        JZ      BLANKS
+1084	 0CB9  3C 09	 	 	        CMP     AL,9
+1085	 0CBB  74 F7	 	 	        JZ      BLANKS
+1086	 0CBD  4E	 	 	        DEC     SI
+1087	 0CBE  0A C0	 	 	        OR      AL,AL
+1088	 0CC0  C3	 	 	        RET
+1089	 	 	 	 	
+1090	 	 	 	 	; GETW: the letters, digits and points 
+	 	 	 	at SI to DI, padded with spaces to
+1091	 	 	 	 	; CX characters; ZF=0 if there are none
+	 	 	 	 or more than CX
+1092	 0CC1  8B D9	 	 	GETW:   MOV     BX,CX
+1093	 0CC3  8A 04	 	 	GETW1:  MOV     AL,[SI]
+1094	 0CC5  3C 2E	 	 	        CMP     AL,"."
+1095	 0CC7  74 10	 	 	        JZ      GETW2
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-24
+
+
+
+1096	 0CC9  3C 30	 	 	        CMP     AL,"0"
+1097	 0CCB  72 13	 	 	        JB      GETW3
+1098	 0CCD  3C 39	 	 	        CMP     AL,"9"
+1099	 0CCF  76 08	 	 	        JBE     GETW2
+1100	 0CD1  3C 41	 	 	        CMP     AL,"A"
+1101	 0CD3  72 0B	 	 	        JB      GETW3
+1102	 0CD5  3C 5A	 	 	        CMP     AL,"Z"
+1103	 0CD7  77 07	 	 	        JA      GETW3
+1104	 0CD9  E3 10	 	 	GETW2:  JCXZ    GETWX
+1105	 0CDB  AA	 	 	        STOSB
+1106	 0CDC  46	 	 	        INC     SI
+1107	 0CDD  49	 	 	        DEC     CX
+1108	 0CDE  EB E3	 	 	        JMP     GETW1
+1109	 0CE0  3B CB	 	 	GETW3:  CMP     CX,BX
+1110	 0CE2  74 07	 	 	        JZ      GETWX
+1111	 0CE4  B0 20	 	 	        MOV     AL," "
+1112	 0CE6  F3/ AA	 	 	        REP     STOSB
+1113	 0CE8  3A C0	 	 	        CMP     AL,AL
+1114	 0CEA  C3	 	 	        RET
+1115	 0CEB  0B E4	 	 	GETWX:  OR      SP,SP           ; ZF=0
+1116	 0CED  C3	 	 	        RET
+1117	 	 	 	 	
+1118	 	 	 	 	; SAME6: ZF=1 if TOKEN is the 6 charact
+	 	 	 	ers at BX
+1119	 0CEE  56	 	 	SAME6:  PUSH    SI
+1120	 0CEF  BE 010D R	 	        MOV     SI,OFFSET TOKEN
+1121	 0CF2  8B FB	 	 	        MOV     DI,BX
+1122	 0CF4  B9 0006	 	 	        MOV     CX,6
+1123	 0CF7  F3/ A6	 	 	        REPE    CMPSB
+1124	 0CF9  5E	 	 	        POP     SI
+1125	 0CFA  C3	 	 	        RET
+1126	 	 	 	 	
+1127	 0CFB     40 [	 	 	        DW      64 DUP (0)
+1128	                0000	 	
+1129	                      ]	 	
+1130	 	 	 	 	
+1131	 0D7B	 	 	 	STKTOP  LABEL   WORD
+1132	 	 	 	 	
+1133	 	 	 	 	; the Z80 part: length, the BIOS addres
+	 	 	 	ses it was made for, the code.
+1134	 	 	 	 	; Once it is in the Z80's memory the bu
+	 	 	 	ffers go over it.
+1135	 0D7B	 	 	 	Z80IMG  LABEL   BYTE
+1136	 =	 	 	 	SCRBUF  EQU     Z80IMG          ; the h
+	 	 	 	ost's screen, 24 x 80 at most
+1137	 = 14FB	 	 	 	RINGBUF EQU     SCRBUF+ROWS*80
+1138	 = 1CFB	 	 	 	LOGBUF  EQU     RINGBUF+RINGSZ
+1139	 = 3CFB	 	 	 	XBUF    EQU     LOGBUF+LOGSZ    ; an XM
+	 	 	 	ODEM block (133 bytes)
+1140	                             C	        INCLUDE TERMZ80.INC
+1141	 0D7B  8C 0D 3B D8 4D EB     C	        DB      08CH,00DH,03BH,0D8H,04D
+	 	 	 	H,0EBH,0E3H,0EBH,000H,0ECH,00EH,0ECH,02AH,0F1H,
+	 	 	 	02CH,0F1H
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-25
+
+
+
+1142	       E3 EB 00 EC 0E EC     C	
+1143	       2A F1 2C F1           C	
+1144	 0D8B  3A 01 D0 FE 0A D0     C	        DB      03AH,001H,0D0H,0FEH,00A
+	 	 	 	H,0D0H,087H,06FH,026H,000H,011H,03FH,0F1H,019H,
+	 	 	 	07EH,023H
+1145	       87 6F 26 00 11 3F     C	
+1146	       F1 19 7E 23           C	
+1147	 0D9B  66 6F E9 53 F1 F2     C	        DB      066H,06FH,0E9H,053H,0F1
+	 	 	 	H,0F2H,0F1H,088H,0F2H,0A3H,0F2H,029H,0F3H,04CH,
+	 	 	 	0F3H,066H
+1148	       F1 88 F2 A3 F2 29     C	
+1149	       F3 4C F3 66           C	
+1150	 0DAB  F3 83 F3 C2 F3 73     C	        DB      0F3H,083H,0F3H,0C2H,0F3
+	 	 	 	H,073H,0F3H,02AH,00CH,0D0H,011H,072H,0FEH,001H,
+	 	 	 	00DH,000H
+1151	       F3 2A 0C D0 11 72     C	
+1152	       FE 01 0D 00           C	
+1153	 0DBB  ED B0 3A 74 FE CD     C	        DB      0EDH,0B0H,03AH,074H,0FE
+	 	 	 	H,0CDH,0EDH,0F6H,022H,081H,0FEH,02AH,07DH,0FEH,
+	 	 	 	025H,022H
+1154	       ED F6 22 81 FE 2A     C	
+1155	       7D FE 25 22           C	
+1156	 0DCB  7F FE AF 32 A9 FE     C	        DB      07FH,0FEH,0AFH,032H,0A9
+	 	 	 	H,0FEH,032H,0A7H,0FEH,032H,0A8H,0FEH,032H,0A6H,
+	 	 	 	0FEH,032H
+1157	       32 A7 FE 32 A8 FE     C	
+1158	       32 A6 FE 32           C	
+1159	 0DDB  B2 FE 67 6F 22 AA     C	        DB      0B2H,0FEH,067H,06FH,022
+	 	 	 	H,0AAH,0FEH,022H,0B0H,0FEH,0CDH,0C2H,0F3H,03EH,
+	 	 	 	027H,032H
+1160	       FE 22 B0 FE CD C2     C	
+1161	       F3 3E 27 32           C	
+1162	 0DEB  A5 FE CD BC F4 AF     C	        DB      0A5H,0FEH,0CDH,0BCH,0F4
+	 	 	 	H,0AFH,032H,093H,0FEH,032H,083H,0FEH,032H,084H,
+	 	 	 	0FEH,032H
+1163	       32 93 FE 32 83 FE     C	
+1164	       32 84 FE 32           C	
+1165	 0DFB  85 FE 32 86 FE 32     C	        DB      085H,0FEH,032H,086H,0FE
+	 	 	 	H,032H,087H,0FEH,032H,08AH,0FEH,032H,08BH,0FEH,
+	 	 	 	032H,08CH
+1166	       87 FE 32 8A FE 32     C	
+1167	       8B FE 32 8C           C	
+1168	 0E0B  FE 32 8D FE 32 8E     C	        DB      0FEH,032H,08DH,0FEH,032
+	 	 	 	H,08EH,0FEH,032H,090H,0FEH,032H,091H,0FEH,032H,
+	 	 	 	092H,0FEH
+1169	       FE 32 90 FE 32 91     C	
+1170	       FE 32 92 FE           C	
+1171	 0E1B  3C 32 89 FE 3A 74     C	        DB      03CH,032H,089H,0FEH,03A
+	 	 	 	H,074H,0FEH,03DH,032H,088H,0FEH,03EH,0FFH,032H,
+	 	 	 	09DH,0FEH
+1172	       FE 3D 32 88 FE 3E     C	
+1173	       FF 32 9D FE           C	
+1174	 0E2B  2A 81 FE ED 5B 77     C	        DB      02AH,081H,0FEH,0EDH,05B
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-26
+
+
+
+	 	 	 	H,077H,0FEH,0B7H,0EDH,052H,044H,04DH,0EBH,0CDH,
+	 	 	 	062H,0F7H
+1175	       FE B7 ED 52 44 4D     C	
+1176	       EB CD 62 F7           C	
+1177	 0E3B  AF CD 44 F6 3E 48     C	        DB      0AFH,0CDH,044H,0F6H,03E
+	 	 	 	H,048H,0CDH,00CH,0F6H,03EH,04AH,0CDH,00CH,0F6H,
+	 	 	 	0AFH,032H
+1178	       CD 0C F6 3E 4A CD     C	
+1179	       0C F6 AF 32           C	
+1180	 0E4B  9B FE 32 9C FE C9     C	        DB      09BH,0FEH,032H,09CH,0FE
+	 	 	 	H,0C9H,0AFH,032H,0A8H,0FEH,0CDH,0E9H,0F3H,0CDH,
+	 	 	 	0E3H,0EBH
+1181	       AF 32 A8 FE CD E9     C	
+1182	       F3 CD E3 EB           C	
+1183	 0E5B  30 0C CD 00 EC 21     C	        DB      030H,00CH,0CDH,000H,0EC
+	 	 	 	H,021H,076H,0FEH,0BEH,028H,053H,0CDH,02AH,0F5H,
+	 	 	 	0CDH,056H
+1184	       76 FE BE 28 53 CD     C	
+1185	       2A F5 CD 56           C	
+1186	 0E6B  F4 38 0C CD 3A F6     C	        DB      0F4H,038H,00CH,0CDH,03A
+	 	 	 	H,0F6H,03AH,0A7H,0FEH,0B7H,0C4H,0A3H,0F4H,018H,
+	 	 	 	0DBH,04FH
+1187	       3A A7 FE B7 C4 A3     C	
+1188	       F4 18 DB 4F           C	
+1189	 0E7B  3A A9 FE B7 28 23     C	        DB      03AH,0A9H,0FEH,0B7H,028
+	 	 	 	H,023H,02AH,0AAH,0FEH,0E5H,0EDH,05BH,07BH,0FEH,
+	 	 	 	019H,071H
+1190	       2A AA FE E5 ED 5B     C	
+1191	       7B FE 19 71           C	
+1192	 0E8B  E1 23 22 AA FE ED     C	        DB      0E1H,023H,022H,0AAH,0FE
+	 	 	 	H,0EDH,05BH,07FH,0FEH,0B7H,0EDH,052H,038H,00BH,
+	 	 	 	079H,0CDH
+1193	       5B 7F FE B7 ED 52     C	
+1194	       38 0B 79 CD           C	
+1195	 0E9B  DB F9 CD 71 F2 3E     C	        DB      0DBH,0F9H,0CDH,071H,0F2
+	 	 	 	H,03EH,002H,018H,01AH,079H,0CDH,0DBH,0F9H,03AH,
+	 	 	 	0A7H,0FEH
+1196	       02 18 1A 79 CD DB     C	
+1197	       F9 3A A7 FE           C	
+1198	 0EAB  B7 28 A7 CD 75 F4     C	        DB      0B7H,028H,0A7H,0CDH,075
+	 	 	 	H,0F4H,07CH,0FEH,001H,0DCH,0A3H,0F4H,018H,09CH,
+	 	 	 	0CDH,071H
+1199	       7C FE 01 DC A3 F4     C	
+1200	       18 9C CD 71           C	
+1201	 0EBB  F2 3E 01 32 00 D0     C	        DB      0F2H,03EH,001H,032H,000
+	 	 	 	H,0D0H,02AH,0AAH,0FEH,022H,002H,0D0H,02AH,0B0H,
+	 	 	 	0FEH,022H
+1202	       2A AA FE 22 02 D0     C	
+1203	       2A B0 FE 22           C	
+1204	 0ECB  04 D0 C3 3A F6 3E     C	        DB      004H,0D0H,0C3H,03AH,0F6
+	 	 	 	H,03EH,001H,032H,0A7H,0FEH,032H,0A8H,0FEH,0CDH,
+	 	 	 	08DH,0F4H
+1205	       01 32 A7 FE 32 A8     C	
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-27
+
+
+
+1206	       FE CD 8D F4           C	
+1207	 0EDB  21 B8 0B CD E9 F3     C	        DB      021H,0B8H,00BH,0CDH,0E9
+	 	 	 	H,0F3H,02BH,07CH,0B5H,020H,0F8H,0C9H,03EH,0FFH,
+	 	 	 	032H,09BH
+1208	       2B 7C B5 20 F8 C9     C	
+1209	       3E FF 32 9B           C	
+1210	 0EEB  FE 32 9D FE 3A 74     C	        DB      0FEH,032H,09DH,0FEH,03A
+	 	 	 	H,074H,0FEH,03DH,04FH,03AH,002H,0D0H,0B9H,038H,
+	 	 	 	001H,079H
+1211	       FE 3D 4F 3A 02 D0     C	
+1212	       B9 38 01 79           C	
+1213	 0EFB  47 CD DD F6 C3 3A     C	        DB      047H,0CDH,0DDH,0F6H,0C3
+	 	 	 	H,03AH,0F6H,0CDH,0CCH,0F3H,03AH,007H,0D0H,0B7H,
+	 	 	 	03AH,006H
+1214	       F6 CD CC F3 3A 07     C	
+1215	       D0 B7 3A 06           C	
+1216	 0F0B  D0 C4 C9 F4 21 00     C	        DB      0D0H,0C4H,0C9H,0F4H,021
+	 	 	 	H,000H,000H,022H,0B3H,0FEH,02AH,004H,0D0H,022H,
+	 	 	 	0B5H,0FEH
+1217	       00 22 B3 FE 2A 04     C	
+1218	       D0 22 B5 FE           C	
+1219	 0F1B  2A 02 D0 ED 5B B3     C	        DB      02AH,002H,0D0H,0EDH,05B
+	 	 	 	H,0B3H,0FEH,0B7H,0EDH,052H,028H,056H,0CDH,056H,
+	 	 	 	0F4H,038H
+1220	       FE B7 ED 52 28 56     C	
+1221	       CD 56 F4 38           C	
+1222	 0F2B  33 3A 72 FE 4F ED     C	        DB      033H,03AH,072H,0FEH,04F
+	 	 	 	H,0EDH,05BH,0B5H,0FEH,021H,0D6H,001H,0EDH,078H,
+	 	 	 	0CBH,04FH
+1223	       5B B5 FE 21 D6 01     C	
+1224	       ED 78 CB 4F           C	
+1225	 0F3B  20 14 DB 2F E6 5F     C	        DB      020H,014H,0DBH,02FH,0E6
+	 	 	 	H,05FH,0FEH,004H,028H,031H,02BH,07CH,0B5H,020H,
+	 	 	 	0EDH,01BH
+1226	       FE 04 28 31 2B 7C     C	
+1227	       B5 20 ED 1B           C	
+1228	 0F4B  7A B3 20 E5 18 2C     C	        DB      07AH,0B3H,020H,0E5H,018
+	 	 	 	H,02CH,0E6H,038H,028H,007H,03AH,0A5H,0FEH,0F6H,
+	 	 	 	010H,0EDH
+1229	       E6 38 28 07 3A A5     C	
+1230	       FE F6 10 ED           C	
+1231	 0F5B  79 0D ED 78 21 64     C	        DB      079H,00DH,0EDH,078H,021
+	 	 	 	H,064H,000H,022H,0B5H,0FEH,02AH,0B3H,0FEH,0E5H,
+	 	 	 	0EDH,05BH
+1232	       00 22 B5 FE 2A B3     C	
+1233	       FE E5 ED 5B           C	
+1234	 0F6B  0E D0 19 77 E1 23     C	        DB      00EH,0D0H,019H,077H,0E1
+	 	 	 	H,023H,022H,0B3H,0FEH,018H,0A5H,0CDH,000H,0ECH,
+	 	 	 	03EH,001H
+1235	       22 B3 FE 18 A5 CD     C	
+1236	       00 EC 3E 01           C	
+1237	 0F7B  18 01 AF 32 00 D0     C	        DB      018H,001H,0AFH,032H,000
+	 	 	 	H,0D0H,02AH,0B3H,0FEH,022H,002H,0D0H,0C9H,0CDH,
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-28
+
+
+
+	 	 	 	0CCH,0F3H
+1238	       2A B3 FE 22 02 D0     C	
+1239	       C9 CD CC F3           C	
+1240	 0F8B  2A 0C D0 ED 4B 02     C	        DB      02AH,00CH,0D0H,0EDH,04B
+	 	 	 	H,002H,0D0H,078H,0B1H,028H,010H,07EH,0E5H,0C5H,
+	 	 	 	0CDH,0C9H
+1241	       D0 78 B1 28 10 7E     C	
+1242	       E5 C5 CD C9           C	
+1243	 0F9B  F4 C1 E1 3E 01 38     C	        DB      0F4H,0C1H,0E1H,03EH,001
+	 	 	 	H,038H,005H,023H,00BH,018H,0ECH,0AFH,032H,000H,
+	 	 	 	0D0H,0C9H
+1244	       05 23 0B 18 EC AF     C	
+1245	       32 00 D0 C9           C	
+1246	 0FAB  CD CC F3 3A A5 FE     C	        DB      0CDH,0CCH,0F3H,03AH,0A5
+	 	 	 	H,0FEH,0F6H,008H,0CDH,0BFH,0F4H,006H,019H,021H,
+	 	 	 	002H,006H
+1247	       F6 08 CD BF F4 06     C	
+1248	       19 21 02 06           C	
+1249	 0FBB  2B 7C B5 20 FB 10     C	        DB      02BH,07CH,0B5H,020H,0FB
+	 	 	 	H,010H,0F6H,0C3H,0BCH,0F4H,03AH,004H,0D0H,032H,
+	 	 	 	0A9H,0FEH
+1250	       F6 C3 BC F4 3A 04     C	
+1251	       D0 32 A9 FE           C	
+1252	 0FCB  2A 02 D0 22 AA FE     C	        DB      02AH,002H,0D0H,022H,0AA
+	 	 	 	H,0FEH,0C9H,03AH,075H,0FEH,0E6H,0E7H,047H,03AH,
+	 	 	 	004H,0D0H
+1253	       C9 3A 75 FE E6 E7     C	
+1254	       47 3A 04 D0           C	
+1255	 0FDB  E6 18 B0 32 75 FE     C	        DB      0E6H,018H,0B0H,032H,075
+	 	 	 	H,0FEH,0C9H,02AH,00CH,0D0H,0EDH,04BH,002H,0D0H,
+	 	 	 	011H,000H
+1256	       C9 2A 0C D0 ED 4B     C	
+1257	       02 D0 11 00           C	
+1258	 0FEB  00 AF 32 B7 FE 78     C	        DB      000H,0AFH,032H,0B7H,0FE
+	 	 	 	H,078H,0B1H,028H,022H,0C5H,03AH,0B7H,0FEH,086H,
+	 	 	 	032H,0B7H
+1259	       B1 28 22 C5 3A B7     C	
+1260	       FE 86 32 B7           C	
+1261	 0FFB  FE 7E AA 57 06 08     C	        DB      0FEH,07EH,0AAH,057H,006
+	 	 	 	H,008H,0CBH,023H,0CBH,012H,030H,008H,07AH,0EEH,
+	 	 	 	010H,057H
+1262	       CB 23 CB 12 30 08     C	
+1263	       7A EE 10 57           C	
+1264	 100B  7B EE 21 5F 10 F0     C	        DB      07BH,0EEH,021H,05FH,010
+	 	 	 	H,0F0H,0C1H,023H,00BH,018H,0DAH,0EDH,053H,004H,
+	 	 	 	0D0H,03AH
+1265	       C1 23 0B 18 DA ED     C	
+1266	       53 04 D0 3A           C	
+1267	 101B  B7 FE 32 00 D0 C9     C	        DB      0B7H,0FEH,032H,000H,0D0
+	 	 	 	H,0C9H,021H,000H,000H,022H,0ACH,0FEH,022H,0AEH,
+	 	 	 	0FEH,0C9H
+1268	       21 00 00 22 AC FE     C	
+1269	       22 AE FE C9           C	
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-29
+
+
+
+1270	 102B  AF 32 A8 FE 3A A7     C	        DB      0AFH,032H,0A8H,0FEH,03A
+	 	 	 	H,0A7H,0FEH,0B7H,0C8H,0CDH,0A3H,0F4H,021H,000H,
+	 	 	 	000H,0CDH
+1271	       FE B7 C8 CD A3 F4     C	
+1272	       21 00 00 CD           C	
+1273	 103B  E9 F3 3A A6 FE B7     C	        DB      0E9H,0F3H,03AH,0A6H,0FE
+	 	 	 	H,0B7H,0C8H,02BH,07CH,0B5H,020H,0F3H,0C9H,0F5H,
+	 	 	 	0D9H,03AH
+1274	       C8 2B 7C B5 20 F3     C	
+1275	       C9 F5 D9 3A           C	
+1276	 104B  72 FE 4F ED 40 3A     C	        DB      072H,0FEH,04FH,0EDH,040
+	 	 	 	H,03AH,0A6H,0FEH,0B7H,028H,010H,05FH,078H,0E6H,
+	 	 	 	081H,0FEH
+1277	       A6 FE B7 28 10 5F     C	
+1278	       78 E6 81 FE           C	
+1279	 105B  81 20 08 0D ED 59     C	        DB      081H,020H,008H,00DH,0ED
+	 	 	 	H,059H,00CH,0AFH,032H,0A6H,0FEH,0CBH,048H,028H,
+	 	 	 	048H,078H
+1280	       0C AF 32 A6 FE CB     C	
+1281	       48 28 48 78           C	
+1282	 106B  E6 38 28 12 E6 10     C	        DB      0E6H,038H,028H,012H,0E6
+	 	 	 	H,010H,028H,007H,02AH,0B0H,0FEH,023H,022H,0B0H,
+	 	 	 	0FEH,03AH
+1283	       28 07 2A B0 FE 23     C	
+1284	       22 B0 FE 3A           C	
+1285	 107B  A5 FE F6 10 ED 79     C	        DB      0A5H,0FEH,0F6H,010H,0ED
+	 	 	 	H,079H,00DH,0EDH,058H,02AH,0ACH,0FEH,0E5H,0EDH,
+	 	 	 	04BH,079H
+1286	       0D ED 58 2A AC FE     C	
+1287	       E5 ED 4B 79           C	
+1288	 108B  FE 09 73 E1 23 7C     C	        DB      0FEH,009H,073H,0E1H,023
+	 	 	 	H,07CH,0E6H,007H,067H,0EDH,04BH,0AEH,0FEH,0B7H,
+	 	 	 	0EDH,042H
+1289	       E6 07 67 ED 4B AE     C	
+1290	       FE B7 ED 42           C	
+1291	 109B  28 0E 7C 09 22 AC     C	        DB      028H,00EH,07CH,009H,022
+	 	 	 	H,0ACH,0FEH,0E6H,007H,0FEH,004H,0D4H,084H,0F4H,
+	 	 	 	018H,007H
+1292	       FE E6 07 FE 04 D4     C	
+1293	       84 F4 18 07           C	
+1294	 10AB  2A B0 FE 23 22 B0     C	        DB      02AH,0B0H,0FEH,023H,022
+	 	 	 	H,0B0H,0FEH,0D9H,0F1H,0C9H,02AH,0AEH,0FEH,0EDH,
+	 	 	 	05BH,0ACH
+1295	       FE D9 F1 C9 2A AE     C	
+1296	       FE ED 5B AC           C	
+1297	 10BB  FE B7 ED 52 C8 19     C	        DB      0FEH,0B7H,0EDH,052H,0C8
+	 	 	 	H,019H,0EBH,02AH,079H,0FEH,019H,07EH,013H,0F5H,
+	 	 	 	07AH,0E6H
+1298	       EB 2A 79 FE 19 7E     C	
+1299	       13 F5 7A E6           C	
+1300	 10CB  07 57 ED 53 AE FE     C	        DB      007H,057H,0EDH,053H,0AE
+	 	 	 	H,0FEH,0F1H,037H,0C9H,02AH,0ACH,0FEH,0EDH,05BH,
+	 	 	 	0AEH,0FEH
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-30
+
+
+
+1301	       F1 37 C9 2A AC FE     C	
+1302	       ED 5B AE FE           C	
+1303	 10DB  B7 ED 52 7C E6 07     C	        DB      0B7H,0EDH,052H,07CH,0E6
+	 	 	 	H,007H,067H,0C9H,03AH,0A7H,0FEH,0B7H,0C0H,03CH,
+	 	 	 	032H,0A7H
+1304	       67 C9 3A A7 FE B7     C	
+1305	       C0 3C 32 A7           C	
+1306	 10EB  FE 3A 75 FE CB 4F     C	        DB      0FEH,03AH,075H,0FEH,0CB
+	 	 	 	H,04FH,028H,005H,03EH,013H,032H,0A6H,0FEH,03AH,
+	 	 	 	075H,0FEH
+1307	       28 05 3E 13 32 A6     C	
+1308	       FE 3A 75 FE           C	
+1309	 10FB  CB 57 C8 3E 07 18     C	        DB      0CBH,057H,0C8H,03EH,007
+	 	 	 	H,018H,016H,03AH,0A8H,0FEH,0B7H,0C0H,032H,0A7H,
+	 	 	 	0FEH,03AH
+1310	       16 3A A8 FE B7 C0     C	
+1311	       32 A7 FE 3A           C	
+1312	 110B  75 FE CB 4F 28 05     C	        DB      075H,0FEH,0CBH,04FH,028
+	 	 	 	H,005H,03EH,011H,032H,0A6H,0FEH,03EH,027H,032H,
+	 	 	 	0A5H,0FEH
+1313	       3E 11 32 A6 FE 3E     C	
+1314	       27 32 A5 FE           C	
+1315	 111B  3A A5 FE C5 47 3A     C	        DB      03AH,0A5H,0FEH,0C5H,047
+	 	 	 	H,03AH,072H,0FEH,04FH,0EDH,041H,0C1H,0C9H,0C5H,
+	 	 	 	0D5H,0E5H
+1316	       72 FE 4F ED 41 C1     C	
+1317	       C9 C5 D5 E5           C	
+1318	 112B  5F 21 00 00 CD E9     C	        DB      05FH,021H,000H,000H,0CD
+	 	 	 	H,0E9H,0F3H,03AH,072H,0FEH,04FH,0EDH,078H,0E6H,
+	 	 	 	081H,0FEH
+1319	       F3 3A 72 FE 4F ED     C	
+1320	       78 E6 81 FE           C	
+1321	 113B  81 28 11 2B 7C B5     C	        DB      081H,028H,011H,02BH,07C
+	 	 	 	H,0B5H,020H,0ECH,03AH,0B2H,0FEH,03CH,028H,003H,
+	 	 	 	032H,0B2H
+1322	       20 EC 3A B2 FE 3C     C	
+1323	       28 03 32 B2           C	
+1324	 114B  FE 37 18 04 0D ED     C	        DB      0FEH,037H,018H,004H,00D
+	 	 	 	H,0EDH,059H,0B7H,0E1H,0D1H,0C1H,0C9H,07EH,0B7H,
+	 	 	 	0C8H,0CDH
+1325	       59 B7 E1 D1 C1 C9     C	
+1326	       7E B7 C8 CD           C	
+1327	 115B  C9 F4 23 18 F7 0E     C	        DB      0C9H,0F4H,023H,018H,0F7
+	 	 	 	H,00EH,000H,006H,064H,0CDH,011H,0F5H,006H,00AH,
+	 	 	 	0CDH,011H
+1328	       00 06 64 CD 11 F5     C	
+1329	       06 0A CD 11           C	
+1330	 116B  F5 C6 30 18 B8 16     C	        DB      0F5H,0C6H,030H,018H,0B8
+	 	 	 	H,016H,02FH,014H,090H,030H,0FCH,080H,05FH,07AH,
+	 	 	 	0FEH,030H
+1331	       2F 14 90 30 FC 80     C	
+1332	       5F 7A FE 30           C	
+1333	 117B  20 04 79 B7 7B C8     C	        DB      020H,004H,079H,0B7H,07B
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-31
+
+
+
+	 	 	 	H,0C8H,07AH,0CDH,0C9H,0F4H,00EH,001H,07BH,0C9H,
+	 	 	 	032H,09FH
+1334	       7A CD C9 F4 0E 01     C	
+1335	       7B C9 32 9F           C	
+1336	 118B  FE 3A 75 FE 0F 38     C	        DB      0FEH,03AH,075H,0FEH,00F
+	 	 	 	H,038H,019H,03AH,09FH,0FEH,0FEH,01BH,020H,012H,
+	 	 	 	021H,020H
+1337	       19 3A 9F FE FE 1B     C	
+1338	       20 12 21 20           C	
+1339	 119B  03 CD E9 F3 E5 CD     C	        DB      003H,0CDH,0E9H,0F3H,0E5
+	 	 	 	H,0CDH,0E3H,0EBH,0E1H,038H,038H,02BH,07CH,0B5H,
+	 	 	 	020H,0F1H
+1340	       E3 EB E1 38 38 2B     C	
+1341	       7C B5 20 F1           C	
+1342	 11AB  3A 9F FE CD C9 F4     C	        DB      03AH,09FH,0FEH,0CDH,0C9
+	 	 	 	H,0F4H,021H,0A0H,0FEH,046H,03AH,09FH,0FEH,077H,
+	 	 	 	03AH,075H
+1343	       21 A0 FE 46 3A 9F     C	
+1344	       FE 77 3A 75           C	
+1345	 11BB  FE CB 5F C8 0F 30     C	        DB      0FEH,0CBH,05FH,0C8H,00F
+	 	 	 	H,030H,004H,078H,0FEH,01BH,0C8H,03AH,09FH,0FEH,
+	 	 	 	0FEH,01BH
+1346	       04 78 FE 1B C8 3A     C	
+1347	       9F FE FE 1B           C	
+1348	 11CB  C8 FE 0D 20 0B CD     C	        DB      0C8H,0FEH,00DH,020H,00B
+	 	 	 	H,0CDH,0DBH,0F9H,03AH,075H,0FEH,0E6H,010H,0C0H,
+	 	 	 	03EH,00AH
+1349	       DB F9 3A 75 FE E6     C	
+1350	       10 C0 3E 0A           C	
+1351	 11DB  C3 DB F9 D6 41 FE     C	        DB      0C3H,0DBH,0F9H,0D6H,041
+	 	 	 	H,0FEH,004H,030H,0C7H,0CDH,000H,0ECH,032H,09FH,
+	 	 	 	0FEH,03EH
+1352	       04 30 C7 CD 00 EC     C	
+1353	       32 9F FE 3E           C	
+1354	 11EB  1B CD C9 F4 3A 8B     C	        DB      01BH,0CDH,0C9H,0F4H,03A
+	 	 	 	H,08BH,0FEH,0B7H,03EH,05BH,028H,002H,03EH,04FH,
+	 	 	 	0CDH,0C9H
+1355	       FE B7 3E 5B 28 02     C	
+1356	       3E 4F CD C9           C	
+1357	 11FB  F4 3A 9F FE C3 C9     C	        DB      0F4H,03AH,09FH,0FEH,0C3
+	 	 	 	H,0C9H,0F4H,0C5H,0D5H,032H,09EH,0FEH,03AH,09EH,
+	 	 	 	0FEH,047H
+1358	       F4 C5 D5 32 9E FE     C	
+1359	       3A 9E FE 47           C	
+1360	 120B  CD C1 F5 28 0D CD     C	        DB      0CDH,0C1H,0F5H,028H,00D
+	 	 	 	H,0CDH,0E9H,0F3H,0DBH,02FH,0E6H,05FH,0FEH,007H,
+	 	 	 	020H,0F5H
+1361	       E9 F3 DB 2F E6 5F     C	
+1362	       FE 07 20 F5           C	
+1363	 121B  18 EA D1 C1 C9 78     C	        DB      018H,0EAH,0D1H,0C1H,0C9
+	 	 	 	H,078H,0E6H,00FH,05FH,078H,00FH,00FH,00FH,00FH,
+	 	 	 	0E6H,00FH
+1364	       E6 0F 5F 78 0F 0F     C	
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-32
+
+
+
+1365	       0F 0F E6 0F           C	
+1366	 122B  57 CD E9 F3 3E 0A     C	        DB      057H,0CDH,0E9H,0F3H,03E
+	 	 	 	H,00AH,0D3H,02FH,0DBH,02FH,0E6H,05FH,0FEH,00FH,
+	 	 	 	020H,0F1H
+1367	       D3 2F DB 2F E6 5F     C	
+1368	       FE 0F 20 F1           C	
+1369	 123B  7B F6 10 D3 2F 47     C	        DB      07BH,0F6H,010H,0D3H,02F
+	 	 	 	H,047H,00EH,000H,0DBH,02FH,00DH,028H,01DH,0E6H,
+	 	 	 	05FH,0B8H
+1370	       0E 00 DB 2F 0D 28     C	
+1371	       1D E6 5F B8           C	
+1372	 124B  20 F6 7A F6 40 D3     C	        DB      020H,0F6H,07AH,0F6H,040
+	 	 	 	H,0D3H,02FH,047H,00EH,000H,0DBH,02FH,00DH,028H,
+	 	 	 	00BH,0E6H
+1373	       2F 47 0E 00 DB 2F     C	
+1374	       0D 28 0B E6           C	
+1375	 125B  5F B8 20 F6 3E 50     C	        DB      05FH,0B8H,020H,0F6H,03E
+	 	 	 	H,050H,0D3H,02FH,0AFH,0C9H,03EH,007H,0D3H,02FH,
+	 	 	 	0A7H,0C9H
+1376	       D3 2F AF C9 3E 07     C	
+1377	       D3 2F A7 C9           C	
+1378	 126B  F5 3E 1B CD A3 F5     C	        DB      0F5H,03EH,01BH,0CDH,0A3
+	 	 	 	H,0F5H,0F1H,018H,08EH,03AH,09BH,0FEH,0BAH,020H,
+	 	 	 	005H,03AH
+1379	       F1 18 8E 3A 9B FE     C	
+1380	       BA 20 05 3A           C	
+1381	 127B  9C FE BB C8 3E 59     C	        DB      09CH,0FEH,0BBH,0C8H,03E
+	 	 	 	H,059H,0CDH,00CH,0F6H,07AH,0C6H,020H,0CDH,0A3H,
+	 	 	 	0F5H,07BH
+1382	       CD 0C F6 7A C6 20     C	
+1383	       CD A3 F5 7B           C	
+1384	 128B  C6 20 CD A3 F5 7A     C	        DB      0C6H,020H,0CDH,0A3H,0F5
+	 	 	 	H,07AH,032H,09BH,0FEH,07BH,032H,09CH,0FEH,0C9H,
+	 	 	 	03AH,083H
+1385	       32 9B FE 7B 32 9C     C	
+1386	       FE C9 3A 83           C	
+1387	 129B  FE 57 3A 84 FE 5F     C	        DB      0FEH,057H,03AH,084H,0FE
+	 	 	 	H,05FH,018H,0D1H,0E5H,021H,09DH,0FEH,0BEH,028H,
+	 	 	 	00BH,077H
+1388	       18 D1 E5 21 9D FE     C	
+1389	       BE 28 0B 77           C	
+1390	 12AB  B7 3E 4D 28 02 3E     C	        DB      0B7H,03EH,04DH,028H,002
+	 	 	 	H,03EH,04CH,0CDH,00CH,0F6H,0E1H,0C9H,0F5H,03AH,
+	 	 	 	074H,0FEH
+1391	       4C CD 0C F6 E1 C9     C	
+1392	       F5 3A 74 FE           C	
+1393	 12BB  3D BA 20 09 3A 73     C	        DB      03DH,0BAH,020H,009H,03A
+	 	 	 	H,073H,0FEH,03DH,0BBH,020H,002H,0F1H,0C9H,0CDH,
+	 	 	 	015H,0F6H
+1394	       FE 3D BB 20 02 F1     C	
+1395	       C9 CD 15 F6           C	
+1396	 12CB  F1 F5 E6 80 CD 44     C	        DB      0F1H,0F5H,0E6H,080H,0CD
+	 	 	 	H,044H,0F6H,0F1H,0E6H,07FH,0CDH,0A3H,0F5H,03AH,
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-33
+
+
+
+	 	 	 	09CH,0FEH
+1397	       F6 F1 E6 7F CD A3     C	
+1398	       F5 3A 9C FE           C	
+1399	 12DB  3C 32 9C FE E5 21     C	        DB      03CH,032H,09CH,0FEH,0E5
+	 	 	 	H,021H,073H,0FEH,0BEH,0E1H,0C0H,0AFH,032H,09CH,
+	 	 	 	0FEH,03AH
+1400	       73 FE BE E1 C0 AF     C	
+1401	       32 9C FE 3A           C	
+1402	 12EB  9B FE 3C 32 9B FE     C	        DB      09BH,0FEH,03CH,032H,09B
+	 	 	 	H,0FEH,0C9H,0CDH,015H,0F6H,0AFH,0CDH,044H,0F6H,
+	 	 	 	03EH,04BH
+1403	       C9 CD 15 F6 AF CD     C	
+1404	       44 F6 3E 4B           C	
+1405	 12FB  C3 0C F6 3A 73 FE     C	        DB      0C3H,00CH,0F6H,03AH,073
+	 	 	 	H,0FEH,03DH,04FH,03AH,074H,0FEH,03DH,0BAH,020H,
+	 	 	 	001H,00DH
+1406	       3D 4F 3A 74 FE 3D     C	
+1407	       BA 20 01 0D           C	
+1408	 130B  79 BB 38 E3 D5 59     C	        DB      079H,0BBH,038H,0E3H,0D5
+	 	 	 	H,059H,0CDH,008H,0F7H,0D1H,041H,07EH,0FEH,020H,
+	 	 	 	020H,00DH
+1409	       CD 08 F7 D1 41 7E     C	
+1410	       FE 20 20 0D           C	
+1411	 131B  78 BB 28 D3 E6 0F     C	        DB      078H,0BBH,028H,0D3H,0E6
+	 	 	 	H,00FH,0CCH,0E9H,0F3H,02BH,005H,018H,0EEH,0C5H,
+	 	 	 	0CDH,008H
+1412	       CC E9 F3 2B 05 18     C	
+1413	       EE C5 CD 08           C	
+1414	 132B  F7 C1 7E CD 58 F6     C	        DB      0F7H,0C1H,07EH,0CDH,058
+	 	 	 	H,0F6H,023H,07BH,01CH,0B8H,020H,0F6H,079H,0BBH,
+	 	 	 	0D8H,018H
+1415	       23 7B 1C B8 20 F6     C	
+1416	       79 BB D8 18           C	
+1417	 133B  B6 50 C5 D5 1E 00     C	        DB      0B6H,050H,0C5H,0D5H,01E
+	 	 	 	H,000H,0CDH,09FH,0F6H,0D1H,0C1H,07AH,0B9H,0C8H,
+	 	 	 	014H,018H
+1418	       CD 9F F6 D1 C1 7A     C	
+1419	       B9 C8 14 18           C	
+1420	 134B  F1 D5 6F 26 00 29     C	        DB      0F1H,0D5H,06FH,026H,000
+	 	 	 	H,029H,029H,029H,029H,054H,05DH,029H,029H,03AH,
+	 	 	 	073H,0FEH
+1421	       29 29 29 54 5D 29     C	
+1422	       29 3A 73 FE           C	
+1423	 135B  FE 40 28 01 19 ED     C	        DB      0FEH,040H,028H,001H,019
+	 	 	 	H,0EDH,05BH,077H,0FEH,019H,0D1H,0C9H,07AH,0CDH,
+	 	 	 	0EDH,0F6H
+1424	       5B 77 FE 19 D1 C9     C	
+1425	       7A CD ED F6           C	
+1426	 136B  7B 85 6F D0 24 C9     C	        DB      07BH,085H,06FH,0D0H,024
+	 	 	 	H,0C9H,0D5H,05FH,016H,000H,0B7H,0EDH,052H,0D1H,
+	 	 	 	0C9H,0CDH
+1427	       D5 5F 16 00 B7 ED     C	
+1428	       52 D1 C9 CD           C	
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-34
+
+
+
+1429	 137B  ED F6 ED 4B 77 FE     C	        DB      0EDH,0F6H,0EDH,04BH,077
+	 	 	 	H,0FEH,0B7H,0EDH,042H,044H,04DH,0C9H,078H,0B7H,
+	 	 	 	020H,005H
+1430	       B7 ED 42 44 4D C9     C	
+1431	       78 B7 20 05           C	
+1432	 138B  79 FE 21 38 0C C5     C	        DB      079H,0FEH,021H,038H,00C
+	 	 	 	H,0C5H,001H,020H,000H,0EDH,0B0H,0C1H,0CDH,058H,
+	 	 	 	0F7H,018H
+1433	       01 20 00 ED B0 C1     C	
+1434	       CD 58 F7 18           C	
+1435	 139B  EB ED B0 C9 78 B7     C	        DB      0EBH,0EDH,0B0H,0C9H,078
+	 	 	 	H,0B7H,020H,005H,079H,0FEH,021H,038H,00CH,0C5H,
+	 	 	 	001H,020H
+1436	       20 05 79 FE 21 38     C	
+1437	       0C C5 01 20           C	
+1438	 13AB  00 ED B8 C1 CD 58     C	        DB      000H,0EDH,0B8H,0C1H,0CD
+	 	 	 	H,058H,0F7H,018H,0EBH,0EDH,0B8H,0C9H,079H,0D6H,
+	 	 	 	020H,04FH
+1439	       F7 18 EB ED B8 C9     C	
+1440	       79 D6 20 4F           C	
+1441	 13BB  30 01 05 C3 E9 F3     C	        DB      030H,001H,005H,0C3H,0E9
+	 	 	 	H,0F3H,078H,0B1H,0C8H,036H,020H,00BH,078H,0B1H,
+	 	 	 	0C8H,054H
+1442	       78 B1 C8 36 20 0B     C	
+1443	       78 B1 C8 54           C	
+1444	 13CB  5D 13 CD 28 F7 C9     C	        DB      05DH,013H,0CDH,028H,0F7
+	 	 	 	H,0C9H,0CDH,0E9H,0F3H,03AH,0A1H,0FEH,0CDH,0EDH,
+	 	 	 	0F6H,0EBH
+1445	       CD E9 F3 3A A1 FE     C	
+1446	       CD ED F6 EB           C	
+1447	 13DB  CD C0 F7 3A 73 FE     C	        DB      0CDH,0C0H,0F7H,03AH,073
+	 	 	 	H,0FEH,06FH,026H,000H,019H,078H,0B1H,028H,003H,
+	 	 	 	0CDH,028H
+1448	       6F 26 00 19 78 B1     C	
+1449	       28 03 CD 28           C	
+1450	 13EB  F7 EB 18 28 CD E9     C	        DB      0F7H,0EBH,018H,028H,0CD
+	 	 	 	H,0E9H,0F3H,0CDH,0C0H,0F7H,03AH,0A2H,0FEH,0CDH,
+	 	 	 	0EDH,0F6H
+1451	       F3 CD C0 F7 3A A2     C	
+1452	       FE CD ED F6           C	
+1453	 13FB  3A 73 FE 3D CD 0D     C	        DB      03AH,073H,0FEH,03DH,0CD
+	 	 	 	H,00DH,0F7H,054H,05DH,03AH,073H,0FEH,0CDH,012H,
+	 	 	 	0F7H,078H
+1454	       F7 54 5D 3A 73 FE     C	
+1455	       CD 12 F7 78           C	
+1456	 140B  B1 28 03 CD 40 F7     C	        DB      0B1H,028H,003H,0CDH,040
+	 	 	 	H,0F7H,03AH,0A1H,0FEH,0CDH,0EDH,0F6H,03AH,073H,
+	 	 	 	0FEH,04FH
+1457	       3A A1 FE CD ED F6     C	
+1458	       3A 73 FE 4F           C	
+1459	 141B  06 00 18 A2 3A A2     C	        DB      006H,000H,018H,0A2H,03A
+	 	 	 	H,0A2H,0FEH,021H,0A1H,0FEH,096H,0C3H,01BH,0F7H,
+	 	 	 	03AH,087H
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-35
+
+
+
+1460	       FE 21 A1 FE 96 C3     C	
+1461	       1B F7 3A 87           C	
+1462	 142B  FE 32 A1 FE 3A 88     C	        DB      0FEH,032H,0A1H,0FEH,03A
+	 	 	 	H,088H,0FEH,032H,0A2H,0FEH,0C9H,03AH,087H,0FEH,
+	 	 	 	0B7H,0C0H
+1463	       FE 32 A2 FE C9 3A     C	
+1464	       87 FE B7 C0           C	
+1465	 143B  3A 74 FE 3D 21 88     C	        DB      03AH,074H,0FEH,03DH,021
+	 	 	 	H,088H,0FEH,0BEH,0C9H,0CDH,0CAH,0F7H,0CDH,072H,
+	 	 	 	0F7H,0CDH
+1466	       FE BE C9 CD CA F7     C	
+1467	       CD 72 F7 CD           C	
+1468	 144B  D7 F7 20 2E 3A 74     C	        DB      0D7H,0F7H,020H,02EH,03A
+	 	 	 	H,074H,0FEH,03DH,057H,03AH,09BH,0FEH,0BAH,028H,
+	 	 	 	005H,01EH
+1469	       FE 3D 57 3A 9B FE     C	
+1470	       BA 28 05 1E           C	
+1471	 145B  00 CD 15 F6 AF CD     C	        DB      000H,0CDH,015H,0F6H,0AF
+	 	 	 	H,0CDH,044H,0F6H,03EH,00AH,0CDH,0A3H,0F5H,03AH,
+	 	 	 	074H,0FEH
+1472	       44 F6 3E 0A CD A3     C	
+1473	       F5 3A 74 FE           C	
+1474	 146B  D6 02 57 3A 73 FE     C	        DB      0D6H,002H,057H,03AH,073
+	 	 	 	H,0FEH,03DH,05FH,0CDH,008H,0F7H,07EH,0FEH,020H,
+	 	 	 	0C8H,0C3H
+1475	       3D 5F CD 08 F7 7E     C	
+1476	       FE 20 C8 C3           C	
+1477	 147B  58 F6 3A 87 FE 47     C	        DB      058H,0F6H,03AH,087H,0FE
+	 	 	 	H,047H,03AH,088H,0FEH,04FH,0C3H,0DDH,0F6H,0CDH,
+	 	 	 	0CAH,0F7H
+1478	       3A 88 FE 4F C3 DD     C	
+1479	       F6 CD CA F7           C	
+1480	 148B  CD 90 F7 CD D7 F7     C	        DB      0CDH,090H,0F7H,0CDH,0D7
+	 	 	 	H,0F7H,020H,0EAH,03AH,09BH,0FEH,0B7H,028H,006H,
+	 	 	 	011H,000H
+1481	       20 EA 3A 9B FE B7     C	
+1482	       28 06 11 00           C	
+1483	 149B  00 CD 15 F6 AF CD     C	        DB      000H,0CDH,015H,0F6H,0AF
+	 	 	 	H,0CDH,044H,0F6H,03EH,049H,0C3H,00CH,0F6H,0AFH,
+	 	 	 	032H,085H
+1484	       44 F6 3E 49 C3 0C     C	
+1485	       F6 AF 32 85           C	
+1486	 14AB  FE 3A 88 FE 21 83     C	        DB      0FEH,03AH,088H,0FEH,021
+	 	 	 	H,083H,0FEH,0BEH,028H,08FH,03AH,074H,0FEH,03DH,
+	 	 	 	0BEH,0C8H
+1487	       FE BE 28 8F 3A 74     C	
+1488	       FE 3D BE C8           C	
+1489	 14BB  34 C9 AF 32 85 FE     C	        DB      034H,0C9H,0AFH,032H,085
+	 	 	 	H,0FEH,03AH,087H,0FEH,021H,083H,0FEH,0BEH,028H,
+	 	 	 	0BEH,07EH
+1490	       3A 87 FE 21 83 FE     C	
+1491	       BE 28 BE 7E           C	
+1492	 14CB  B7 C8 35 C9 CD E9     C	        DB      0B7H,0C8H,035H,0C9H,0CD
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-36
+
+
+
+	 	 	 	H,0E9H,0F3H,04FH,03AH,085H,0FEH,0B7H,028H,009H,
+	 	 	 	0AFH,032H
+1493	       F3 4F 3A 85 FE B7     C	
+1494	       28 09 AF 32           C	
+1495	 14DB  84 FE C5 CD 49 F8     C	        DB      084H,0FEH,0C5H,0CDH,049
+	 	 	 	H,0F8H,0C1H,03AH,083H,0FEH,057H,03AH,084H,0FEH,
+	 	 	 	05FH,03AH
+1496	       C1 3A 83 FE 57 3A     C	
+1497	       84 FE 5F 3A           C	
+1498	 14EB  8A FE B7 28 14 C5     C	        DB      08AH,0FEH,0B7H,028H,014
+	 	 	 	H,0C5H,03EH,001H,0CDH,0DBH,0F8H,0C1H,0CDH,035H,
+	 	 	 	0F9H,03AH
+1499	       3E 01 CD DB F8 C1     C	
+1500	       CD 35 F9 3A           C	
+1501	 14FB  86 FE B1 77 CD 9F     C	        DB      086H,0FEH,0B1H,077H,0CD
+	 	 	 	H,09FH,0F6H,018H,00BH,0CDH,008H,0F7H,03AH,086H,
+	 	 	 	0FEH,0B1H
+1502	       F6 18 0B CD 08 F7     C	
+1503	       3A 86 FE B1           C	
+1504	 150B  77 CD 58 F6 3A 84     C	        DB      077H,0CDH,058H,0F6H,03A
+	 	 	 	H,084H,0FEH,05FH,03AH,073H,0FEH,03DH,0BBH,028H,
+	 	 	 	006H,01CH
+1505	       FE 5F 3A 73 FE 3D     C	
+1506	       BB 28 06 1C           C	
+1507	 151B  7B 32 84 FE C9 3A     C	        DB      07BH,032H,084H,0FEH,0C9
+	 	 	 	H,03AH,089H,0FEH,032H,085H,0FEH,0C9H,047H,0B7H,
+	 	 	 	020H,001H
+1508	       89 FE 32 85 FE C9     C	
+1509	       47 B7 20 01           C	
+1510	 152B  04 3A 84 FE 4F 3A     C	        DB      004H,03AH,084H,0FEH,04F
+	 	 	 	H,03AH,073H,0FEH,091H,0B8H,030H,001H,047H,090H,
+	 	 	 	0C9H,0CDH
+1511	       73 FE 91 B8 30 01     C	
+1512	       47 90 C9 CD           C	
+1513	 153B  C8 F8 C5 F5 3A 83     C	        DB      0C8H,0F8H,0C5H,0F5H,03A
+	 	 	 	H,083H,0FEH,057H,03AH,073H,0FEH,03DH,05FH,0CDH,
+	 	 	 	008H,0F7H
+1514	       FE 57 3A 73 FE 3D     C	
+1515	       5F CD 08 F7           C	
+1516	 154B  54 5D F1 C1 C5 F5     C	        DB      054H,05DH,0F1H,0C1H,0C5
+	 	 	 	H,0F5H,078H,0CDH,012H,0F7H,0F1H,04FH,006H,000H,
+	 	 	 	0B7H,028H
+1517	       78 CD 12 F7 F1 4F     C	
+1518	       06 00 B7 28           C	
+1519	 155B  03 CD 40 F7 C1 18     C	        DB      003H,0CDH,040H,0F7H,0C1
+	 	 	 	H,018H,027H,0CDH,0C8H,0F8H,0C5H,0F5H,0CDH,035H,
+	 	 	 	0F9H,054H
+1520	       27 CD C8 F8 C5 F5     C	
+1521	       CD 35 F9 54           C	
+1522	 156B  5D F1 C1 C5 F5 78     C	        DB      05DH,0F1H,0C1H,0C5H,0F5
+	 	 	 	H,078H,0CDH,00DH,0F7H,0F1H,04FH,006H,000H,0B7H,
+	 	 	 	028H,003H
+1523	       CD 0D F7 F1 4F 06     C	
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-37
+
+
+
+1524	       00 B7 28 03           C	
+1525	 157B  CD 28 F7 C1 EB 48     C	        DB      0CDH,028H,0F7H,0C1H,0EB
+	 	 	 	H,048H,006H,000H,0C3H,062H,0F7H,0CDH,0C8H,0F8H,
+	 	 	 	0C5H,0CDH
+1526	       06 00 C3 62 F7 CD     C	
+1527	       C8 F8 C5 CD           C	
+1528	 158B  35 F9 C1 48 06 00     C	        DB      035H,0F9H,0C1H,048H,006
+	 	 	 	H,000H,0C3H,062H,0F7H,03AH,083H,0FEH,057H,03AH,
+	 	 	 	084H,0FEH
+1529	       C3 62 F7 3A 83 FE     C	
+1530	       57 3A 84 FE           C	
+1531	 159B  5F C3 08 F7 3A 74     C	        DB      05FH,0C3H,008H,0F7H,03A
+	 	 	 	H,074H,0FEH,03DH,0BAH,030H,001H,057H,03AH,073H,
+	 	 	 	0FEH,03DH
+1532	       FE 3D BA 30 01 57     C	
+1533	       3A 73 FE 3D           C	
+1534	 15AB  BB 30 01 5F 7A 32     C	        DB      0BBH,030H,001H,05FH,07A
+	 	 	 	H,032H,083H,0FEH,07BH,032H,084H,0FEH,0AFH,032H,
+	 	 	 	085H,0FEH
+1535	       83 FE 7B 32 84 FE     C	
+1536	       AF 32 85 FE           C	
+1537	 15BB  C9 FE 01 28 21 D2     C	        DB      0C9H,0FEH,001H,028H,021
+	 	 	 	H,0D2H,0CCH,0F1H,0CDH,035H,0F9H,0D5H,0EBH,02AH,
+	 	 	 	081H,0FEH
+1538	       CC F1 CD 35 F9 D5     C	
+1539	       EB 2A 81 FE           C	
+1540	 15CB  B7 ED 52 44 4D EB     C	        DB      0B7H,0EDH,052H,044H,04D
+	 	 	 	H,0EBH,0CDH,062H,0F7H,0D1H,0CDH,015H,0F6H,0AFH,
+	 	 	 	0CDH,044H
+1541	       CD 62 F7 D1 CD 15     C	
+1542	       F6 AF CD 44           C	
+1543	 15DB  F6 3E 4A C3 0C F6     C	        DB      0F6H,03EH,04AH,0C3H,00C
+	 	 	 	H,0F6H,0CDH,035H,0F9H,0D5H,023H,0EDH,05BH,077H,
+	 	 	 	0FEH,0B7H
+1544	       CD 35 F9 D5 23 ED     C	
+1545	       5B 77 FE B7           C	
+1546	 15EB  ED 52 44 4D EB CD     C	        DB      0EDH,052H,044H,04DH,0EB
+	 	 	 	H,0CDH,062H,0F7H,0D1H,006H,000H,04AH,0C3H,0DDH,
+	 	 	 	0F6H,047H
+1547	       62 F7 D1 06 00 4A     C	
+1548	       C3 DD F6 47           C	
+1549	 15FB  3A 83 FE 57 78 FE     C	        DB      03AH,083H,0FEH,057H,078
+	 	 	 	H,0FEH,001H,028H,018H,030H,02AH,03AH,084H,0FEH,
+	 	 	 	05FH,0CDH
+1550	       01 28 18 30 2A 3A     C	
+1551	       84 FE 5F CD           C	
+1552	 160B  08 F7 3A 73 FE 93     C	        DB      008H,0F7H,03AH,073H,0FE
+	 	 	 	H,093H,04FH,006H,000H,0D5H,0CDH,062H,0F7H,0D1H,
+	 	 	 	0C3H,093H
+1553	       4F 06 00 D5 CD 62     C	
+1554	       F7 D1 C3 93           C	
+1555	 161B  F6 1E 00 CD 08 F7     C	        DB      0F6H,01EH,000H,0CDH,008
+	 	 	 	H,0F7H,03AH,084H,0FEH,03CH,04FH,006H,000H,0D5H,
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-38
+
+
+
+	 	 	 	0CDH,062H
+1556	       3A 84 FE 3C 4F 06     C	
+1557	       00 D5 CD 62           C	
+1558	 162B  F7 D1 C3 9F F6 1E     C	        DB      0F7H,0D1H,0C3H,09FH,0F6
+	 	 	 	H,01EH,000H,0CDH,008H,0F7H,03AH,073H,0FEH,018H,
+	 	 	 	0D7H,04FH
+1559	       00 CD 08 F7 3A 73     C	
+1560	       FE 18 D7 4F           C	
+1561	 163B  FE 80 30 2E FE 20     C	        DB      0FEH,080H,030H,02EH,0FE
+	 	 	 	H,020H,038H,038H,0FEH,07FH,0C8H,03AH,093H,0FEH,
+	 	 	 	0B7H,0C2H
+1562	       38 38 FE 7F C8 3A     C	
+1563	       93 FE B7 C2           C	
+1564	 164B  8E FA 21 8D FE 3A     C	        DB      08EH,0FAH,021H,08DH,0FE
+	 	 	 	H,03AH,08CH,0FEH,0CDH,00DH,0F7H,07EH,0B7H,079H,
+	 	 	 	0CAH,070H
+1565	       8C FE CD 0D F7 7E     C	
+1566	       B7 79 CA 70           C	
+1567	 165B  F8 FE 5F DA 70 F8     C	        DB      0F8H,0FEH,05FH,0DAH,070
+	 	 	 	H,0F8H,0D6H,05FH,021H,052H,0FEH,0CDH,00DH,0F7H,
+	 	 	 	07EH,0C3H
+1568	       D6 5F 21 52 FE CD     C	
+1569	       0D F7 7E C3           C	
+1570	 166B  70 F8 3A 93 FE B7     C	        DB      070H,0F8H,03AH,093H,0FE
+	 	 	 	H,0B7H,0C0H,079H,0FEH,0C0H,0D8H,03EH,03FH,0C3H,
+	 	 	 	070H,0F8H
+1571	       C0 79 FE C0 D8 3E     C	
+1572	       3F C3 70 F8           C	
+1573	 167B  FE 1B 28 33 FE 18     C	        DB      0FEH,01BH,028H,033H,0FE
+	 	 	 	H,018H,028H,033H,0FEH,01AH,028H,02FH,0FEH,00DH,
+	 	 	 	028H,030H
+1574	       28 33 FE 1A 28 2F     C	
+1575	       FE 0D 28 30           C	
+1576	 168B  FE 0A CA 49 F8 FE     C	        DB      0FEH,00AH,0CAH,049H,0F8
+	 	 	 	H,0FEH,00BH,0CAH,049H,0F8H,0FEH,00CH,0CAH,049H,
+	 	 	 	0F8H,0FEH
+1577	       0B CA 49 F8 FE 0C     C	
+1578	       CA 49 F8 FE           C	
+1579	 169B  08 28 2D FE 09 28     C	        DB      008H,028H,02DH,0FEH,009
+	 	 	 	H,028H,037H,0FEH,00EH,028H,006H,0FEH,00FH,0C0H,
+	 	 	 	0AFH,018H
+1580	       37 FE 0E 28 06 FE     C	
+1581	       0F C0 AF 18           C	
+1582	 16AB  02 3E 01 32 8C FE     C	        DB      002H,03EH,001H,032H,08C
+	 	 	 	H,0FEH,0C9H,03EH,001H,018H,001H,0AFH,032H,093H,
+	 	 	 	0FEH,0C9H
+1583	       C9 3E 01 18 01 AF     C	
+1584	       32 93 FE C9           C	
+1585	 16BB  AF 32 84 FE 32 85     C	        DB      0AFH,032H,084H,0FEH,032
+	 	 	 	H,085H,0FEH,03AH,075H,0FEH,0E6H,010H,0C8H,0C3H,
+	 	 	 	049H,0F8H
+1586	       FE 3A 75 FE E6 10     C	
+1587	       C8 C3 49 F8           C	
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-39
+
+
+
+1588	 16CB  AF 32 85 FE 3A 84     C	        DB      0AFH,032H,085H,0FEH,03A
+	 	 	 	H,084H,0FEH,0B7H,0C8H,03DH,032H,084H,0FEH,0C9H,
+	 	 	 	03AH,084H
+1589	       FE B7 C8 3D 32 84     C	
+1590	       FE C9 3A 84           C	
+1591	 16DB  FE F6 07 3C 21 73     C	        DB      0FEH,0F6H,007H,03CH,021
+	 	 	 	H,073H,0FEH,0BEH,038H,002H,07EH,03DH,032H,084H,
+	 	 	 	0FEH,0C3H
+1592	       FE BE 38 02 7E 3D     C	
+1593	       32 84 FE C3           C	
+1594	 16EB  58 F9 3D 28 3F 3D     C	        DB      058H,0F9H,03DH,028H,03F
+	 	 	 	H,03DH,0CAH,07EH,0FBH,03DH,028H,021H,03DH,028H,
+	 	 	 	0BCH,03DH
+1595	       CA 7E FB 3D 28 21     C	
+1596	       3D 28 BC 3D           C	
+1597	 16FB  28 0F AF 32 93 FE     C	        DB      028H,00FH,0AFH,032H,093
+	 	 	 	H,0FEH,079H,0D6H,020H,05FH,03AH,09AH,0FEH,057H,
+	 	 	 	0C3H,040H
+1598	       79 D6 20 5F 3A 9A     C	
+1599	       FE 57 C3 40           C	
+1600	 170B  F9 79 D6 20 32 9A     C	        DB      0F9H,079H,0D6H,020H,032
+	 	 	 	H,09AH,0FEH,03EH,006H,032H,093H,0FEH,0C9H,0AFH,
+	 	 	 	032H,093H
+1601	       FE 3E 06 32 93 FE     C	
+1602	       C9 AF 32 93           C	
+1603	 171B  FE 21 8D FE 3A 8F     C	        DB      0FEH,021H,08DH,0FEH,03A
+	 	 	 	H,08FH,0FEH,0CDH,00DH,0F7H,079H,0D6H,030H,028H,
+	 	 	 	002H,03EH
+1604	       FE CD 0D F7 79 D6     C	
+1605	       30 28 02 3E           C	
+1606	 172B  FF 3C 77 C9 32 93     C	        DB      0FFH,03CH,077H,0C9H,032
+	 	 	 	H,093H,0FEH,03AH,075H,0FEH,00FH,038H,060H,079H,
+	 	 	 	0FEH,05BH
+1607	       FE 3A 75 FE 0F 38     C	
+1608	       60 79 FE 5B           C	
+1609	 173B  28 44 FE 37 CA 2E     C	        DB      028H,044H,0FEH,037H,0CA
+	 	 	 	H,02EH,0FEH,0FEH,038H,0CAH,041H,0FEH,0FEH,044H,
+	 	 	 	0CAH,049H
+1610	       FE FE 38 CA 41 FE     C	
+1611	       FE 44 CA 49           C	
+1612	 174B  F8 FE 45 28 2A FE     C	        DB      0F8H,0FEH,045H,028H,02A
+	 	 	 	H,0FEH,04DH,0CAH,05EH,0F8H,0FEH,063H,0CAH,091H,
+	 	 	 	0F1H,0FEH
+1613	       4D CA 5E F8 FE 63     C	
+1614	       CA 91 F1 FE           C	
+1615	 175B  5A CA 64 FD FE 23     C	        DB      05AH,0CAH,064H,0FDH,0FE
+	 	 	 	H,023H,006H,004H,028H,010H,0FEH,028H,006H,000H,
+	 	 	 	028H,004H
+1616	       06 04 28 10 FE 28     C	
+1617	       06 00 28 04           C	
+1618	 176B  FE 29 C0 04 78 32     C	        DB      0FEH,029H,0C0H,004H,078
+	 	 	 	H,032H,08FH,0FEH,006H,003H,078H,032H,093H,0FEH,
+	 	 	 	0C9H,0AFH
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-40
+
+
+
+1619	       8F FE 06 03 78 32     C	
+1620	       93 FE C9 AF           C	
+1621	 177B  32 84 FE C3 49 F8     C	        DB      032H,084H,0FEH,0C3H,049
+	 	 	 	H,0F8H,03EH,002H,032H,093H,0FEH,0AFH,032H,094H,
+	 	 	 	0FEH,032H
+1622	       3E 02 32 93 FE AF     C	
+1623	       32 94 FE 32           C	
+1624	 178B  95 FE 21 96 FE 77     C	        DB      095H,0FEH,021H,096H,0FE
+	 	 	 	H,077H,023H,077H,023H,077H,023H,077H,0C9H,03EH,
+	 	 	 	001H,032H
+1625	       23 77 23 77 23 77     C	
+1626	       C9 3E 01 32           C	
+1627	 179B  96 FE 79 FE 41 CA     C	        DB      096H,0FEH,079H,0FEH,041
+	 	 	 	H,0CAH,043H,0FCH,0FEH,042H,0CAH,060H,0FCH,0FEH,
+	 	 	 	043H,0CAH
+1628	       43 FC FE 42 CA 60     C	
+1629	       FC FE 43 CA           C	
+1630	 17AB  85 FC FE 44 CA 9E     C	        DB      085H,0FCH,0FEH,044H,0CA
+	 	 	 	H,09EH,0FCH,0FEH,049H,0CAH,05EH,0F8H,0FEH,048H,
+	 	 	 	011H,000H
+1631	       FC FE 49 CA 5E F8     C	
+1632	       FE 48 11 00           C	
+1633	 17BB  00 CA 40 F9 FE 4A     C	        DB      000H,0CAH,040H,0F9H,0FE
+	 	 	 	H,04AH,03EH,000H,0CAH,05DH,0F9H,079H,0FEH,04BH,
+	 	 	 	03EH,000H
+1634	       3E 00 CA 5D F9 79     C	
+1635	       FE 4B 3E 00           C	
+1636	 17CB  CA 9B F9 79 FE 5A     C	        DB      0CAH,09BH,0F9H,079H,0FE
+	 	 	 	H,05AH,0CAH,064H,0FDH,0FEH,059H,0C0H,03EH,005H,
+	 	 	 	032H,093H
+1637	       CA 64 FD FE 59 C0     C	
+1638	       3E 05 32 93           C	
+1639	 17DB  FE C9 79 FE 3C 30     C	        DB      0FEH,0C9H,079H,0FEH,03C
+	 	 	 	H,030H,034H,0FEH,030H,0D8H,0FEH,03BH,028H,024H,
+	 	 	 	0FEH,03AH
+1640	       34 FE 30 D8 FE 3B     C	
+1641	       28 24 FE 3A           C	
+1642	 17EB  D0 3A 94 FE FE 04     C	        DB      0D0H,03AH,094H,0FEH,0FE
+	 	 	 	H,004H,0D0H,021H,096H,0FEH,0CDH,00DH,0F7H,07EH,
+	 	 	 	0FEH,01AH
+1643	       D0 21 96 FE CD 0D     C	
+1644	       F7 7E FE 1A           C	
+1645	 17FB  30 0C 47 87 87 80     C	        DB      030H,00CH,047H,087H,087
+	 	 	 	H,080H,087H,047H,079H,0D6H,030H,080H,030H,002H,
+	 	 	 	03EH,0FFH
+1646	       87 47 79 D6 30 80     C	
+1647	       30 02 3E FF           C	
+1648	 180B  77 C9 21 94 FE 7E     C	        DB      077H,0C9H,021H,094H,0FE
+	 	 	 	H,07EH,0FEH,004H,0D0H,034H,0C9H,0FEH,040H,030H,
+	 	 	 	006H,03EH
+1649	       FE 04 D0 34 C9 FE     C	
+1650	       40 30 06 3E           C	
+1651	 181B  01 32 95 FE C9 AF     C	        DB      001H,032H,095H,0FEH,0C9
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-41
+
+
+
+	 	 	 	H,0AFH,032H,093H,0FEH,021H,0E1H,0FBH,03AH,095H,
+	 	 	 	0FEH,0B7H
+1652	       32 93 FE 21 E1 FB     C	
+1653	       3A 95 FE B7           C	
+1654	 182B  28 03 21 30 FC 7E     C	        DB      028H,003H,021H,030H,0FC
+	 	 	 	H,07EH,0B7H,0C8H,023H,0B9H,028H,004H,023H,023H,
+	 	 	 	018H,0F5H
+1655	       B7 C8 23 B9 28 04     C	
+1656	       23 23 18 F5           C	
+1657	 183B  7E 23 66 6F E9 41     C	        DB      07EH,023H,066H,06FH,0E9
+	 	 	 	H,041H,043H,0FCH,042H,060H,0FCH,065H,060H,0FCH,
+	 	 	 	043H,085H
+1658	       43 FC 42 60 FC 65     C	
+1659	       60 FC 43 85           C	
+1660	 184B  FC 61 85 FC 44 9E     C	        DB      0FCH,061H,085H,0FCH,044
+	 	 	 	H,09EH,0FCH,048H,0AFH,0FCH,066H,0AFH,0FCH,047H,
+	 	 	 	0BCH,0FCH
+1661	       FC 48 AF FC 66 AF     C	
+1662	       FC 47 BC FC           C	
+1663	 185B  60 BC FC 64 C8 FC     C	        DB      060H,0BCH,0FCH,064H,0C8
+	 	 	 	H,0FCH,04AH,0D4H,0FCH,04BH,0DAH,0FCH,06DH,0E0H,
+	 	 	 	0FCH,072H
+1664	       4A D4 FC 4B DA FC     C	
+1665	       6D E0 FC 72           C	
+1666	 186B  0A FD 6E 2D FD 63     C	        DB      00AH,0FDH,06EH,02DH,0FD
+	 	 	 	H,063H,05FH,0FDH,068H,084H,0FDH,06CH,088H,0FDH,
+	 	 	 	04CH,0C2H
+1667	       5F FD 68 84 FD 6C     C	
+1668	       88 FD 4C C2           C	
+1669	 187B  FD 4D C7 FD 40 09     C	        DB      0FDH,04DH,0C7H,0FDH,040
+	 	 	 	H,009H,0FEH,050H,00EH,0FEH,058H,013H,0FEH,073H,
+	 	 	 	02EH,0FEH
+1670	       FE 50 0E FE 58 13     C	
+1671	       FE 73 2E FE           C	
+1672	 188B  75 41 FE 00 68 9D     C	        DB      075H,041H,0FEH,000H,068
+	 	 	 	H,09DH,0FDH,06CH,0A1H,0FDH,000H,03AH,097H,0FEH,
+	 	 	 	018H,003H
+1673	       FD 6C A1 FD 00 3A     C	
+1674	       97 FE 18 03           C	
+1675	 189B  3A 96 FE B7 C0 3C     C	        DB      03AH,096H,0FEH,0B7H,0C0
+	 	 	 	H,03CH,0C9H,0CDH,03CH,0FCH,047H,03AH,087H,0FEH,
+	 	 	 	04FH,03AH
+1676	       C9 CD 3C FC 47 3A     C	
+1677	       87 FE 4F 3A           C	
+1678	 18AB  83 FE B9 30 02 0E     C	        DB      083H,0FEH,0B9H,030H,002
+	 	 	 	H,00EH,000H,090H,038H,003H,0B9H,030H,001H,079H,
+	 	 	 	032H,083H
+1679	       00 90 38 03 B9 30     C	
+1680	       01 79 32 83           C	
+1681	 18BB  FE C3 58 F9 CD 3C     C	        DB      0FEH,0C3H,058H,0F9H,0CD
+	 	 	 	H,03CH,0FCH,047H,03AH,088H,0FEH,04FH,03AH,083H,
+	 	 	 	0FEH,0B9H
+1682	       FC 47 3A 88 FE 4F     C	
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-42
+
+
+
+1683	       3A 83 FE B9           C	
+1684	 18CB  38 0A 28 08 3A 74     C	        DB      038H,00AH,028H,008H,03A
+	 	 	 	H,074H,0FEH,03DH,04FH,03AH,083H,0FEH,080H,038H,
+	 	 	 	003H,0B9H
+1685	       FE 3D 4F 3A 83 FE     C	
+1686	       80 38 03 B9           C	
+1687	 18DB  38 01 79 32 83 FE     C	        DB      038H,001H,079H,032H,083
+	 	 	 	H,0FEH,0C3H,058H,0F9H,0CDH,03CH,0FCH,047H,03AH,
+	 	 	 	073H,0FEH
+1688	       C3 58 F9 CD 3C FC     C	
+1689	       47 3A 73 FE           C	
+1690	 18EB  3D 4F 3A 84 FE 80     C	        DB      03DH,04FH,03AH,084H,0FE
+	 	 	 	H,080H,038H,003H,0B9H,038H,001H,079H,032H,084H,
+	 	 	 	0FEH,0C3H
+1691	       38 03 B9 38 01 79     C	
+1692	       32 84 FE C3           C	
+1693	 18FB  58 F9 CD 3C FC 47     C	        DB      058H,0F9H,0CDH,03CH,0FC
+	 	 	 	H,047H,03AH,084H,0FEH,090H,030H,001H,0AFH,032H,
+	 	 	 	084H,0FEH
+1694	       3A 84 FE 90 30 01     C	
+1695	       AF 32 84 FE           C	
+1696	 190B  C3 58 F9 CD 3C FC     C	        DB      0C3H,058H,0F9H,0CDH,03C
+	 	 	 	H,0FCH,03DH,057H,0CDH,037H,0FCH,03DH,05FH,0C3H,
+	 	 	 	040H,0F9H
+1697	       3D 57 CD 37 FC 3D     C	
+1698	       5F C3 40 F9           C	
+1699	 191B  CD 3C FC 3D 5F 3A     C	        DB      0CDH,03CH,0FCH,03DH,05F
+	 	 	 	H,03AH,083H,0FEH,057H,0C3H,040H,0F9H,0CDH,03CH,
+	 	 	 	0FCH,03DH
+1700	       83 FE 57 C3 40 F9     C	
+1701	       CD 3C FC 3D           C	
+1702	 192B  57 3A 84 FE 5F C3     C	        DB      057H,03AH,084H,0FEH,05F
+	 	 	 	H,0C3H,040H,0F9H,03AH,096H,0FEH,0C3H,05DH,0F9H,
+	 	 	 	03AH,096H
+1703	       40 F9 3A 96 FE C3     C	
+1704	       5D F9 3A 96           C	
+1705	 193B  FE C3 9B F9 21 96     C	        DB      0FEH,0C3H,09BH,0F9H,021
+	 	 	 	H,096H,0FEH,0CDH,0FEH,0FCH,07EH,023H,0B7H,028H,
+	 	 	 	00DH,0FEH
+1706	       FE CD FE FC 7E 23     C	
+1707	       B7 28 0D FE           C	
+1708	 194B  1B 20 03 AF 18 06     C	        DB      01BH,020H,003H,0AFH,018
+	 	 	 	H,006H,0FEH,007H,020H,005H,03EH,080H,032H,086H,
+	 	 	 	0FEH,010H
+1709	       FE 07 20 05 3E 80     C	
+1710	       32 86 FE 10           C	
+1711	 195B  E9 C9 3A 94 FE FE     C	        DB      0E9H,0C9H,03AH,094H,0FE
+	 	 	 	H,0FEH,004H,038H,002H,03EH,003H,03CH,047H,0C9H,
+	 	 	 	0CDH,03CH
+1712	       04 38 02 3E 03 3C     C	
+1713	       47 C9 CD 3C           C	
+1714	 196B  FC 3D 57 3A 97 FE     C	        DB      0FCH,03DH,057H,03AH,097
+	 	 	 	H,0FEH,021H,074H,0FEH,0B7H,028H,003H,0BEH,038H,
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-43
+
+
+
+	 	 	 	001H,07EH
+1715	       21 74 FE B7 28 03     C	
+1716	       BE 38 01 7E           C	
+1717	 197B  3D BA D8 C8 32 88     C	        DB      03DH,0BAH,0D8H,0C8H,032
+	 	 	 	H,088H,0FEH,07AH,032H,087H,0FEH,011H,000H,000H,
+	 	 	 	0C3H,040H
+1718	       FE 7A 32 87 FE 11     C	
+1719	       00 00 C3 40           C	
+1720	 198B  F9 3A 96 FE FE 05     C	        DB      0F9H,03AH,096H,0FEH,0FE
+	 	 	 	H,005H,028H,025H,0FEH,006H,0C0H,03EH,01BH,0CDH,
+	 	 	 	0C9H,0F4H
+1721	       28 25 FE 06 C0 3E     C	
+1722	       1B CD C9 F4           C	
+1723	 199B  3E 5B CD C9 F4 3A     C	        DB      03EH,05BH,0CDH,0C9H,0F4
+	 	 	 	H,03AH,083H,0FEH,03CH,0CDH,001H,0F5H,03EH,03BH,
+	 	 	 	0CDH,0C9H
+1724	       83 FE 3C CD 01 F5     C	
+1725	       3E 3B CD C9           C	
+1726	 19AB  F4 3A 84 FE 3C CD     C	        DB      0F4H,03AH,084H,0FEH,03C
+	 	 	 	H,0CDH,001H,0F5H,03EH,052H,0C3H,0C9H,0F4H,021H,
+	 	 	 	07FH,0FDH
+1727	       01 F5 3E 52 C3 C9     C	
+1728	       F4 21 7F FD           C	
+1729	 19BB  C3 F8 F4 3A 96 FE     C	        DB      0C3H,0F8H,0F4H,03AH,096
+	 	 	 	H,0FEH,0B7H,0C0H,021H,073H,0FDH,03AH,075H,0FEH,
+	 	 	 	00FH,030H
+1730	       B7 C0 21 73 FD 3A     C	
+1731	       75 FE 0F 30           C	
+1732	 19CB  03 21 7B FD C3 F8     C	        DB      003H,021H,07BH,0FDH,0C3
+	 	 	 	H,0F8H,0F4H,01BH,05BH,03FH,031H,03BH,030H,063H,
+	 	 	 	000H,01BH
+1733	       F4 1B 5B 3F 31 3B     C	
+1734	       30 63 00 1B           C	
+1735	 19DB  2F 5A 00 1B 5B 30     C	        DB      02FH,05AH,000H,01BH,05B
+	 	 	 	H,030H,06EH,000H,00EH,001H,018H,002H,00EH,000H,
+	 	 	 	021H,096H
+1736	       6E 00 0E 01 18 02     C	
+1737	       0E 00 21 96           C	
+1738	 19EB  FE CD FE FC 7E 23     C	        DB      0FEH,0CDH,0FEH,0FCH,07E
+	 	 	 	H,023H,0FEH,004H,020H,004H,079H,032H,08AH,0FEH,
+	 	 	 	010H,0F4H
+1739	       FE 04 20 04 79 32     C	
+1740	       8A FE 10 F4           C	
+1741	 19FB  C9 0E 01 18 02 0E     C	        DB      0C9H,00EH,001H,018H,002
+	 	 	 	H,00EH,000H,021H,096H,0FEH,0CDH,0FEH,0FCH,07EH,
+	 	 	 	023H,0FEH
+1742	       00 21 96 FE CD FE     C	
+1743	       FC 7E 23 FE           C	
+1744	 1A0B  01 20 04 79 32 8B     C	        DB      001H,020H,004H,079H,032
+	 	 	 	H,08BH,0FEH,0FEH,007H,020H,008H,079H,032H,089H,
+	 	 	 	0FEH,0AFH
+1745	       FE FE 07 20 08 79     C	
+1746	       32 89 FE AF           C	
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-44
+
+
+
+1747	 1A1B  32 85 FE 10 E8 C9     C	        DB      032H,085H,0FEH,010H,0E8
+	 	 	 	H,0C9H,021H,090H,0F7H,018H,003H,021H,072H,0F7H,
+	 	 	 	022H,0A3H
+1748	       21 90 F7 18 03 21     C	
+1749	       72 F7 22 A3           C	
+1750	 1A2B  FE 3A 87 FE 47 3A     C	        DB      0FEH,03AH,087H,0FEH,047
+	 	 	 	H,03AH,083H,0FEH,0B8H,0D8H,032H,0A1H,0FEH,047H,
+	 	 	 	03AH,088H
+1751	       83 FE B8 D8 32 A1     C	
+1752	       FE 47 3A 88           C	
+1753	 1A3B  FE 32 A2 FE B8 D8     C	        DB      0FEH,032H,0A2H,0FEH,0B8
+	 	 	 	H,0D8H,090H,03CH,04FH,0CDH,03CH,0FCH,0B9H,038H,
+	 	 	 	001H,079H
+1754	       90 3C 4F CD 3C FC     C	
+1755	       B9 38 01 79           C	
+1756	 1A4B  47 C5 2A A3 FE CD     C	        DB      047H,0C5H,02AH,0A3H,0FE
+	 	 	 	H,0CDH,04DH,0EBH,0C1H,010H,0F6H,0AFH,032H,084H,
+	 	 	 	0FEH,032H
+1757	       4D EB C1 10 F6 AF     C	
+1758	       32 84 FE 32           C	
+1759	 1A5B  85 FE 3A 83 FE 47     C	        DB      085H,0FEH,03AH,083H,0FE
+	 	 	 	H,047H,03AH,088H,0FEH,04FH,0C3H,0DDH,0F6H,021H,
+	 	 	 	0DBH,0F8H
+1760	       3A 88 FE 4F C3 DD     C	
+1761	       F6 21 DB F8           C	
+1762	 1A6B  18 08 21 03 F9 18     C	        DB      018H,008H,021H,003H,0F9
+	 	 	 	H,018H,003H,021H,027H,0F9H,011H,01FH,0FEH,0D5H,
+	 	 	 	0E5H,03AH
+1763	       03 21 27 F9 11 1F     C	
+1764	       FE D5 E5 3A           C	
+1765	 1A7B  96 FE C9 AF 32 85     C	        DB      096H,0FEH,0C9H,0AFH,032
+	 	 	 	H,085H,0FEH,03AH,083H,0FEH,057H,03AH,084H,0FEH,
+	 	 	 	05FH,0C3H
+1766	       FE 3A 83 FE 57 3A     C	
+1767	       84 FE 5F C3           C	
+1768	 1A8B  9F F6 3A 83 FE 32     C	        DB      09FH,0F6H,03AH,083H,0FE
+	 	 	 	H,032H,090H,0FEH,03AH,084H,0FEH,032H,091H,0FEH,
+	 	 	 	03AH,086H
+1769	       90 FE 3A 84 FE 32     C	
+1770	       91 FE 3A 86           C	
+1771	 1A9B  FE 32 92 FE C9 3A     C	        DB      0FEH,032H,092H,0FEH,0C9
+	 	 	 	H,03AH,092H,0FEH,032H,086H,0FEH,03AH,090H,0FEH,
+	 	 	 	057H,03AH
+1772	       92 FE 32 86 FE 3A     C	
+1773	       90 FE 57 3A           C	
+1774	 1AAB  91 FE 5F C3 40 F9     C	        DB      091H,0FEH,05FH,0C3H,040
+	 	 	 	H,0F9H,020H,02AH,023H,048H,046H,043H,04CH,06FH,
+	 	 	 	023H,04EH
+1775	       20 2A 23 48 46 43     C	
+1776	       4C 6F 23 4E           C	
+1777	 1ABB  56 2B 2B 2B 2B 2B     C	        DB      056H,02BH,02BH,02BH,02B
+	 	 	 	H,02BH,07EH,02DH,02DH,05FH,05FH,02BH,02BH,02BH,
+	 	 	 	02BH,07CH
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-45
+
+
+
+1778	       7E 2D 2D 5F 5F 2B     C	
+1779	       2B 2B 2B 7C           C	
+1780	 1ACB  3C 3E 70 23 66 2E     C	        DB      03CH,03EH,070H,023H,066
+	 	 	 	H,02EH,000H,000H,000H,000H,000H,000H,000H,000H,
+	 	 	 	000H,000H
+1781	       00 00 00 00 00 00     C	
+1782	       00 00 00 00           C	
+1783	 1ADB  00 00 00 00 00 00     C	        DB      000H,000H,000H,000H,000
+	 	 	 	H,000H,000H,000H,000H,000H,000H,000H,000H,000H,
+	 	 	 	000H,000H
+1784	       00 00 00 00 00 00     C	
+1785	       00 00 00 00           C	
+1786	 1AEB  00 00 00 00 00 00     C	        DB      000H,000H,000H,000H,000
+	 	 	 	H,000H,000H,000H,000H,000H,000H,000H,000H,000H,
+	 	 	 	000H,000H
+1787	       00 00 00 00 00 00     C	
+1788	       00 00 00 00           C	
+1789	 1AFB  00 00 00 00 00 00     C	        DB      000H,000H,000H,000H,000
+	 	 	 	H,000H,000H,000H,000H,000H,000H,000H,000H,000H,
+	 	 	 	000H,000H
+1790	       00 00 00 00 00 00     C	
+1791	       00 00 00 00           C	
+1792	 1B0B  00 00 00 00 00 00     C	        DB      000H,000H,000H,000H,000
+	 	 	 	H,000H,000H,000H,000H,000H,000H,000H
+1793	       00 00 00 00 00 00     C	
+1794	 	 	 	 	
+1795	 1B17	 	 	 	CODE    ENDS
+1796	 	 	 	 	        END     BEGIN
+
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols
+	 	 	 	-1
+
+
+
+Segments and groups:
+
+	 	N a m e	 	 	Size	align	combine	class
+
+CODE . . . . . . . . . . . . . .	1B17	PARA  	NONE	
+
+Symbols:            
+
+	 	N a m e	 	 	Type	Value	Attr         
+
+ABAUDS . . . . . . . . . . . . .	L BYTE 	021D	CODE
+ACK. . . . . . . . . . . . . . .	Number	0006	
+ANSB . . . . . . . . . . . . . .	L BYTE 	0134	CODE
+ASK1 . . . . . . . . . . . . . .	L NEAR 	0BF7	CODE
+ASK3 . . . . . . . . . . . . . .	L NEAR 	0C21	CODE
+ASK4 . . . . . . . . . . . . . .	L NEAR 	0C2E	CODE
+ASKF . . . . . . . . . . . . . .	L NEAR 	0BE9	CODE
+ASKNO. . . . . . . . . . . . . .	L NEAR 	0C48	CODE
+ASKNO1 . . . . . . . . . . . . .	L NEAR 	0C49	CODE
+BAD. . . . . . . . . . . . . . .	L NEAR 	0754	CODE
+BAD0 . . . . . . . . . . . . . .	L NEAR 	05E7	CODE
+BAD1 . . . . . . . . . . . . . .	L NEAR 	06BF	CODE
+BADO . . . . . . . . . . . . . .	L NEAR 	058C	CODE
+BASE . . . . . . . . . . . . . .	L WORD 	0103	CODE
+BAUD1. . . . . . . . . . . . . .	L NEAR 	0622	CODE
+BAUD2. . . . . . . . . . . . . .	L NEAR 	0636	CODE
+BAUD3. . . . . . . . . . . . . .	L NEAR 	0648	CODE
+BAUD4. . . . . . . . . . . . . .	L NEAR 	0645	CODE
+BAUDC. . . . . . . . . . . . . .	L BYTE 	0108	CODE
+BAUDS. . . . . . . . . . . . . .	L BYTE 	01BD	CODE
+BEGIN. . . . . . . . . . . . . .	L NEAR 	0100	CODE
+BLANKS . . . . . . . . . . . . .	L NEAR 	0CB4	CODE
+BLK. . . . . . . . . . . . . . .	L BYTE 	0125	CODE
+BOTE . . . . . . . . . . . . . .	L BYTE 	03EC	CODE
+BOTEND . . . . . . . . . . . . .	L NEAR 	0C60	CODE
+BOTL . . . . . . . . . . . . . .	L BYTE 	03E5	CODE
+BOTTOM . . . . . . . . . . . . .	L NEAR 	0C5B	CODE
+BSSTR. . . . . . . . . . . . . .	L BYTE 	0514	CODE
+BYTESM . . . . . . . . . . . . .	L BYTE 	04C1	CODE
+CAN. . . . . . . . . . . . . . .	Number	0018	
+CANM . . . . . . . . . . . . . .	L BYTE 	04D5	CODE
+CANS . . . . . . . . . . . . . .	L BYTE 	0136	CODE
+CHAN . . . . . . . . . . . . . .	L WORD 	0105	CODE
+CMBAD. . . . . . . . . . . . . .	L NEAR 	0CB1	CODE
+CMX. . . . . . . . . . . . . . .	L NEAR 	0CB0	CODE
+COMMA. . . . . . . . . . . . . .	L NEAR 	0C9C	CODE
+CRCM . . . . . . . . . . . . . .	L BYTE 	0126	CODE
+CRLF . . . . . . . . . . . . . .	L BYTE 	03A7	CODE
+CRMSG. . . . . . . . . . . . . .	L BYTE 	046E	CODE
+DBITS. . . . . . . . . . . . . .	L NEAR 	066F	CODE
+DONEM. . . . . . . . . . . . . .	L BYTE 	04C8	CODE
+EOT. . . . . . . . . . . . . . .	Number	0004	
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols
+	 	 	 	-2
+
+
+
+EOTB . . . . . . . . . . . . . .	L BYTE 	0135	CODE
+FAILM. . . . . . . . . . . . . .	L BYTE 	04FB	CODE
+FULLM. . . . . . . . . . . . . .	L BYTE 	0494	CODE
+GETW . . . . . . . . . . . . . .	L NEAR 	0CC1	CODE
+GETW1. . . . . . . . . . . . . .	L NEAR 	0CC3	CODE
+GETW2. . . . . . . . . . . . . .	L NEAR 	0CD9	CODE
+GETW3. . . . . . . . . . . . . .	L NEAR 	0CE0	CODE
+GETWX. . . . . . . . . . . . . .	L NEAR 	0CEB	CODE
+GOT. . . . . . . . . . . . . . .	L BYTE 	0128	CODE
+HELLO. . . . . . . . . . . . . .	L BYTE 	03CC	CODE
+HELLOE . . . . . . . . . . . . .	L BYTE 	03E5	CODE
+KEYM . . . . . . . . . . . . . .	L BYTE 	050B	CODE
+LFCB . . . . . . . . . . . . . .	L BYTE 	013A	CODE
+LINE . . . . . . . . . . . . . .	L BYTE 	0184	CODE	Length =0020
+LOAD . . . . . . . . . . . . . .	L NEAR 	06D1	CODE
+LOAD1. . . . . . . . . . . . . .	L NEAR 	06E6	CODE
+LOAD2. . . . . . . . . . . . . .	L NEAR 	06F1	CODE
+LOGASK . . . . . . . . . . . . .	L BYTE 	0430	CODE
+LOGBUF . . . . . . . . . . . . .	E BYTE 	1CFB	CODE
+LOGN . . . . . . . . . . . . . .	L WORD 	0121	CODE
+LOGOFF . . . . . . . . . . . . .	L NEAR 	085C	CODE
+LOGON. . . . . . . . . . . . . .	L BYTE 	0120	CODE
+LOGON1 . . . . . . . . . . . . .	L NEAR 	0843	CODE
+LOGSET . . . . . . . . . . . . .	L NEAR 	0851	CODE
+LOGSW. . . . . . . . . . . . . .	L NEAR 	0820	CODE
+LOGSZ. . . . . . . . . . . . . .	Number	2000	
+LOGW1. . . . . . . . . . . . . .	L NEAR 	08A6	CODE
+LOGWR. . . . . . . . . . . . . .	L NEAR 	0870	CODE
+LOGX . . . . . . . . . . . . . .	L NEAR 	086F	CODE
+LOST . . . . . . . . . . . . . .	L WORD 	0123	CODE
+LOSTM. . . . . . . . . . . . . .	L BYTE 	0429	CODE
+MENU . . . . . . . . . . . . . .	L NEAR 	0764	CODE
+MENU1. . . . . . . . . . . . . .	L BYTE 	03F1	CODE
+MENU1A . . . . . . . . . . . . .	L NEAR 	07A5	CODE
+MENU2. . . . . . . . . . . . . .	L BYTE 	0410	CODE
+MENU2A . . . . . . . . . . . . .	L NEAR 	07B2	CODE
+MENU3. . . . . . . . . . . . . .	L NEAR 	07BD	CODE
+MENU4. . . . . . . . . . . . . .	L NEAR 	07C4	CODE
+MENU5. . . . . . . . . . . . . .	L NEAR 	07CB	CODE
+MENU6. . . . . . . . . . . . . .	L NEAR 	07ED	CODE
+MENU7. . . . . . . . . . . . . .	L NEAR 	07FA	CODE
+MENU8. . . . . . . . . . . . . .	L NEAR 	07D4	CODE
+MENU9. . . . . . . . . . . . . .	L NEAR 	07E0	CODE
+MENUC. . . . . . . . . . . . . .	L BYTE 	0406	CODE
+MENUE. . . . . . . . . . . . . .	L BYTE 	03FE	CODE
+MENUK. . . . . . . . . . . . . .	Number	0001	
+MENUKB . . . . . . . . . . . . .	L BYTE 	0139	CODE
+MENUOF . . . . . . . . . . . . .	L BYTE 	040E	CODE
+MENUON . . . . . . . . . . . . .	L BYTE 	040C	CODE
+MODEB. . . . . . . . . . . . . .	L BYTE 	0107	CODE
+NABAUDS. . . . . . . . . . . . .	Number	000A	
+NAK. . . . . . . . . . . . . . .	Number	0015	
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols
+	 	 	 	-3
+
+
+
+NAMBUF . . . . . . . . . . . . .	L BYTE 	0109	CODE
+NBYTES . . . . . . . . . . . . .	L WORD 	0130	CODE
+NFMSG. . . . . . . . . . . . . .	L BYTE 	0485	CODE
+NPORTS . . . . . . . . . . . . .	Number	0005	
+ONOFF. . . . . . . . . . . . . .	L NEAR 	07FB	CODE
+ONOFF1 . . . . . . . . . . . . .	L NEAR 	0805	CODE
+OPT. . . . . . . . . . . . . . .	L NEAR 	0546	CODE
+OPT52. . . . . . . . . . . . . .	L NEAR 	059D	CODE
+OPT64. . . . . . . . . . . . . .	L NEAR 	0596	CODE
+OPT80. . . . . . . . . . . . . .	L NEAR 	058F	CODE
+OPTB . . . . . . . . . . . . . .	L NEAR 	05AD	CODE
+OPTF . . . . . . . . . . . . . .	L NEAR 	05A4	CODE
+OPTM . . . . . . . . . . . . . .	L NEAR 	0586	CODE
+OPTX . . . . . . . . . . . . . .	L NEAR 	05B7	CODE
+PAR. . . . . . . . . . . . . . .	L NEAR 	064C	CODE
+PAR1 . . . . . . . . . . . . . .	L NEAR 	0665	CODE
+PBLK . . . . . . . . . . . . . .	L BYTE 	0113	CODE
+PCOLS. . . . . . . . . . . . . .	L BYTE 	0114	CODE
+PCTL . . . . . . . . . . . . . .	L BYTE 	0113	CODE
+PFLAGS . . . . . . . . . . . . .	L BYTE 	0116	CODE
+PLOG . . . . . . . . . . . . . .	L WORD 	011C	CODE
+PLOGSZ . . . . . . . . . . . . .	L WORD 	011E	CODE
+PMENU. . . . . . . . . . . . . .	L BYTE 	0117	CODE
+PORT0. . . . . . . . . . . . . .	L NEAR 	05C2	CODE
+PORT1. . . . . . . . . . . . . .	L NEAR 	05D2	CODE
+PORT2. . . . . . . . . . . . . .	L NEAR 	05EA	CODE
+PORT3. . . . . . . . . . . . . .	L NEAR 	05F6	CODE
+PORT4. . . . . . . . . . . . . .	L NEAR 	05FE	CODE
+PORTS. . . . . . . . . . . . . .	L BYTE 	01A4	CODE
+PRING. . . . . . . . . . . . . .	L WORD 	011A	CODE
+PROWS. . . . . . . . . . . . . .	L BYTE 	0115	CODE
+PSCR . . . . . . . . . . . . . .	L WORD 	0118	CODE
+PURGE. . . . . . . . . . . . . .	L NEAR 	0B87	CODE
+PURGE1 . . . . . . . . . . . . .	L NEAR 	0B96	CODE
+PUTN1. . . . . . . . . . . . . .	L NEAR 	0C91	CODE
+PUTN2. . . . . . . . . . . . . .	L NEAR 	0C92	CODE
+PUTNB. . . . . . . . . . . . . .	L NEAR 	0C68	CODE
+PUTNB1 . . . . . . . . . . . . .	L NEAR 	0C7F	CODE
+PUTNUM . . . . . . . . . . . . .	L NEAR 	0C82	CODE
+PUTS . . . . . . . . . . . . . .	L NEAR 	0C63	CODE
+QUIT . . . . . . . . . . . . . .	L NEAR 	0808	CODE
+QUIT1. . . . . . . . . . . . . .	L NEAR 	0812	CODE
+RCANM. . . . . . . . . . . . . .	L BYTE 	04DF	CODE
+RCVASK . . . . . . . . . . . . .	L BYTE 	043E	CODE
+RECSZ1 . . . . . . . . . . . . .	L NEAR 	0C4B	CODE
+RINGBUF. . . . . . . . . . . . .	E BYTE 	14FB	CODE
+RINGSZ . . . . . . . . . . . . .	Number	0800	
+ROWS . . . . . . . . . . . . . .	Number	0018	
+SAME6. . . . . . . . . . . . . .	L NEAR 	0CEE	CODE
+SBEND. . . . . . . . . . . . . .	L NEAR 	06BA	CODE
+SBIT1. . . . . . . . . . . . . .	L NEAR 	069B	CODE
+SBIT2. . . . . . . . . . . . . .	L NEAR 	06B0	CODE
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols
+	 	 	 	-4
+
+
+
+SBITS. . . . . . . . . . . . . .	L NEAR 	068A	CODE
+SCRBUF . . . . . . . . . . . . .	Alias	Z80IMG	 	
+SEND . . . . . . . . . . . . . .	L NEAR 	0B97	CODE
+SESS . . . . . . . . . . . . . .	L NEAR 	072D	CODE
+SESS1. . . . . . . . . . . . . .	L NEAR 	0743	CODE
+SETX . . . . . . . . . . . . . .	L NEAR 	06C2	CODE
+SHOW . . . . . . . . . . . . . .	L NEAR 	0BD3	CODE
+SHOW1. . . . . . . . . . . . . .	L NEAR 	0BD8	CODE
+SNDASK . . . . . . . . . . . . .	L BYTE 	0459	CODE
+SOH. . . . . . . . . . . . . . .	Number	0001	
+START. . . . . . . . . . . . . .	L NEAR 	0518	CODE
+STKTOP . . . . . . . . . . . . .	L WORD 	0D7B	CODE
+TOKEN. . . . . . . . . . . . . .	L BYTE 	010D	CODE
+TRIES. . . . . . . . . . . . . .	L BYTE 	0127	CODE
+UP1. . . . . . . . . . . . . . .	L NEAR 	053D	CODE
+UPPER. . . . . . . . . . . . . .	L NEAR 	0530	CODE
+UPX. . . . . . . . . . . . . . .	L NEAR 	0540	CODE
+USEMSG . . . . . . . . . . . . .	L BYTE 	0263	CODE
+VERMSG . . . . . . . . . . . . .	L BYTE 	03AA	CODE
+XANS . . . . . . . . . . . . . .	L NEAR 	0B50	CODE
+XANS1. . . . . . . . . . . . . .	L NEAR 	0B67	CODE
+XBUF . . . . . . . . . . . . . .	E BYTE 	3CFB	CODE
+XCAN . . . . . . . . . . . . . .	L NEAR 	0BBF	CODE
+XCHECK . . . . . . . . . . . . .	L NEAR 	0B78	CODE
+XCNT . . . . . . . . . . . . . .	L WORD 	012C	CODE
+XDONE. . . . . . . . . . . . . .	L NEAR 	0BA0	CODE
+XEND . . . . . . . . . . . . . .	L NEAR 	0BCA	CODE
+XFAIL. . . . . . . . . . . . . .	L NEAR 	0BBC	CODE
+XFCB . . . . . . . . . . . . . .	L BYTE 	015F	CODE
+XGET . . . . . . . . . . . . . .	L NEAR 	0B68	CODE
+XGETDI . . . . . . . . . . . . .	L NEAR 	0B6B	CODE
+XLEN . . . . . . . . . . . . . .	L WORD 	012A	CODE
+XMSG . . . . . . . . . . . . . .	L WORD 	012E	CODE
+XPROG. . . . . . . . . . . . . .	L NEAR 	0B34	CODE
+XR0. . . . . . . . . . . . . . .	L NEAR 	08C8	CODE
+XR1. . . . . . . . . . . . . . .	L NEAR 	08E8	CODE
+XR2. . . . . . . . . . . . . . .	L NEAR 	0911	CODE
+XR3. . . . . . . . . . . . . . .	L NEAR 	0918	CODE
+XRACK. . . . . . . . . . . . . .	L NEAR 	09BE	CODE
+XRBAD. . . . . . . . . . . . . .	L NEAR 	09C6	CODE
+XRBAD1 . . . . . . . . . . . . .	L NEAR 	09D7	CODE
+XRC. . . . . . . . . . . . . . .	L NEAR 	0947	CODE
+XRCAN. . . . . . . . . . . . . .	L NEAR 	09E5	CODE
+XRECV. . . . . . . . . . . . . .	L NEAR 	08AB	CODE
+XREOT. . . . . . . . . . . . . .	L NEAR 	09DA	CODE
+XREPLY . . . . . . . . . . . . .	L BYTE 	0129	CODE
+XRFL . . . . . . . . . . . . . .	L NEAR 	094E	CODE
+XRMSG. . . . . . . . . . . . . .	L BYTE 	04AB	CODE
+XRNAK. . . . . . . . . . . . . .	L NEAR 	0940	CODE
+XRS1 . . . . . . . . . . . . . .	L NEAR 	0978	CODE
+XRS2 . . . . . . . . . . . . . .	L NEAR 	097E	CODE
+XRS3 . . . . . . . . . . . . . .	L NEAR 	099C	CODE
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols
+	 	 	 	-5
+
+
+
+XRS4 . . . . . . . . . . . . . .	L NEAR 	09B4	CODE
+XRSOH. . . . . . . . . . . . . .	L NEAR 	0951	CODE
+XRTO . . . . . . . . . . . . . .	L NEAR 	0922	CODE
+XRUSR. . . . . . . . . . . . . .	L NEAR 	091F	CODE
+XRX. . . . . . . . . . . . . . .	L NEAR 	08C7	CODE
+XS0. . . . . . . . . . . . . . .	L NEAR 	0A08	CODE
+XS1. . . . . . . . . . . . . . .	L NEAR 	0A14	CODE
+XS2. . . . . . . . . . . . . . .	L NEAR 	0A44	CODE
+XS3. . . . . . . . . . . . . . .	L NEAR 	0A49	CODE
+XS31 . . . . . . . . . . . . . .	L NEAR 	0A61	CODE
+XS4. . . . . . . . . . . . . . .	L NEAR 	0AA6	CODE
+XS5. . . . . . . . . . . . . . .	L NEAR 	0AAB	CODE
+XS51 . . . . . . . . . . . . . .	L NEAR 	0AC9	CODE
+XS6. . . . . . . . . . . . . . .	L NEAR 	0AD7	CODE
+XSE1 . . . . . . . . . . . . . .	L NEAR 	0AE9	CODE
+XSE11. . . . . . . . . . . . . .	L NEAR 	0AFA	CODE
+XSE2 . . . . . . . . . . . . . .	L NEAR 	0B0C	CODE
+XSEND. . . . . . . . . . . . . .	L NEAR 	09EB	CODE
+XSEOT. . . . . . . . . . . . . .	L NEAR 	0AE4	CODE
+XSFL . . . . . . . . . . . . . .	L NEAR 	0A41	CODE
+XSFL1. . . . . . . . . . . . . .	L NEAR 	0AD4	CODE
+XSMSG. . . . . . . . . . . . . .	L BYTE 	04B7	CODE
+XSTART . . . . . . . . . . . . .	L NEAR 	0B0F	CODE
+XSUSR. . . . . . . . . . . . . .	L NEAR 	0A3E	CODE
+XSX. . . . . . . . . . . . . . .	L NEAR 	0A07	CODE
+XUSER. . . . . . . . . . . . . .	L NEAR 	0BB7	CODE
+Z80. . . . . . . . . . . . . . .	L NEAR 	074F	CODE
+Z80IMG . . . . . . . . . . . . .	L BYTE 	0D7B	CODE
+
+Warning Severe
+Errors	Errors 
+0	0
