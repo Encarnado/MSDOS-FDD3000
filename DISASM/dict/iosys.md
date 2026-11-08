@@ -150,13 +150,13 @@ should reuse these names for the same numbers.
 - aliases: none (source writes the number: MOV AH,26 / FCB+14 / DS:[6] ...)
 - status: verified (code + IOFDD.ASM + MSDOS.LST)
 
-### DOS_SETDMA — INT 21h AH=1Ah set disk transfer address
+### DOS_SETDTA — INT 21h AH=1Ah set disk transfer address
 - class: constant
 - value: 1Ah
 - aliases: none (source writes the number: MOV AH,26 / FCB+14 / DS:[6] ...)
 - status: verified (code + IOFDD.ASM + MSDOS.LST)
 
-### DOS_BLKRD — INT 21h AH=27h random block read
+### DOS_BLKREAD — INT 21h AH=27h random block read
 - class: constant
 - value: 27h
 - aliases: none (source writes the number: MOV AH,26 / FCB+14 / DS:[6] ...)

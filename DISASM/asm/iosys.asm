@@ -1,5 +1,5 @@
 ;==============================================================================
-;  MS-DOS 1.25 ON THE TIMEX FDD3000  --  THE DISASSEMBLIES  --  4/7
+;  MS-DOS 1.25 ON THE TIMEX FDD3000  --  THE DISASSEMBLIES  --  4/10
 ;  IO.SYS - the I/O system (8086, 332 bytes, runs at 0040:0000 = 0400h)
 ;==============================================================================
 ;
@@ -186,8 +186,8 @@ TRAP_INT1A	equ	1Ah	; T_I1A: tick count, +1 per call
 ; =====================================================================
 DOS_PRTSTR	equ	09h	; INT 21h AH=09h print string to "$"
 DOS_OPEN	equ	0Fh	; INT 21h AH=0Fh open FCB
-DOS_SETDMA	equ	1Ah	; INT 21h AH=1Ah set disk transfer address
-DOS_BLKRD	equ	27h	; INT 21h AH=27h random block read
+DOS_SETDTA	equ	1Ah	; INT 21h AH=1Ah set disk transfer address
+DOS_BLKREAD	equ	27h	; INT 21h AH=27h random block read
 FCB_RECSIZ	equ	14	; FCB: record size (FCBLOCK RECSIZ, 0Eh)
 FCB_RR		equ	33	; FCB: random record, 4 bytes (RR, 21h)
 PSP_SEGSIZE	equ	6	; program segment: bytes in the segment, set
@@ -320,7 +320,7 @@ SETROM:
 ; MS-DOS 1.25 has no EXEC: the I/O system loads the shell itself, with
 ; FCB calls, into the segment DOSINIT just prepared.
 	mov dx,COM_ORG		; DTA = DS:0100h, where a .COM belongs
-	mov ah,DOS_SETDMA	; AH=1Ah set disk transfer address
+	mov ah,DOS_SETDTA	; AH=1Ah set disk transfer address
 	int 21h	; DTA = BX:0100h (DS is still the new segment)
 	mov cx,[PSP_SEGSIZE]	; CX = bytes in the program segment: the
 				;   record count for the read (records of 1)
@@ -337,7 +337,7 @@ SETROM:
 	mov [FCB+FCB_RR+2],ax	;   ... and high word)
 	inc ax			; record size 1, so CX counts bytes
 	mov [FCB+FCB_RECSIZ],ax	; (open set it to 128)
-	mov ah,DOS_BLKRD	; AH=27h random block read, CX records
+	mov ah,DOS_BLKREAD	; AH=27h random block read, CX records
 	int 21h			;   to the DTA; CX = records read
 	jcxz short COMERR	; nothing read: empty or unreadable
 	test al,1		; AL = 1 (or 3): end of file reached
@@ -352,7 +352,7 @@ SETROM:
 	xor_d ax,ax		; a 0 on top of the stack: a near RET from
 	push ax			;   the program lands on [0] = INT 20h
 	mov dx,PSP_DTA		; DTA = DS:0080h, the default buffer
-	mov ah,DOS_SETDMA	; AH=1Ah set disk transfer address
+	mov ah,DOS_SETDTA	; AH=1Ah set disk transfer address
 	int 21h	; (the read is done; 80h is the 1.x default)
 	push bx			; far return address = segment:0100h ...
 	mov ax,COM_ORG	; IP = 0100h, the .COM entry

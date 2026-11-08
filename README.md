@@ -26,6 +26,7 @@ FUSE. **It has not been tried on real FDD3000 hardware.**
 |---|---|
 | `OVERVIEW.md` | What was built, how each part works, and how the work was done and checked, step by step. Read this first. |
 | `DISASSEMBLY_GUIDE.md` | Each binary: CPU, load address, entry points, code and data regions, the matching listing and symbol file, and the traps to watch for (non-standard opcodes, self-modifying code, split jump tables, overlays). |
+| `DISASM/` | Commented disassemblies of every project binary (ten volumes), each reassembling byte-identical to its binary (`DISASM/tools/roundtrip.sh`); findings, conventions and the real-hardware run in `DISASM/notes`, `DISASM/dict`. Start with `DISASM/PLAN.md`. |
 | `project/MSDOS/poc/README.md` | The project's own working notes: full detail, measurements, design decisions. |
 | `project/MSDOS/FEASIBILITY.md` | The feasibility study written before the work started. |
 | `MANIFEST.sha256` | SHA-256 and size of every file in the package. |
@@ -49,6 +50,8 @@ symbols/
   z80/*.lst, *.sym          address + bytes + source listings, symbol tables
                             with a code / data / equ tag per symbol
   x86/*.LST, *.sym          MASM 1.10 listings and symbol tables
+DISASM/                     the commented disassemblies (asm/), their tools,
+                            notes and dictionary (see DISASM/PLAN.md)
 project/                    the sources and the Python tools, runnable
                             (see "Running it" below)
 LICENSE-MICROSOFT-MIT.txt   Microsoft's licence for MS-DOS 1.25 / 2.0
@@ -60,7 +63,7 @@ LICENSE-MICROSOFT-MIT.txt   Microsoft's licence for MS-DOS 1.25 / 2.0
 |---|---|
 | `MSDOS.SYS`, `COMMAND.COM` | Built by us from `github.com/microsoft/MS-DOS` (v1.25 source, MIT licence), with MASM 1.10, LINK 2.00 and EXE2BIN from the same repository's v2.0 (byte-identical to the ones used). One build-time patch to COMMAND.ASM (`ZERO EQU $` to `ZERO = $`, a MASM 1.10 limitation). |
 | `EDLIN.COM`, `DEBUG.COM`, `CHKDSK.COM` on the disk | Microsoft's own binaries from that repository's `v1.25/bin`, unchanged. |
-| Everything else (`Z86.SYS`, `BOOT.BIN`, `IO.SYS`, `FORMAT.COM`, `CPM.COM`, `CPMZ80.BIN`, `EDIT.COM`, `MODE.COM`, `TERM.COM`, `TERMZ80.BIN`, all `.ASM` except Microsoft's, the Python tools) | Written in this project. The Z80 console and floppy routines in `BIOS.ASM` follow the FDD3000's CP/M CBIOS A1.1 (link protocol, WD177x transfer loop). |
+| Everything else (`Z86.SYS`, `BOOT.BIN`, `IO.SYS`, `FORMAT.COM`, `CPM.COM`, `CPMZ80.BIN`, `EDIT.COM`, `MODE.COM`, `TERM.COM`, `TERMZ80.BIN`, all `.ASM` except Microsoft's, the Python tools) | Written in this project. The Z80 console and floppy routines in `BIOS.ASM` follow the FDD3000's CP/M CBIOS A1.1 (link protocol, WD177x transfer loop). `MODE.COM`, `TERM.COM` and `TERMZ80.BIN` (`MODE.ASM`, `TERM.ASM`, `TERMZ80.ASM`, `test_term.py`), the INT 14h F0h / F1h calls and the WD2123 CTS correction are by João Encarnado. |
 
 **Left out on purpose:** third-party software the project used for testing
 but that is not ours to pass on: Microsoft BASIC-80 (MBASIC 5.2) and the

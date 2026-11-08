@@ -40,6 +40,10 @@ IMAGES = {
                    org=0x0100, asm='cpmcom.asm'),
     'EDIT': dict(bin='bin/EDIT.COM', lst='symbols/x86/EDIT.LST', sym='symbols/x86/EDIT.COM.sym',
                  org=0x0100, asm='edit.asm'),
+    'MODE': dict(bin='bin/MODE.COM', lst='symbols/x86/MODE.LST', sym='symbols/x86/MODE.COM.sym',
+                 org=0x0100, asm='mode.asm'),
+    'TERM': dict(bin='bin/TERM.COM', lst='symbols/x86/TERM.LST', sym='symbols/x86/TERM.COM.sym',
+                 org=0x0100, asm='term.asm'),
 }
 
 DATA_OPS = {'DB', 'DW', 'DD'}

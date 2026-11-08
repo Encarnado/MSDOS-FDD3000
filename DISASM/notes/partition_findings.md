@@ -63,3 +63,11 @@ Assembler differences found and spelled out (CONVENTIONS): MASM's reg,reg direct
 bit (`_d` macros, 203 sites; the traps arrive as data, since the author wrote them as `DB 0FH,nn`), opcode 83h imm8 forms, the `JMP` + `NOP` pad MASM
 leaves after a forward short jump (kept as a real `nop`), and author labels that are
 NASM reserved words.
+
+## TERMZ80.BIN (2026-11-08, merge with João Encarnado's work)
+Descent from T_TERM, FTAB (10 DW, the trap-1Ch functions), every DW of the
+ESC / CSI dispatch tables ((char, DW handler) pairs: `seed_listing_dw`), and
+DCHS / ECHS / CH1 - reached only by CH0's push-and-RET dispatch (LD HL,handler /
+LD DE,CH1 / push / RET: the handler returns into CH1). With those, 3 243 code
+bytes, every instruction of TERMZ80.lst, zero disagreements, nothing dead.
+MODE.COM / TERM.COM (8086): listing-reconciled, 0 raw-byte fallbacks.

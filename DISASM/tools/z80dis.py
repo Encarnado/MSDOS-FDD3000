@@ -297,6 +297,12 @@ def main():
     for t in img.get('word_tables', ()):           # (addr, count)
         for k in range(t[1]):
             seeds.add(mem(t[0] + 2 * k) | (mem(t[0] + 2 * k + 1) << 8))
+    if img.get('seed_listing_dw'):          # dispatch tables of (char, DW handler)
+        for a, e in lst.items():
+            if e['op'].upper() == 'DW':
+                b = e['bytes']
+                for k in range(0, len(b) - 1, 2):
+                    seeds.add(b[k] | b[k + 1] << 8)
     for base, size, count in img.get('slot_blocks', ()):   # SMC JP targets
         for k in range(count):
             seeds.add(base + k * size)

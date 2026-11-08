@@ -1,5 +1,5 @@
 ;==============================================================================
-;  MS-DOS 1.25 ON THE TIMEX FDD3000  --  THE DISASSEMBLIES  --  7/7
+;  MS-DOS 1.25 ON THE TIMEX FDD3000  --  THE DISASSEMBLIES  --  7/10
 ;  EDIT.COM - the full-screen text editor (8086, 4 653 bytes, .COM at 0100h)
 ;==============================================================================
 ;
@@ -221,7 +221,7 @@ NAMELEN		equ	11		; 8 + 3, blank-padded
 FCBHEAD		equ	12		; drive byte + name + extension
 
 ; INT 21h functions (AH), named after MS-DOS 1.25's
-DOS_PRINT	equ	09h		; print a $-terminated string at DX
+DOS_PRTSTR	equ	09h		; print a $-terminated string at DX
 DOS_OPEN	equ	0Fh		; open FCB
 DOS_CLOSE	equ	10h		; close FCB
 DOS_DELETE	equ	13h		; delete FCB (wildcards allowed)
@@ -389,7 +389,7 @@ TFCB:
 RFCB:
 	times 37 db 0		; rename / delete: old name at 1, new at 17
 
-; ---- messages: $-terminated for DOS_PRINT, 0-terminated for PUTS ----
+; ---- messages: $-terminated for DOS_PRTSTR, 0-terminated for PUTS ----
 USEMSG:
 	db "EDIT 1.0 - full screen text editor",13,10
 	db "Usage: EDIT name.ext [/80]",13,10,"$"
@@ -477,7 +477,7 @@ CTAB:
 USAGE:
 	mov dx,USEMSG		; banner and the command line form
 DOSMSG:
-	mov ah,DOS_PRINT	; the $-terminated text at DX
+	mov ah,DOS_PRTSTR	; the $-terminated text at DX
 	int byte 0x21		; DOS prints it
 	int byte 0x20		; back to COMMAND
 

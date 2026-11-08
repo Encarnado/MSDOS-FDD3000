@@ -19,6 +19,9 @@ tools/  z80decode.py z80dis.py images.py roundtrip.sh   build/ disposable
 | 5 | `format.asm` | FORMAT.COM (1 628 B) | ✅ narrated, gate PASS, 98% commented |
 | 6 | `cpmcom.asm` | CPM.COM (3 286 B; Z80 image from 03FCh) | ✅ narrated, gate PASS, 88% commented |
 | 7 | `edit.asm` | EDIT.COM (4 653 B) | ✅ narrated, gate PASS, 96% commented |
+| 8 | `mode.asm` | MODE.COM (1 119 B, 8086; João Encarnado) | ✅ narrated, gate PASS, 94% commented |
+| 9 | `term.asm` | TERM.COM (6 679 B, 8086 + TERMZ80 image; João Encarnado) | ✅ narrated, gate PASS, 86% commented |
+| 10 | `termz80.asm` | TERMZ80.BIN (3 468 B, Z80 @F12Ch; João Encarnado) | ✅ narrated, gate PASS, 93% commented |
 | — | MSDOS.SYS / COMMAND.COM | Microsoft | short note only (public listings) |
 
 ## Done 2026-11-08
@@ -30,6 +33,7 @@ tools/  z80decode.py z80dis.py images.py roundtrip.sh   build/ disposable
 - Volume 1 complete (`notes/boot_findings.md`).
 
 ## Status 2026-11-08
+Ten volumes (João Encarnado's MODE / TERM / TERMZ80 added after the merge); gate 10/10.
 All 7 volumes narrated; gate 7/7 byte-identical; lint 0 errors. Real-hardware run folded in
 (notes/hardware_run.md). Package doc corrections: notes/doc_corrections.md.
 
