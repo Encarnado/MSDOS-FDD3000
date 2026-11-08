@@ -733,8 +733,9 @@ I16B:   XOR A
 
 ; INT 14h serial: DX = 0 channel A, 1 channel B. AH = 0 set up from AL
 ; (PC format), 1 send AL, 2 receive into AL, 3 status, 4 set up from BX
-; and CX (PS/2 format). Returns AH = line status (bit 7: timed out) and
-; AL = modem status (but the byte received, for AH = 2).
+; and CX (PS/2 format), F0h and F1h read and set the WD2123's own mode
+; byte and baud code (I14X, in I86.ASM). Returns AH = line status (bit 7:
+; timed out) and AL = modem status (but the byte received, for AH = 2).
 T_I14:  LD HL,(R_DX)
         LD C,81h
         LD A,H
@@ -755,8 +756,7 @@ I14A:   LD A,(R_AH)
         DEC A
         JP Z,SSTAT
         DEC A
-        RET NZ
-        JP I14EXT               ; 4 (in I86.ASM, with 0)
+        JP I14X                 ; 4, F0h, F1h (in I86.ASM, with 0)
 I14PUT: LD A,(R_AL)
         LD E,A
         LD HL,0FFFFh            ; about 1.5 s
@@ -780,7 +780,7 @@ I14T:   SBC A,A                 ; CF: timed out
         RET
 
 ; INT 17h printer (channel A, whatever DX is): AH = 0 print AL, 1 set up
-; (nothing to do), 2 status. AH = 90h ready, 10h busy (no DSR), +1 timed out.
+; (nothing to do), 2 status. AH = 90h ready, 10h busy (no CTS), +1 timed out.
 T_I17:  LD C,81h
         LD E,0
         LD A,(R_AH)

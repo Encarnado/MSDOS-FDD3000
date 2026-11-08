@@ -23,6 +23,7 @@ SRC = os.path.join(HERE, 'I86.ASM')
 BIOS = os.path.join(HERE, 'BIOS.ASM')
 BOOT = os.path.join(HERE, 'BOOT.ASM')
 CPMZ80 = os.path.join(HERE, 'CPMZ80.ASM')
+TERMZ80 = os.path.join(HERE, 'TERMZ80.ASM')
 R16 = ['AX', 'CX', 'DX', 'BX', 'SP', 'BP', 'SI', 'DI']
 R8 = ['AL', 'CL', 'DL', 'BL', 'AH', 'CH', 'DH', 'BH']
 SEGS = ['ES', 'CS', 'SS', 'DS']
@@ -87,20 +88,23 @@ def ea_table():
     return ['EA%d%d' % (m >> 6, m & 7) for m in range(0xC0)]
 
 
-def table_text(lo, hi, labels):
+def table_text(lo, hi, labels, fills=([], [])):
+    """fills: source lines placed after the entries in each half's page."""
     out = ['        DS (($+255)&0FF00h)-$', lo + ':']
-    for part, fmt in ((lo, '%s&0FFh'), (hi, '%s>>8')):
+    for part, fmt, fill in ((lo, '%s&0FFh', fills[0]), (hi, '%s>>8', fills[1])):
         if part == hi:
             out.append(hi + ':')
-        vals = [fmt % l for l in labels] + ['0'] * (256 - len(labels))
-        for i in range(0, 256, 8):
+        vals = [fmt % l for l in labels]
+        for i in range(0, len(vals), 8):
             out.append('        DB ' + ', '.join(vals[i:i + 8]))
+        out += fill + ['        DS %s+256-$' % part]
     return out
 
 
 def preprocess(text):
     """;@FOR V a b c ... ;@END repeats a block with {V} replaced;
-    ;@TABLE LO HI ops|ea inserts a split 256-entry jump table."""
+    ;@TABLE LO HI ops|ea inserts a split 256-entry jump table, optionally
+    followed by ;@FILL lines ;@FILL lines ;@END for the rest of its pages."""
     out, lines, i = [], text.split('\n'), 0
     while i < len(lines):
         line = lines[i]
@@ -117,7 +121,17 @@ def preprocess(text):
         m = re.match(r'\s*;@TABLE\s+(\w+)\s+(\w+)\s+(\w+)', line)
         if m:
             labels = op_table() if m.group(3) == 'ops' else ea_table()
-            out += table_text(m.group(1), m.group(2), labels)
+            fills = ([], [])
+            if i + 1 < len(lines) and re.match(r'\s*;@FILL', lines[i + 1]):
+                # ;@FILL code ;@FILL code ;@END: the rest of each page
+                j = i + 2
+                while not re.match(r'\s*;@FILL', lines[j]):
+                    j += 1
+                k = j + 1
+                while not re.match(r'\s*;@END', lines[k]):
+                    k += 1
+                fills, i = (lines[i + 2:j], lines[j + 1:k]), k
+            out += table_text(m.group(1), m.group(2), labels, fills)
         else:
             out.append(line)
         i += 1
@@ -146,6 +160,8 @@ def _build(bios):
     syms = {k: v for k, v in a.symbols.items() if isinstance(v, int)}
     assert syms['REGS'] == 0xD000 and syms['BOOTJP'] == 0xD0FD
     assert syms['WCORE'] == syms['BCORE'] + 0x100, 'the end of the BCORE page overflows'
+    assert syms['EAHI'] == syms['EALO'] + 0x100 and syms['BCORE'] == syms['EAHI'] + 0x100, \
+        'the end of the EALO or EAHI page overflows'
     if bios:
         assert syms['TTEND'] - syms['TTAB'] == 2 * 0x1E, 'TRAP checks CP 1Eh'
         assert len(code) == syms['BIOSEND'] - 0xD000 + syms['CPMEND'] - syms['ENDBIOS']
@@ -162,6 +178,25 @@ def cpmz80():
     assert syms['BUFEND'] <= 0xFF00, 'CPMZ80 runs into the Z80 stack'
     hdr = len(z).to_bytes(2, 'little') + b''.join(syms[n].to_bytes(2, 'little') for n in names)
     return hdr + z
+
+
+@functools.lru_cache(None)
+def termz80():
+    """-> TERM.COM's Z80 part, as BIOS trap 1Ch takes it (see cpmz80):
+    TERMZ80.ASM assembled after I86.ASM and BIOS.ASM, for ENDBIOS."""
+    code, syms = _build(True)
+    a = z80asm.Assembler()
+    tz = bytes(a.assemble(preprocess(open(SRC).read() + open(BIOS).read().replace('\n        END\n', '\n')
+                                     + open(TERMZ80).read())))
+    ts = {k: v for k, v in a.symbols.items() if isinstance(v, int)}
+    end = syms['BIOSEND'] - 0xD000
+    assert tz[:end] == code[:end], 'TERMZ80.ASM changed Z86.SYS'
+    z = tz[end:]
+    assert len(z) == ts['TERMEND'] - ts['ENDBIOS']
+    assert ts['TERMEND'] <= 0xFF00 - 64, 'TERMZ80 runs into the Z80 stack'
+    names = ('NEXT', 'JPHL', 'PEEKEY', 'GETKEY', 'CONOUT', 'DCSP', 'ENDBIOS')
+    hdr = len(z).to_bytes(2, 'little') + b''.join(syms[n].to_bytes(2, 'little') for n in names)
+    return hdr + z, ts
 
 
 @functools.lru_cache(None)

@@ -82,20 +82,25 @@ D038  00 00 00 00 00 00                 DS REGS+62-$
                                 ; The FDD3000's WD2123 holds two 8251A-compatible channels with their own
                                 ; baud-rate generators: channel A data 80h, control and status 81h, baud
                                 ; 10h; channel B 40h, 41h, 11h. Status bits: 0 TxRDY, 1 RxRDY, 2 TxEMPTY,
-                                ; 3 parity, 4 overrun, 5 framing error, 6 break, 7 DSR. As in CBIOS A1.1,
+                                ; 3 parity, 4 overrun, 5 framing error, 6 break, 7 CTS (the WD2123 has no
+                                ; DSR; on the FDD3000's DE-9s CTS is pin 5, RTS pin 4). Commands: bit 0
+                                ; transmit, 1 CS, 2 receive, 3 break, 4 error reset, 5 RTS, 6 internal
+                                ; reset. CS (an 8251A's DTR) must be 1: both clocks then come from the
+                                ; baud-rate generator (SELCLK is tied high), with 0 the receiver's comes
+                                ; from SELCLK and nothing is received (WD2123 datasheet). As in CBIOS A1.1,
                                 ; the printer is channel A (CP/M's LIST) and AUX channel B (PUNCH, READER).
                                 ; C = the channel's control port throughout.
                                 
                                 ; SPRN, SAUXO: A to channel A, B; SAUXI: A from channel B; SLSTS: A = FFh
-                                ; if channel A's DSR is on, else 0. They wait for ever, as CBIOS A1.1.
+                                ; if channel A's CTS is on, else 0. They wait for ever, as CBIOS A1.1.
 D03E  0E 81                     SPRN:   LD C,81h
 D040  18 02                             JR SPF
 D042  0E 41                     SAUXO:  LD C,41h
 D044  5F                        SPF:    LD E,A
 D045  21 00 00                          LD HL,0
-                                ; SPUT: E to the channel when DSR and TxRDY are on. HL: polls before
+                                ; SPUT: E to the channel when CTS and TxRDY are on. HL: polls before
                                 ; giving up with CF=1 (0: for ever).
-D048  3E 27                     SPUT:   LD A,27h                ; transmit, receive, DTR, RTS on
+D048  3E 27                     SPUT:   LD A,27h                ; transmit, CS, receive, RTS on
 D04A  ED 79                             OUT (C),A
 D04C  CD 98 D0                          CALL SERR
 D04F  ED 78                     SP1:    IN A,(C)
@@ -155,7 +160,10 @@ D09F  ED 79                             OUT (C),A
 D0A1  C9                                RET
                                 ; SSET: set the channel up: mode byte D, baud code E (0-15: 50 75 110
                                 ; 134.5 150 200 300 600 1200 1800 2400 3600 4800 7200 9600 19200, as TMX
-                                ; CONFIGUR lists them). The three 0s and 40h reset the 8251A from any state.
+                                ; CONFIGUR lists them; the WD2123's table for 1.8432 MHz, x16). The
+                                ; three 0s, as CBIOS A1.1 writes them, do no harm; 40h (internal reset)
+                                ; makes the next control write the mode, as the datasheet has it.
+                                ; Uses A, HL.
 D0A2  AF                        SSET:   XOR A
 D0A3  ED 79                             OUT (C),A
 D0A5  ED 79                             OUT (C),A
@@ -172,38 +180,45 @@ D0B7  DE 00                             SBC A,0
 D0B9  C5                                PUSH BC
 D0BA  4F                                LD C,A
 D0BB  ED 59                             OUT (C),E
-D0BD  C1                                POP BC
-D0BE  C9                                RET
+D0BD  21 B0 D4                          LD HL,SAVED-10h         ; kept for INT 14h F0h: the chip can't
+D0C0  85                                ADD A,L                 ;   be read back
+D0C1  6F                                LD L,A
+D0C2  72                                LD (HL),D
+D0C3  2C                                INC L
+D0C4  2C                                INC L
+D0C5  73                                LD (HL),E
+D0C6  C1                                POP BC
+D0C7  C9                                RET
                                 ; SSTAT: INT 14h's status: AH = line status (0 data ready, 1 overrun,
                                 ; 2 parity, 3 framing, 4 break, 5 and 6 transmitter empty), AL = modem
-                                ; status (5 DSR; 4 CTS, always on: the 8251A handles CTS itself)
-D0BF  ED 78                     SSTAT:  IN A,(C)
-D0C1  57                                LD D,A
-D0C2  21 E1 D0                          LD HL,LSMAP
-D0C5  06 07                             LD B,7
-D0C7  7A                        SS1:    LD A,D
-D0C8  A6                                AND (HL)
-D0C9  C6 FF                             ADD A,0FFh
-D0CB  CB 13                             RL E
-D0CD  23                                INC HL
-D0CE  10 F7                             DJNZ SS1
-D0D0  7B                                LD A,E
-D0D1  E6 7F                             AND 7Fh
-D0D3  32 01 D0                          LD (R_AH),A
-D0D6  7A                                LD A,D
-D0D7  E6 80                             AND 80h
-D0D9  0F                                RRCA
-D0DA  0F                                RRCA
-D0DB  F6 10                             OR 10h
-D0DD  32 00 D0                          LD (R_AL),A
-D0E0  C9                                RET
-D0E1  04 01 40 20 08 10 02      LSMAP:  DB 04h,01h,40h,20h,08h,10h,02h  ; the 8251A's bits for AH bits 6-0
+                                ; status (4 CTS, from status bit 7; 5 DSR, always on: there is none)
+D0C8  ED 78                     SSTAT:  IN A,(C)
+D0CA  57                                LD D,A
+D0CB  21 EB D0                          LD HL,LSMAP
+D0CE  06 07                             LD B,7
+D0D0  7A                        SS1:    LD A,D
+D0D1  A6                                AND (HL)
+D0D2  C6 FF                             ADD A,0FFh
+D0D4  CB 13                             RL E
+D0D6  23                                INC HL
+D0D7  10 F7                             DJNZ SS1
+D0D9  7B                                LD A,E
+D0DA  E6 7F                             AND 7Fh
+D0DC  32 01 D0                          LD (R_AH),A
+D0DF  7A                                LD A,D
+D0E0  E6 80                             AND 80h
+D0E2  0F                                RRCA
+D0E3  0F                                RRCA
+D0E4  0F                                RRCA
+D0E5  F6 20                             OR 20h
+D0E7  32 00 D0                          LD (R_AL),A
+D0EA  C9                                RET
+D0EB  04 01 40 20 08 10 02      LSMAP:  DB 04h,01h,40h,20h,08h,10h,02h  ; the 8251A's bits for AH bits 6-0
                                 ; INT 14h's baud rates (0-8) as WD2123 codes
-D0E8  02 04 06 07 08 0A 0C 0E   BAUDT:  DB 2,4,6,7,8,10,12,14,15        ; 110 150 300 600 1200 2400 4800 9600 19200
-D0E8  0F                        
-D0F1  00 00 00 00 00 00 00 00           DS REGS+253-$
-D0F1  00 00 00 00               
-D0FD  C3 2C F1                  BOOTJP: JP COLD                 ; D0FDh: the boot sector jumps here
+D0F2  02 04 06 07 08 0A 0C 0E   BAUDT:  DB 2,4,6,7,8,10,12,14,15        ; 110 150 300 600 1200 2400 4800 9600 19200
+D0F2  0F                        
+D0FB  00 00                             DS REGS+253-$
+D0FD  C3 2B F1                  BOOTJP: JP COLD                 ; D0FDh: the boot sector jumps here
                                 
                                 ; ----------------------------------------------- opcode and ModR/M tables
                                         DS (($+255)&0FF00h)-$
@@ -240,6 +255,7 @@ D1E0  7E 90 A5 B4 BF C7 D0 D0           DB O_LOOPNZ&0FFh, O_LOOPZ&0FFh, O_LOOP&0
 D1E8  D3 EB F8 48 C0 C8 BF BF           DB O_CALLN&0FFh, O_JMPN&0FFh, O_JMPF&0FFh, O_JREL8&0FFh, O_INDXB&0FFh, O_INDXW&0FFh, O_NOP&0FFh, O_NOP&0FFh
 D1F0  45 BA E5 E5 BD 06 42 18           DB O_LOCK&0FFh, O_BAD&0FFh, O_REP&0FFh, O_REP&0FFh, O_HLT&0FFh, O_CMC&0FFh, O_GRP3B&0FFh, O_GRP3W&0FFh
 D1F8  0F 16 20 27 2E 38 A4 C0           DB O_CLC&0FFh, O_STC&0FFh, O_CLI&0FFh, O_STI&0FFh, O_CLD&0FFh, O_STD&0FFh, O_GRP4&0FFh, O_GRP5&0FFh
+                                        DS OPLO+256-$
 D200                            OPHI:
 D200  DB DB DB DB DB DB DB DB           DB O_ALU0>>8, O_ALU1>>8, O_ALU2>>8, O_ALU3>>8, O_ALU4>>8, O_ALU5>>8, O_PUSH_ES>>8, O_POP_ES>>8
 D208  DB DB DB DB DB DB DB D8           DB O_ALU0>>8, O_ALU1>>8, O_ALU2>>8, O_ALU3>>8, O_ALU4>>8, O_ALU5>>8, O_PUSH_CS>>8, O_TRAP>>8
@@ -273,6 +289,7 @@ D2E0  E7 E7 E7 E7 E7 E7 E7 E7           DB O_LOOPNZ>>8, O_LOOPZ>>8, O_LOOP>>8, O
 D2E8  E7 E7 E7 DE E7 E7 D8 D8           DB O_CALLN>>8, O_JMPN>>8, O_JMPF>>8, O_JREL8>>8, O_INDXB>>8, O_INDXW>>8, O_NOP>>8, O_NOP>>8
 D2F0  D8 D8 E1 E1 D8 E8 E8 E9           DB O_LOCK>>8, O_BAD>>8, O_REP>>8, O_REP>>8, O_HLT>>8, O_CMC>>8, O_GRP3B>>8, O_GRP3W>>8
 D2F8  E8 E8 E8 E8 E8 E8 EA EA           DB O_CLC>>8, O_STC>>8, O_CLI>>8, O_STI>>8, O_CLD>>8, O_STD>>8, O_GRP4>>8, O_GRP5>>8
+                                        DS OPHI+256-$
                                         DS (($+255)&0FF00h)-$
 D300                            EALO:
 D300  2E 3C 46 54 5E 63 68 70           DB EA00&0FFh, EA01&0FFh, EA02&0FFh, EA03&0FFh, EA04&0FFh, EA05&0FFh, EA06&0FFh, EA07&0FFh
@@ -299,14 +316,38 @@ D3A0  BF D1 DB ED F7 FC 01 06           DB EA20&0FFh, EA21&0FFh, EA22&0FFh, EA23
 D3A8  BF D1 DB ED F7 FC 01 06           DB EA20&0FFh, EA21&0FFh, EA22&0FFh, EA23&0FFh, EA24&0FFh, EA25&0FFh, EA26&0FFh, EA27&0FFh
 D3B0  BF D1 DB ED F7 FC 01 06           DB EA20&0FFh, EA21&0FFh, EA22&0FFh, EA23&0FFh, EA24&0FFh, EA25&0FFh, EA26&0FFh, EA27&0FFh
 D3B8  BF D1 DB ED F7 FC 01 06           DB EA20&0FFh, EA21&0FFh, EA22&0FFh, EA23&0FFh, EA24&0FFh, EA25&0FFh, EA26&0FFh, EA27&0FFh
-D3C0  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
-D3C8  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
-D3D0  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
-D3D8  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
-D3E0  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
-D3E8  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
-D3F0  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
-D3F8  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
+                                ; ---- INT 14h's FDD3000 calls (from BIOS.ASM's T_I14; A = AH-4, Z: AH = 4)
+                                ;   AH = F0h: AL = the channel's mode byte, AH = its baud code, as last set
+                                ;   AH = F1h: set the channel up: AL = mode byte (bits 1-0 are forced to
+                                ;             10b, x16 clock), CL = baud code 0-15 (see SSET); -> status
+D3C0  CA A2 D5                  I14X:   JP Z,I14EXT
+D3C3  D6 EC                             SUB 0F0h-4
+D3C5  28 17                             JR Z,I14RD
+D3C7  3D                                DEC A
+D3C8  C0                                RET NZ
+D3C9  3A 02 D0                          LD A,(R_CL)
+D3CC  FE 10                             CP 16
+D3CE  D0                                RET NC
+D3CF  5F                                LD E,A
+D3D0  3A 00 D0                          LD A,(R_AL)
+D3D3  E6 FC                             AND 0FCh
+D3D5  F6 02                             OR 2
+D3D7  57                                LD D,A
+D3D8  CD A2 D0                          CALL SSET
+D3DB  C3 C8 D0                          JP SSTAT
+D3DE  21 C1 D4                  I14RD:  LD HL,SAVED+1
+D3E1  CB 79                             BIT 7,C                 ; channel A: SAVED, B: SAVED+1
+D3E3  28 01                             JR Z,I14R1
+D3E5  2D                                DEC L
+D3E6  7E                        I14R1:  LD A,(HL)
+D3E7  32 00 D0                          LD (R_AL),A
+D3EA  2C                                INC L
+D3EB  2C                                INC L
+D3EC  7E                                LD A,(HL)
+D3ED  32 01 D0                          LD (R_AH),A
+D3F0  C9                                RET
+D3F1  00 00 00 00 00 00 00 00           DS EALO+256-$
+D3F1  00 00 00 00 00 00 00      
 D400                            EAHI:
 D400  D9 D9 D9 D9 D9 D9 D9 D9           DB EA00>>8, EA01>>8, EA02>>8, EA03>>8, EA04>>8, EA05>>8, EA06>>8, EA07>>8
 D408  D9 D9 D9 D9 D9 D9 D9 D9           DB EA00>>8, EA01>>8, EA02>>8, EA03>>8, EA04>>8, EA05>>8, EA06>>8, EA07>>8
@@ -332,14 +373,15 @@ D4A0  D9 D9 D9 D9 D9 D9 DA DA           DB EA20>>8, EA21>>8, EA22>>8, EA23>>8, E
 D4A8  D9 D9 D9 D9 D9 D9 DA DA           DB EA20>>8, EA21>>8, EA22>>8, EA23>>8, EA24>>8, EA25>>8, EA26>>8, EA27>>8
 D4B0  D9 D9 D9 D9 D9 D9 DA DA           DB EA20>>8, EA21>>8, EA22>>8, EA23>>8, EA24>>8, EA25>>8, EA26>>8, EA27>>8
 D4B8  D9 D9 D9 D9 D9 D9 DA DA           DB EA20>>8, EA21>>8, EA22>>8, EA23>>8, EA24>>8, EA25>>8, EA26>>8, EA27>>8
-D4C0  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
-D4C8  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
-D4D0  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
-D4D8  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
-D4E0  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
-D4E8  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
-D4F0  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
-D4F8  00 00 00 00 00 00 00 00           DB 0, 0, 0, 0, 0, 0, 0, 0
+D4C0  00 00 00 00               SAVED:  DS 4                    ; mode bytes for A, B, then baud codes (SSET)
+D4C4  00 00 00 00 00 00 00 00           DS EAHI+256-$
+D4C4  00 00 00 00 00 00 00 00   
+D4C4  00 00 00 00 00 00 00 00   
+D4C4  00 00 00 00 00 00 00 00   
+D4C4  00 00 00 00 00 00 00 00   
+D4C4  00 00 00 00 00 00 00 00   
+D4C4  00 00 00 00 00 00 00 00   
+D4C4  00 00 00 00               
                                 
                                 ; ------------------------------------------------- ALU cores, 16-byte slots
                                 ; In: HL = destination operand, E = source. Index: (op >> 3) & 7.
@@ -480,7 +522,7 @@ D5E6  87                                ADD A,A                 ;   bits, B = in
 D5E7  B2                                OR D
 D5E8  F6 02                             OR 2                    ; x16 clock
 D5EA  57                                LD D,A
-D5EB  21 E8 D0                          LD HL,BAUDT
+D5EB  21 F2 D0                          LD HL,BAUDT
 D5EE  7D                                LD A,L
 D5EF  80                                ADD A,B
 D5F0  6F                                LD L,A
@@ -488,7 +530,7 @@ D5F1  30 01                             JR NC,I14S1
 D5F3  24                                INC H
 D5F4  5E                        I14S1:  LD E,(HL)
 D5F5  CD A2 D0                          CALL SSET
-D5F8  C3 BF D0                          JP SSTAT
+D5F8  C3 C8 D0                          JP SSTAT
                                 
 D5FB  00 00 00 00 00                    DS (($+255)&0FF00h)-$
                                 ; ------------------------------------------------- ALU cores, 32-byte slots
@@ -3908,9 +3950,9 @@ EB69  D3 EB DF EB D9 EB DC EC           DW T_PRINT, T_AUXIN, T_AUXOUT, T_READ   
 EB71  DF EC 2D EF 34 EF 3B EF           DW T_WRITE, T_DSKCHG, T_SDATE, T_STIME  ; 8-11
 EB79  48 EF E6 EB 5F EB 5F EB           DW T_GTIME, T_FLUSH, TNONE, TNONE       ; 12, 13, 14 MAPDEV, 15
 EB81  5B EF EB EF F2 EF 5F EB           DW T_I10, T_I11, T_I12, TNONE           ; 10h-13h: IBM PC ROM BIOS
-EB89  20 F0 5F EB F9 EF 6C F0           DW T_I14, TNONE, T_I16, T_I17           ; 14h-17h
-EB91  5F EB 5F EB 92 F0                 DW TNONE, TNONE, T_I1A                  ; 18h-1Ah
-EB97  A4 EE B5 F0 DC F0                 DW T_FMT, T_CPML, T_RET                 ; 1Bh: FORMAT.COM, 1Ch-1Dh: CPM.COM
+EB89  20 F0 5F EB F9 EF 6B F0           DW T_I14, TNONE, T_I16, T_I17           ; 14h-17h
+EB91  5F EB 5F EB 91 F0                 DW TNONE, TNONE, T_I1A                  ; 18h-1Ah
+EB97  A4 EE B4 F0 DB F0                 DW T_FMT, T_CPML, T_RET                 ; 1Bh: FORMAT.COM, 1Ch-1Dh: CPM.COM
 EB9D                            TTEND:
                                 
                                 ; 8086 flags in F': F' = F' AND D OR E
@@ -3967,7 +4009,7 @@ EBE5  C9                                RET
                                 ; 13 FLUSH: drop the keys typed ahead
 EBE6                            T_FLUSH:
 EBE6  AF                                XOR A
-EBE7  32 0B F1                          LD (KFLAG),A
+EBE7  32 0A F1                          LD (KFLAG),A
 EBEA  DB 2F                     FL1:    IN A,(2Fh)
 EBEC  E6 5F                             AND 5Fh
 EBEE  FE 04                             CP 04h
@@ -3977,7 +4019,7 @@ EBF4  18 F4                             JR FL1
                                 
                                 ; PEEKEY: CF=1 and A = the next key, which stays for GETKEY; CF=0 none.
                                 ; The link can't look at a key without taking it, so it is kept here.
-EBF6  3A 0B F1                  PEEKEY: LD A,(KFLAG)
+EBF6  3A 0A F1                  PEEKEY: LD A,(KFLAG)
 EBF9  B7                                OR A
 EBFA  20 12                             JR NZ,PK1
 EBFC  DB 2F                             IN A,(2Fh)
@@ -3985,25 +4027,25 @@ EBFE  E6 5F                             AND 5Fh
 EC00  FE 04                             CP 04h                  ; the terminal has a key
 EC02  C0                                RET NZ                  ; (NC)
 EC03  CD 7E EC                          CALL CONIN
-EC06  32 0C F1                          LD (KBUF),A
+EC06  32 0B F1                          LD (KBUF),A
 EC09  3E 01                             LD A,1
-EC0B  32 0B F1                          LD (KFLAG),A
-EC0E  3A 0C F1                  PK1:    LD A,(KBUF)
+EC0B  32 0A F1                          LD (KFLAG),A
+EC0E  3A 0B F1                  PK1:    LD A,(KBUF)
 EC11  37                                SCF
 EC12  C9                                RET
                                 
                                 ; GETKEY: A = next key (waits)
-EC13  21 0B F1                  GETKEY: LD HL,KFLAG
+EC13  21 0A F1                  GETKEY: LD HL,KFLAG
 EC16  7E                                LD A,(HL)
 EC17  B7                                OR A
 EC18  CA 7E EC                          JP Z,CONIN
 EC1B  36 00                             LD (HL),0
-EC1D  3A 0C F1                          LD A,(KBUF)
+EC1D  3A 0B F1                          LD A,(KBUF)
 EC20  C9                                RET
                                 
                                 ; CONOUT: A to the terminal (CBIOS FAA8h). Uses A, BC, DE.
-EC21  32 0D F1                  CONOUT: LD (COCHR),A
-EC24  3A 0D F1                  CO1:    LD A,(COCHR)
+EC21  32 0C F1                  CONOUT: LD (COCHR),A
+EC24  3A 0C F1                  CO1:    LD A,(COCHR)
 EC27  47                                LD B,A
 EC28  CD 36 EC                          CALL COSEND
 EC2B  C8                                RET Z
@@ -4125,15 +4167,15 @@ ECDC  AF                        T_READ: XOR A
 ECDD  18 02                             JR DISKIO
 ECDF                            T_WRITE:
 ECDF  3E 01                             LD A,1
-ECE1  32 14 F1                  DISKIO: LD (DWRITE),A
+ECE1  32 13 F1                  DISKIO: LD (DWRITE),A
 ECE4  3A 00 D0                          LD A,(R_AL)
 ECE7  FE 04                             CP NDRIVE
 ECE9  D2 75 ED                          JR NC,DNRDY
-ECEC  32 15 F1                          LD (DDRIVE),A
+ECEC  32 14 F1                          LD (DDRIVE),A
 ECEF  2A 1E D0                          LD HL,(B_DS)
 ECF2  ED 5B 06 D0                       LD DE,(R_BX)
 ECF6  19                                ADD HL,DE
-ECF7  22 1B F1                          LD (DADDR),HL
+ECF7  22 1A F1                          LD (DADDR),HL
 ECFA  CD 76 EE                          CALL HOOK38
 ECFD  2A 02 D0                  DLOOP:  LD HL,(R_CX)
 ED00  7C                                LD A,H
@@ -4145,7 +4187,7 @@ ED0A  B7                                OR A
 ED0B  ED 52                             SBC HL,DE
 ED0D  3E 10                             LD A,10h                ; past the last sector: not found
 ED0F  30 4D                             JR NC,DFAIL
-ED11  2A 1B F1                          LD HL,(DADDR)
+ED11  2A 1A F1                          LD HL,(DADDR)
 ED14  11 01 CF                          LD DE,GTOP-255
 ED17  B7                                OR A
 ED18  ED 52                             SBC HL,DE
@@ -4158,20 +4200,20 @@ ED26  04                        DV1:    INC B
 ED27  19                                ADD HL,DE
 ED28  38 FC                             JR C,DV1
 ED2A  78                                LD A,B
-ED2B  32 16 F1                          LD (DTRK),A
+ED2B  32 15 F1                          LD (DTRK),A
 ED2E  7D                                LD A,L
 ED2F  C6 12                             ADD A,SPT
 ED31  5F                                LD E,A                  ; sector ID: 2:1 interleave in the track
 ED32  16 00                             LD D,0
-ED34  21 F8 F0                          LD HL,SKEW
+ED34  21 F7 F0                          LD HL,SKEW
 ED37  19                                ADD HL,DE
 ED38  7E                                LD A,(HL)
-ED39  32 17 F1                          LD (DSEC),A
+ED39  32 16 F1                          LD (DSEC),A
 ED3C  CD 7F ED                          CALL SECTIO
 ED3F  20 1D                             JR NZ,DFAIL
-ED41  2A 1B F1                          LD HL,(DADDR)
+ED41  2A 1A F1                          LD HL,(DADDR)
 ED44  24                                INC H
-ED45  22 1B F1                          LD (DADDR),HL
+ED45  22 1A F1                          LD (DADDR),HL
 ED48  2A 04 D0                          LD HL,(R_DX)
 ED4B  23                                INC HL
 ED4C  22 04 D0                          LD (R_DX),HL
@@ -4205,17 +4247,17 @@ ED7E  0C                                DB 0Ch                  ; lost data, bad
                                 
                                 ; SECTIO: one sector, DSEC of track DTRK, at DADDR. Z = done; else
                                 ; A = status (as ERRTAB).
-ED7F  3A 15 F1                  SECTIO: LD A,(DDRIVE)
+ED7F  3A 14 F1                  SECTIO: LD A,(DDRIVE)
 ED82  CD 25 EE                          CALL SELECT
 ED85  C0                                RET NZ
 ED86  3E 0A                             LD A,RETRIES
-ED88  32 18 F1                          LD (DTRY),A
+ED88  32 17 F1                          LD (DTRY),A
 ED8B  CD E9 ED                  SIO1:   CALL SEEK
 ED8E  C0                                RET NZ
-ED8F  3A 17 F1                          LD A,(DSEC)
+ED8F  3A 16 F1                          LD A,(DSEC)
 ED92  D3 C2                             OUT (0C2h),A
-ED94  2A 1B F1                          LD HL,(DADDR)
-ED97  3A 14 F1                          LD A,(DWRITE)
+ED94  2A 1A F1                          LD HL,(DADDR)
+ED97  3A 13 F1                          LD A,(DWRITE)
 ED9A  B7                                OR A
 ED9B  20 05                             JR NZ,SIO2
 ED9D  CD B8 ED                          CALL RDSEC
@@ -4225,11 +4267,11 @@ EDA5  B7                        SIO3:   OR A
 EDA6  C8                                RET Z
 EDA7  CB 77                             BIT 6,A                 ; write protected: no point retrying
 EDA9  C0                                RET NZ
-EDAA  32 1A F1                          LD (DSTAT),A
-EDAD  21 18 F1                          LD HL,DTRY
+EDAA  32 19 F1                          LD (DSTAT),A
+EDAD  21 17 F1                          LD HL,DTRY
 EDB0  35                                DEC (HL)
 EDB1  20 D8                             JR NZ,SIO1
-EDB3  3A 1A F1                          LD A,(DSTAT)
+EDB3  3A 19 F1                          LD A,(DSTAT)
 EDB6  B7                                OR A
 EDB7  C9                                RET
                                 
@@ -4269,13 +4311,13 @@ EDE6  E6 5C                             AND 5Ch
 EDE8  C9                                RET                     ; to whoever called the loop (DI stays)
                                 
                                 ; SEEK: to DTRK with verify (CBIOS FB7Ch). Z = there; NZ, A = 80h failed.
-EDE9  3A 16 F1                  SEEK:   LD A,(DTRK)
+EDE9  3A 15 F1                  SEEK:   LD A,(DTRK)
 EDEC  47                                LD B,A
 EDED  DB C1                             IN A,(0C1h)
 EDEF  B8                                CP B
 EDF0  28 1D                             JR Z,SKOK
 EDF2  3E 0A                             LD A,RETRIES
-EDF4  32 19 F1                          LD (STRY),A
+EDF4  32 18 F1                          LD (STRY),A
 EDF7  78                        SK1:    LD A,B
 EDF8  D3 C3                             OUT (0C3h),A
 EDFA  3E 15                             LD A,15h                ; seek, verify
@@ -4283,7 +4325,7 @@ EDFC  CD DC ED                          CALL FDCCMD
 EDFF  E6 18                             AND 18h                 ; seek error, CRC
 EE01  C8                                RET Z
 EE02  CD 11 EE                          CALL FHOME
-EE05  21 19 F1                          LD HL,STRY
+EE05  21 18 F1                          LD HL,STRY
 EE08  35                                DEC (HL)
 EE09  20 EC                             JR NZ,SK1
 EE0B  3E 80                             LD A,80h
@@ -4294,7 +4336,7 @@ EE10  C9                                RET
                                 
                                 ; FHOME: restore to track 0, polled (CBIOS F7B5h). NZ: seek error, the
                                 ; drive never showed track 0.
-EE11  3A 0A F1                  FHOME:  LD A,(RESCMD)
+EE11  3A 09 F1                  FHOME:  LD A,(RESCMD)
 EE14  D3 C0                             OUT (0C0h),A
 EE16  C5                                PUSH BC
 EE17  06 12                             LD B,12h                ; let the FDC raise BUSY
@@ -4311,7 +4353,7 @@ EE24  C9                                RET
                                 ; where that drive's head is (CBIOS FA1Eh). A drive not used yet is
                                 ; restored first. Z = done; NZ, A = 20h: the restore failed (no drive).
 EE25  4F                        SELECT: LD C,A
-EE26  3A 0E F1                          LD A,(CURDRV)
+EE26  3A 0D F1                          LD A,(CURDRV)
 EE29  B9                                CP C
 EE2A  20 05                             JR NZ,SEL0
 EE2C  CD 5C EE                          CALL LATCHC
@@ -4323,7 +4365,7 @@ EE35  CD 6E EE                          CALL TRKPTR             ; keep the old d
 EE38  DB C1                             IN A,(0C1h)
 EE3A  77                                LD (HL),A
 EE3B  79                        SEL1:   LD A,C
-EE3C  32 0E F1                          LD (CURDRV),A
+EE3C  32 0D F1                          LD (CURDRV),A
 EE3F  CD 5C EE                          CALL LATCHC
 EE42  79                                LD A,C
 EE43  CD 6E EE                          CALL TRKPTR
@@ -4336,7 +4378,7 @@ EE4E  C9                                RET
 EE4F  CD 11 EE                  SEL2:   CALL FHOME
 EE52  C8                                RET Z
 EE53  3E FF                             LD A,0FFh               ; restore it again next time
-EE55  32 0E F1                          LD (CURDRV),A
+EE55  32 0D F1                          LD (CURDRV),A
 EE58  3E 20                             LD A,20h
 EE5A  B7                                OR A
 EE5B  C9                                RET
@@ -4352,10 +4394,10 @@ EE63  07                                RLCA
 EE64  18 FA                             JR LC1
 EE66  E6 5F                     LC2:    AND 5Fh
 EE68  D3 E0                             OUT (0E0h),A
-EE6A  32 13 F1                          LD (LATCH),A
+EE6A  32 12 F1                          LD (LATCH),A
 EE6D  C9                                RET
                                 
-EE6E  21 0F F1                  TRKPTR: LD HL,TRKTAB
+EE6E  21 0E F1                  TRKPTR: LD HL,TRKTAB
 EE71  85                                ADD A,L
 EE72  6F                                LD L,A
 EE73  D0                                RET NC
@@ -4365,7 +4407,7 @@ EE75  C9                                RET
                                 ; HOOK38 / UNHOOK: point 0038h (the 8086's INT 0Eh vector) at FDCINT for a
                                 ; disk call, then put the vector back and unload the head.
 EE76  21 38 00                  HOOK38: LD HL,0038h
-EE79  11 1D F1                          LD DE,SAV38
+EE79  11 1C F1                          LD DE,SAV38
 EE7C  01 03 00                          LD BC,3
 EE7F  ED B0                             LDIR
 EE81  3E C3                             LD A,0C3h               ; JP FDCINT
@@ -4375,14 +4417,14 @@ EE89  22 39 00                          LD (0039h),HL
 EE8C  C9                                RET
                                 
 EE8D  F3                        UNHOOK: DI
-EE8E  21 1D F1                          LD HL,SAV38
+EE8E  21 1C F1                          LD HL,SAV38
 EE91  11 38 00                          LD DE,0038h
 EE94  01 03 00                          LD BC,3
 EE97  ED B0                             LDIR
-EE99  3A 13 F1                          LD A,(LATCH)
+EE99  3A 12 F1                          LD A,(LATCH)
 EE9C  F6 80                             OR 80h
 EE9E  D3 E0                             OUT (0E0h),A
-EEA0  32 13 F1                          LD (LATCH),A
+EEA0  32 12 F1                          LD (LATCH),A
 EEA3  C9                                RET
                                 
                                 ; 1Bh FORMAT TRACK, for FORMAT.COM: AL = drive, DL = track, DS:BX = the
@@ -4394,36 +4436,36 @@ EEA4                            FMTLEN  EQU 32+SPT*332          ; FORMAT.ASM's i
 EEA4  3A 00 D0                  T_FMT:  LD A,(R_AL)
 EEA7  FE 04                             CP NDRIVE
 EEA9  D2 75 ED                          JR NC,DNRDY
-EEAC  32 15 F1                          LD (DDRIVE),A
+EEAC  32 14 F1                          LD (DDRIVE),A
 EEAF  CD 76 EE                          CALL HOOK38
 EEB2  3A 04 D0                          LD A,(R_DL)
-EEB5  32 16 F1                          LD (DTRK),A
+EEB5  32 15 F1                          LD (DTRK),A
 EEB8  FE 28                             CP NTRACK
 EEBA  3E 10                             LD A,10h
 EEBC  D2 5E ED                          JP NC,DFAIL
 EEBF  2A 1E D0                          LD HL,(B_DS)
 EEC2  ED 5B 06 D0                       LD DE,(R_BX)
 EEC6  19                                ADD HL,DE
-EEC7  22 1B F1                          LD (DADDR),HL
+EEC7  22 1A F1                          LD (DADDR),HL
 EECA  11 89 B8                          LD DE,GTOP-FMTLEN+1
 EECD  B7                                OR A
 EECE  ED 52                             SBC HL,DE
 EED0  3E 01                             LD A,01h
 EED2  D2 5E ED                          JP NC,DFAIL
 EED5  3E 01                             LD A,01h                ; restore without verify: no IDs there yet
-EED7  32 0A F1                          LD (RESCMD),A
-EEDA  3A 15 F1                          LD A,(DDRIVE)
+EED7  32 09 F1                          LD (RESCMD),A
+EEDA  3A 14 F1                          LD A,(DDRIVE)
 EEDD  CD 25 EE                          CALL SELECT
 EEE0  47                                LD B,A
 EEE1  3E 05                             LD A,05h
-EEE3  32 0A F1                          LD (RESCMD),A
+EEE3  32 09 F1                          LD (RESCMD),A
 EEE6  78                                LD A,B
 EEE7  C2 5E ED                          JP NZ,DFAIL
-EEEA  3A 16 F1                          LD A,(DTRK)             ; seek without verify too
+EEEA  3A 15 F1                          LD A,(DTRK)             ; seek without verify too
 EEED  D3 C3                             OUT (0C3h),A
 EEEF  3E 11                             LD A,11h
 EEF1  CD DC ED                          CALL FDCCMD
-EEF4  2A 1B F1                          LD HL,(DADDR)
+EEF4  2A 1A F1                          LD HL,(DADDR)
 EEF7  11 78 17                          LD DE,FMTLEN
 EEFA  0E C3                             LD C,0C3h
 EEFC  3E FE                             LD A,0FEh               ; write track, as FORMAT 2.0
@@ -4464,24 +4506,24 @@ EF31  C3 AC EB                          JP CF0
                                 ; 10 SETDATE: AX = days since 1-1-80
 EF34                            T_SDATE:
 EF34  2A 00 D0                          LD HL,(R_AX)
-EF37  22 20 F1                          LD (DAYS),HL
+EF37  22 1F F1                          LD (DAYS),HL
 EF3A  C9                                RET
                                 
                                 ; 11 SETTIME: CH hour, CL minute, DH second, DL 1/100
 EF3B                            T_STIME:
 EF3B  2A 02 D0                          LD HL,(R_CX)
-EF3E  22 22 F1                          LD (CLKCX),HL
+EF3E  22 21 F1                          LD (CLKCX),HL
 EF41  2A 04 D0                          LD HL,(R_DX)
-EF44  22 24 F1                          LD (CLKDX),HL
+EF44  22 23 F1                          LD (CLKDX),HL
 EF47  C9                                RET
                                 
                                 ; 12 GETTIME: AX = days, CX and DX as SETTIME
 EF48                            T_GTIME:
-EF48  2A 20 F1                          LD HL,(DAYS)
+EF48  2A 1F F1                          LD HL,(DAYS)
 EF4B  22 00 D0                          LD (R_AX),HL
-EF4E  2A 22 F1                          LD HL,(CLKCX)
+EF4E  2A 21 F1                          LD HL,(CLKCX)
 EF51  22 02 D0                          LD (R_CX),HL
-EF54  2A 24 F1                          LD HL,(CLKDX)
+EF54  2A 23 F1                          LD HL,(CLKDX)
 EF57  22 04 D0                          LD (R_DX),HL
 EF5A  C9                                RET
                                 
@@ -4590,8 +4632,9 @@ F01F  C9                                RET
                                 
                                 ; INT 14h serial: DX = 0 channel A, 1 channel B. AH = 0 set up from AL
                                 ; (PC format), 1 send AL, 2 receive into AL, 3 status, 4 set up from BX
-                                ; and CX (PS/2 format). Returns AH = line status (bit 7: timed out) and
-                                ; AL = modem status (but the byte received, for AH = 2).
+                                ; and CX (PS/2 format), F0h and F1h read and set the WD2123's own mode
+                                ; byte and baud code (I14X, in I86.ASM). Returns AH = line status (bit 7:
+                                ; timed out) and AL = modem status (but the byte received, for AH = 2).
 F020  2A 04 D0                  T_I14:  LD HL,(R_DX)
 F023  0E 81                             LD C,81h
 F025  7C                                LD A,H
@@ -4606,77 +4649,76 @@ F02F  3A 01 D0                  I14A:   LD A,(R_AH)
 F032  B7                                OR A
 F033  CA C9 D5                          JP Z,I14INI             ; (in I86.ASM)
 F036  3D                                DEC A
-F037  28 0C                             JR Z,I14PUT
+F037  28 0B                             JR Z,I14PUT
 F039  3D                                DEC A
-F03A  28 15                             JR Z,I14GET
+F03A  28 14                             JR Z,I14GET
 F03C  3D                                DEC A
-F03D  CA BF D0                          JP Z,SSTAT
+F03D  CA C8 D0                          JP Z,SSTAT
 F040  3D                                DEC A
-F041  C0                                RET NZ
-F042  C3 A2 D5                          JP I14EXT               ; 4 (in I86.ASM, with 0)
-F045  3A 00 D0                  I14PUT: LD A,(R_AL)
-F048  5F                                LD E,A
-F049  21 FF FF                          LD HL,0FFFFh            ; about 1.5 s
-F04C  CD 48 D0                          CALL SPUT
-F04F  18 07                             JR I14T
-F051  21 FF FF                  I14GET: LD HL,0FFFFh
-F054  CD 67 D0                          CALL SGET
-F057  5F                                LD E,A
-F058  9F                        I14T:   SBC A,A                 ; CF: timed out
-F059  E6 80                             AND 80h
-F05B  57                                LD D,A
-F05C  D5                                PUSH DE
-F05D  CD BF D0                          CALL SSTAT
-F060  D1                                POP DE
-F061  7B                                LD A,E
-F062  32 00 D0                          LD (R_AL),A
-F065  21 01 D0                          LD HL,R_AH
-F068  7A                                LD A,D
-F069  B6                                OR (HL)
-F06A  77                                LD (HL),A
-F06B  C9                                RET
+F041  C3 C0 D3                          JP I14X                 ; 4, F0h, F1h (in I86.ASM, with 0)
+F044  3A 00 D0                  I14PUT: LD A,(R_AL)
+F047  5F                                LD E,A
+F048  21 FF FF                          LD HL,0FFFFh            ; about 1.5 s
+F04B  CD 48 D0                          CALL SPUT
+F04E  18 07                             JR I14T
+F050  21 FF FF                  I14GET: LD HL,0FFFFh
+F053  CD 67 D0                          CALL SGET
+F056  5F                                LD E,A
+F057  9F                        I14T:   SBC A,A                 ; CF: timed out
+F058  E6 80                             AND 80h
+F05A  57                                LD D,A
+F05B  D5                                PUSH DE
+F05C  CD C8 D0                          CALL SSTAT
+F05F  D1                                POP DE
+F060  7B                                LD A,E
+F061  32 00 D0                          LD (R_AL),A
+F064  21 01 D0                          LD HL,R_AH
+F067  7A                                LD A,D
+F068  B6                                OR (HL)
+F069  77                                LD (HL),A
+F06A  C9                                RET
                                 
                                 ; INT 17h printer (channel A, whatever DX is): AH = 0 print AL, 1 set up
-                                ; (nothing to do), 2 status. AH = 90h ready, 10h busy (no DSR), +1 timed out.
-F06C  0E 81                     T_I17:  LD C,81h
-F06E  1E 00                             LD E,0
-F070  3A 01 D0                          LD A,(R_AH)
-F073  B7                                OR A
-F074  20 0E                             JR NZ,I17A
-F076  3A 00 D0                          LD A,(R_AL)
-F079  5F                                LD E,A
-F07A  21 FF FF                          LD HL,0FFFFh
-F07D  CD 48 D0                          CALL SPUT
-F080  9F                                SBC A,A
-F081  E6 01                             AND 1
-F083  5F                                LD E,A
-F084  ED 78                     I17A:   IN A,(C)
-F086  17                                RLA
-F087  3E 10                             LD A,10h
-F089  30 02                             JR NC,I17B
-F08B  3E 90                             LD A,90h
-F08D  B3                        I17B:   OR E
-F08E  32 01 D0                          LD (R_AH),A
-F091  C9                                RET
+                                ; (nothing to do), 2 status. AH = 90h ready, 10h busy (no CTS), +1 timed out.
+F06B  0E 81                     T_I17:  LD C,81h
+F06D  1E 00                             LD E,0
+F06F  3A 01 D0                          LD A,(R_AH)
+F072  B7                                OR A
+F073  20 0E                             JR NZ,I17A
+F075  3A 00 D0                          LD A,(R_AL)
+F078  5F                                LD E,A
+F079  21 FF FF                          LD HL,0FFFFh
+F07C  CD 48 D0                          CALL SPUT
+F07F  9F                                SBC A,A
+F080  E6 01                             AND 1
+F082  5F                                LD E,A
+F083  ED 78                     I17A:   IN A,(C)
+F085  17                                RLA
+F086  3E 10                             LD A,10h
+F088  30 02                             JR NC,I17B
+F08A  3E 90                             LD A,90h
+F08C  B3                        I17B:   OR E
+F08D  32 01 D0                          LD (R_AH),A
+F090  C9                                RET
                                 
                                 ; INT 1Ah AH=0: CX:DX = ticks (one more each call), AL = 0
-F092  3A 01 D0                  T_I1A:  LD A,(R_AH)
-F095  B7                                OR A
-F096  C0                                RET NZ
-F097  32 00 D0                          LD (R_AL),A
-F09A  2A 28 F1                          LD HL,(TICKS+2)
-F09D  22 02 D0                          LD (R_CX),HL
-F0A0  2A 26 F1                          LD HL,(TICKS)
-F0A3  22 04 D0                          LD (R_DX),HL
-F0A6  23                                INC HL
-F0A7  22 26 F1                          LD (TICKS),HL
-F0AA  7C                                LD A,H
-F0AB  B5                                OR L
-F0AC  C0                                RET NZ
-F0AD  2A 28 F1                          LD HL,(TICKS+2)
-F0B0  23                                INC HL
-F0B1  22 28 F1                          LD (TICKS+2),HL
-F0B4  C9                                RET
+F091  3A 01 D0                  T_I1A:  LD A,(R_AH)
+F094  B7                                OR A
+F095  C0                                RET NZ
+F096  32 00 D0                          LD (R_AL),A
+F099  2A 27 F1                          LD HL,(TICKS+2)
+F09C  22 02 D0                          LD (R_CX),HL
+F09F  2A 25 F1                          LD HL,(TICKS)
+F0A2  22 04 D0                          LD (R_DX),HL
+F0A5  23                                INC HL
+F0A6  22 25 F1                          LD (TICKS),HL
+F0A9  7C                                LD A,H
+F0AA  B5                                OR L
+F0AB  C0                                RET NZ
+F0AC  2A 27 F1                          LD HL,(TICKS+2)
+F0AF  23                                INC HL
+F0B0  22 27 F1                          LD (TICKS+2),HL
+F0B3  C9                                RET
                                 
                                 ; ---------------------------------------------------------------- CP/M
                                 ; 1Ch: CPM.COM's Z80 part (CPMZ80.ASM), which runs CP/M programs. BP =
@@ -4684,74 +4726,74 @@ F0B4  C9                                RET
                                 ; with (CPMSYM), then the code, for ENDBIOS. It is copied there; a
                                 ; CPM.COM made for another build of Z86.SYS gets CF=1 instead. BP = 0:
                                 ; run it (T_CPM, at ENDBIOS).
-F0B5  2A 0A D0                  T_CPML: LD HL,(R_BP)
-F0B8  7C                                LD A,H
-F0B9  B5                                OR L
-F0BA  CA 2C F1                          JP Z,ENDBIOS
-F0BD  4E                                LD C,(HL)
-F0BE  23                                INC HL
-F0BF  46                                LD B,(HL)
-F0C0  23                                INC HL
-F0C1  C5                                PUSH BC
-F0C2  11 EA F0                          LD DE,CPMSYM
-F0C5  06 0E                             LD B,CPMSYE-CPMSYM
-F0C7  1A                        TL1:    LD A,(DE)
-F0C8  BE                                CP (HL)
-F0C9  20 0D                             JR NZ,TL2
-F0CB  13                                INC DE
-F0CC  23                                INC HL
-F0CD  10 F8                             DJNZ TL1
-F0CF  C1                                POP BC
-F0D0  11 2C F1                          LD DE,ENDBIOS
-F0D3  ED B0                             LDIR
-F0D5  C3 AC EB                          JP CF0
-F0D8  C1                        TL2:    POP BC
-F0D9  C3 A7 EB                          JP CF1
+F0B4  2A 0A D0                  T_CPML: LD HL,(R_BP)
+F0B7  7C                                LD A,H
+F0B8  B5                                OR L
+F0B9  CA 2B F1                          JP Z,ENDBIOS
+F0BC  4E                                LD C,(HL)
+F0BD  23                                INC HL
+F0BE  46                                LD B,(HL)
+F0BF  23                                INC HL
+F0C0  C5                                PUSH BC
+F0C1  11 E9 F0                          LD DE,CPMSYM
+F0C4  06 0E                             LD B,CPMSYE-CPMSYM
+F0C6  1A                        TL1:    LD A,(DE)
+F0C7  BE                                CP (HL)
+F0C8  20 0D                             JR NZ,TL2
+F0CA  13                                INC DE
+F0CB  23                                INC HL
+F0CC  10 F8                             DJNZ TL1
+F0CE  C1                                POP BC
+F0CF  11 2B F1                          LD DE,ENDBIOS
+F0D2  ED B0                             LDIR
+F0D4  C3 AC EB                          JP CF0
+F0D7  C1                        TL2:    POP BC
+F0D8  C3 A7 EB                          JP CF1
                                 
                                 ; 1Dh: the end of an INT 21h that CPMZ80's DOSCALL started: back to
                                 ; DOSCALL's caller, on the Z80 stack it had
-F0DC  2A 2A F1                  T_RET:  LD HL,(DCSP)
-F0DF  7C                                LD A,H
-F0E0  B5                                OR L
-F0E1  C8                                RET Z
-F0E2  F9                                LD SP,HL
-F0E3  21 00 00                          LD HL,0
-F0E6  22 2A F1                          LD (DCSP),HL
-F0E9  C9                                RET
+F0DB  2A 29 F1                  T_RET:  LD HL,(DCSP)
+F0DE  7C                                LD A,H
+F0DF  B5                                OR L
+F0E0  C8                                RET Z
+F0E1  F9                                LD SP,HL
+F0E2  21 00 00                          LD HL,0
+F0E5  22 29 F1                          LD (DCSP),HL
+F0E8  C9                                RET
                                 
-F0EA  3B D8 60 EB F6 EB 13 EC   CPMSYM: DW NEXT, JPHL, PEEKEY, GETKEY, CONOUT, DCSP, ENDBIOS
-F0EA  21 EC 2A F1 2C F1         
-F0F8                            CPMSYE:
+F0E9  3B D8 60 EB F6 EB 13 EC   CPMSYM: DW NEXT, JPHL, PEEKEY, GETKEY, CONOUT, DCSP, ENDBIOS
+F0E9  21 EC 29 F1 2B F1         
+F0F7                            CPMSYE:
                                 
                                 ; ---------------------------------------------------------------- data
-F0F8  00 02 04 06 08 0A 0C 0E   SKEW:   DB 0,2,4,6,8,10,12,14,16,1,3,5,7,9,11,13,15,17
-F0F8  10 01 03 05 07 09 0B 0D   
-F0F8  0F 11                     
-F10A  05                        RESCMD: DB 05h                  ; FHOME's restore: verify (FORMAT: 01h)
-F10B  00                        KFLAG:  DB 0                    ; 1: KBUF holds a key
-F10C  00                        KBUF:   DB 0
-F10D  00                        COCHR:  DB 0
-F10E  FF                        CURDRV: DB 0FFh                 ; drive selected last (FFh none yet)
-F10F  FF FF FF FF               TRKTAB: DB 0FFh,0FFh,0FFh,0FFh  ; head position per drive (FFh unknown)
-F113  FF                        LATCH:  DB 0FFh
-F114  00                        DWRITE: DB 0
-F115  00                        DDRIVE: DB 0
-F116  00                        DTRK:   DB 0
-F117  00                        DSEC:   DB 0
-F118  00                        DTRY:   DB 0
-F119  00                        STRY:   DB 0
-F11A  00                        DSTAT:  DB 0
-F11B  00 00                     DADDR:  DW 0
-F11D  00 00 00                  SAV38:  DB 0,0,0
-F120  00 00                     DAYS:   DW 0
-F122  00 00                     CLKCX:  DW 0
-F124  00 00                     CLKDX:  DW 0
-F126  00 00 00 00               TICKS:  DW 0,0
-F12A  00 00                     DCSP:   DW 0                    ; CPMZ80: Z80 SP in DOSCALL (0: none)
+F0F7  00 02 04 06 08 0A 0C 0E   SKEW:   DB 0,2,4,6,8,10,12,14,16,1,3,5,7,9,11,13,15,17
+F0F7  10 01 03 05 07 09 0B 0D   
+F0F7  0F 11                     
+F109  05                        RESCMD: DB 05h                  ; FHOME's restore: verify (FORMAT: 01h)
+F10A  00                        KFLAG:  DB 0                    ; 1: KBUF holds a key
+F10B  00                        KBUF:   DB 0
+F10C  00                        COCHR:  DB 0
+F10D  FF                        CURDRV: DB 0FFh                 ; drive selected last (FFh none yet)
+F10E  FF FF FF FF               TRKTAB: DB 0FFh,0FFh,0FFh,0FFh  ; head position per drive (FFh unknown)
+F112  FF                        LATCH:  DB 0FFh
+F113  00                        DWRITE: DB 0
+F114  00                        DDRIVE: DB 0
+F115  00                        DTRK:   DB 0
+F116  00                        DSEC:   DB 0
+F117  00                        DTRY:   DB 0
+F118  00                        STRY:   DB 0
+F119  00                        DSTAT:  DB 0
+F11A  00 00                     DADDR:  DW 0
+F11C  00 00 00                  SAV38:  DB 0,0,0
+F11F  00 00                     DAYS:   DW 0
+F121  00 00                     CLKCX:  DW 0
+F123  00 00                     CLKDX:  DW 0
+F125  00 00 00 00               TICKS:  DW 0,0
+F129  00 00                     DCSP:   DW 0                    ; CPMZ80: Z80 SP in DOSCALL (0: none)
                                 
                                 ; ENDBIOS: CPM.COM's Z80 part (CPMZ80.ASM) is copied here, over COLD, which
                                 ; is needed only at boot.
-F12C                            ENDBIOS:
+F12B                            ENDBIOS:
                                 ; ---------------------------------------------------------------- cold boot
                                 ; COLD: from the boot sector (BOOT.ASM) through D0FDh, with this image
                                 ; (Z86.SYS) at D000h and the boot ROM paged out. Clears the 8086 vectors,
@@ -4760,126 +4802,126 @@ F12C                            ENDBIOS:
                                 ; from its first cluster, as FORMAT /S and mkfat write them - and starts
                                 ; the 8086 at 0040:0000 with CS = DS = 0040h, as fddos.boot does. A read
                                 ; error or a missing file prints a message and stops.
-F12C                            DIRBUF  EQU 0C000h              ; in the 8086's memory, free at boot
-F12C  F3                        COLD:   DI
-F12D  31 00 00                          LD SP,0
-F130  0E 81                             LD C,81h                ; both serial channels as CBIOS A1.1 sets
-F132  11 08 8E                          LD DE,8E08h             ;   them: 8 bits, no parity, 1.5 stop bits,
-F135  CD A2 D0                          CALL SSET               ;   1200 baud (code 8)
-F138  0E 41                             LD C,41h
-F13A  CD A2 D0                          CALL SSET
-F13D  21 00 00                          LD HL,0
-F140  11 01 00                          LD DE,1
-F143  01 FF 03                          LD BC,3FFh
-F146  75                                LD (HL),L
-F147  ED B0                             LDIR
-F149  21 00 C0                          LD HL,DIRBUF
-F14C  11 01 00                          LD DE,1
-F14F  01 05 00                          LD BC,FIRDIR
-F152  CD C7 F1                          CALL CLOAD
-F155  21 20 C0                          LD HL,DIRBUF+32
-F158  11 0B F2                          LD DE,IONAM
-F15B  01 00 04                          LD BC,0400h
-F15E  3E 03                             LD A,3                  ; under 3 sectors: MSDOS.SYS is at 0600h
-F160  CD 97 F1                          CALL CFILE
-F163  21 40 C0                          LD HL,DIRBUF+64
-F166  11 16 F2                          LD DE,DOSNAM
-F169  01 00 06                          LD BC,0600h
-F16C  3E 29                             LD A,41                 ; 10 KB at most
-F16E  CD 97 F1                          CALL CFILE
-F171  21 00 D0                          LD HL,R_AX              ; AX-DI and the segment registers: 0
-F174  06 18                             LD B,24
-F176  36 00                     CB1:    LD (HL),0
-F178  23                                INC HL
-F179  10 FB                             DJNZ CB1
-F17B  21 40 00                          LD HL,40h
-F17E  22 12 D0                          LD (R_CS),HL
-F181  22 16 D0                          LD (R_DS),HL
-F184  21 00 00                          LD HL,0
-F187  22 2A D0                          LD (TMP),HL             ; IP
-F18A  AF                                XOR A
-F18B  32 24 D0                          LD (FLAGHI),A
-F18E  21 00 01                          LD HL,0100h             ; F' = 0, A' = 1 (odd: PF = 0)
-F191  E5                                PUSH HL
-F192  F1                                POP AF
-F193  08                                EX AF,AF'
-F194  C3 00 D8                          JP START
+F12B                            DIRBUF  EQU 0C000h              ; in the 8086's memory, free at boot
+F12B  F3                        COLD:   DI
+F12C  31 00 00                          LD SP,0
+F12F  0E 81                             LD C,81h                ; both serial channels as CBIOS A1.1 sets
+F131  11 08 8E                          LD DE,8E08h             ;   them: 8 bits, no parity, 1.5 stop bits,
+F134  CD A2 D0                          CALL SSET               ;   1200 baud (code 8)
+F137  0E 41                             LD C,41h
+F139  CD A2 D0                          CALL SSET
+F13C  21 00 00                          LD HL,0
+F13F  11 01 00                          LD DE,1
+F142  01 FF 03                          LD BC,3FFh
+F145  75                                LD (HL),L
+F146  ED B0                             LDIR
+F148  21 00 C0                          LD HL,DIRBUF
+F14B  11 01 00                          LD DE,1
+F14E  01 05 00                          LD BC,FIRDIR
+F151  CD C6 F1                          CALL CLOAD
+F154  21 20 C0                          LD HL,DIRBUF+32
+F157  11 0A F2                          LD DE,IONAM
+F15A  01 00 04                          LD BC,0400h
+F15D  3E 03                             LD A,3                  ; under 3 sectors: MSDOS.SYS is at 0600h
+F15F  CD 96 F1                          CALL CFILE
+F162  21 40 C0                          LD HL,DIRBUF+64
+F165  11 15 F2                          LD DE,DOSNAM
+F168  01 00 06                          LD BC,0600h
+F16B  3E 29                             LD A,41                 ; 10 KB at most
+F16D  CD 96 F1                          CALL CFILE
+F170  21 00 D0                          LD HL,R_AX              ; AX-DI and the segment registers: 0
+F173  06 18                             LD B,24
+F175  36 00                     CB1:    LD (HL),0
+F177  23                                INC HL
+F178  10 FB                             DJNZ CB1
+F17A  21 40 00                          LD HL,40h
+F17D  22 12 D0                          LD (R_CS),HL
+F180  22 16 D0                          LD (R_DS),HL
+F183  21 00 00                          LD HL,0
+F186  22 2A D0                          LD (TMP),HL             ; IP
+F189  AF                                XOR A
+F18A  32 24 D0                          LD (FLAGHI),A
+F18D  21 00 01                          LD HL,0100h             ; F' = 0, A' = 1 (odd: PF = 0)
+F190  E5                                PUSH HL
+F191  F1                                POP AF
+F192  08                                EX AF,AF'
+F193  C3 00 D8                          JP START
                                 
                                 ; CFILE: directory entry HL, which must be named as at DE, to 0000:BC;
                                 ; fewer than A sectors
-F197  C5                        CFILE:  PUSH BC
-F198  F5                                PUSH AF
-F199  E5                                PUSH HL
-F19A  06 0B                             LD B,11
-F19C  1A                        CFL1:   LD A,(DE)
-F19D  BE                                CP (HL)
-F19E  20 44                             JR NZ,CBAD
-F1A0  13                                INC DE
-F1A1  23                                INC HL
-F1A2  10 F8                             DJNZ CFL1
-F1A4  E1                                POP HL
-F1A5  11 1A 00                          LD DE,26
-F1A8  19                                ADD HL,DE
-F1A9  5E                                LD E,(HL)               ; DE = first cluster
-F1AA  23                                INC HL
-F1AB  56                                LD D,(HL)
-F1AC  23                                INC HL
-F1AD  7E                                LD A,(HL)               ; size -> sectors
-F1AE  23                                INC HL
-F1AF  B7                                OR A
-F1B0  7E                                LD A,(HL)
-F1B1  28 01                             JR Z,CFL2
-F1B3  3C                                INC A
-F1B4  C1                        CFL2:   POP BC                  ; B = the limit
-F1B5  B8                                CP B
-F1B6  30 2C                             JR NC,CBAD
-F1B8  EB                                EX DE,HL
-F1B9  2B                                DEC HL                  ; logical sector = FIRREC + 4 (cluster - 2)
-F1BA  2B                                DEC HL
+F196  C5                        CFILE:  PUSH BC
+F197  F5                                PUSH AF
+F198  E5                                PUSH HL
+F199  06 0B                             LD B,11
+F19B  1A                        CFL1:   LD A,(DE)
+F19C  BE                                CP (HL)
+F19D  20 44                             JR NZ,CBAD
+F19F  13                                INC DE
+F1A0  23                                INC HL
+F1A1  10 F8                             DJNZ CFL1
+F1A3  E1                                POP HL
+F1A4  11 1A 00                          LD DE,26
+F1A7  19                                ADD HL,DE
+F1A8  5E                                LD E,(HL)               ; DE = first cluster
+F1A9  23                                INC HL
+F1AA  56                                LD D,(HL)
+F1AB  23                                INC HL
+F1AC  7E                                LD A,(HL)               ; size -> sectors
+F1AD  23                                INC HL
+F1AE  B7                                OR A
+F1AF  7E                                LD A,(HL)
+F1B0  28 01                             JR Z,CFL2
+F1B2  3C                                INC A
+F1B3  C1                        CFL2:   POP BC                  ; B = the limit
+F1B4  B8                                CP B
+F1B5  30 2C                             JR NC,CBAD
+F1B7  EB                                EX DE,HL
+F1B8  2B                                DEC HL                  ; logical sector = FIRREC + 4 (cluster - 2)
+F1B9  2B                                DEC HL
+F1BA  29                                ADD HL,HL
 F1BB  29                                ADD HL,HL
-F1BC  29                                ADD HL,HL
-F1BD  01 0D 00                          LD BC,FIRREC
-F1C0  09                                ADD HL,BC
-F1C1  44                                LD B,H
-F1C2  4D                                LD C,L
-F1C3  5F                                LD E,A
-F1C4  16 00                             LD D,0
-F1C6  E1                                POP HL
+F1BC  01 0D 00                          LD BC,FIRREC
+F1BF  09                                ADD HL,BC
+F1C0  44                                LD B,H
+F1C1  4D                                LD C,L
+F1C2  5F                                LD E,A
+F1C3  16 00                             LD D,0
+F1C5  E1                                POP HL
                                 ; CLOAD: DE sectors from logical sector BC of drive A to 0000:HL
-F1C7  22 06 D0                  CLOAD:  LD (R_BX),HL
-F1CA  ED 53 02 D0                       LD (R_CX),DE
-F1CE  ED 43 04 D0                       LD (R_DX),BC
-F1D2  AF                                XOR A
-F1D3  32 00 D0                          LD (R_AL),A
-F1D6  67                                LD H,A
-F1D7  6F                                LD L,A
-F1D8  22 1E D0                          LD (B_DS),HL
-F1DB  CD DC EC                          CALL T_READ
-F1DE  2A 02 D0                          LD HL,(R_CX)
-F1E1  7C                                LD A,H
-F1E2  B5                                OR L
-F1E3  C8                                RET Z
-F1E4  21 F5 F1                  CBAD:   LD HL,BOOTMSG
-F1E7  7E                        CB2:    LD A,(HL)
-F1E8  B7                                OR A
-F1E9  28 08                             JR Z,CB3
-F1EB  E5                                PUSH HL
-F1EC  CD 21 EC                          CALL CONOUT
-F1EF  E1                                POP HL
-F1F0  23                                INC HL
-F1F1  18 F4                             JR CB2
-F1F3  F3                        CB3:    DI
-F1F4  76                                HALT
+F1C6  22 06 D0                  CLOAD:  LD (R_BX),HL
+F1C9  ED 53 02 D0                       LD (R_CX),DE
+F1CD  ED 43 04 D0                       LD (R_DX),BC
+F1D1  AF                                XOR A
+F1D2  32 00 D0                          LD (R_AL),A
+F1D5  67                                LD H,A
+F1D6  6F                                LD L,A
+F1D7  22 1E D0                          LD (B_DS),HL
+F1DA  CD DC EC                          CALL T_READ
+F1DD  2A 02 D0                          LD HL,(R_CX)
+F1E0  7C                                LD A,H
+F1E1  B5                                OR L
+F1E2  C8                                RET Z
+F1E3  21 F4 F1                  CBAD:   LD HL,BOOTMSG
+F1E6  7E                        CB2:    LD A,(HL)
+F1E7  B7                                OR A
+F1E8  28 08                             JR Z,CB3
+F1EA  E5                                PUSH HL
+F1EB  CD 21 EC                          CALL CONOUT
+F1EE  E1                                POP HL
+F1EF  23                                INC HL
+F1F0  18 F4                             JR CB2
+F1F2  F3                        CB3:    DI
+F1F3  76                                HALT
                                 
-F1F5                            BOOTMSG:
-F1F5  0D 0A 44 69 73 6B 20 62           DB 13,10,'Disk boot failure',13,10,0
-F1F5  6F 6F 74 20 66 61 69 6C   
-F1F5  75 72 65 0D 0A 00         
-F20B  49 4F 20 20 20 20 20 20   IONAM:  DB 'IO      SYS'
-F20B  53 59 53                  
-F216  4D 53 44 4F 53 20 20 20   DOSNAM: DB 'MSDOS   SYS'
-F216  53 59 53                  
-F221                            BIOSEND:                        ; the end of Z86.SYS
+F1F4                            BOOTMSG:
+F1F4  0D 0A 44 69 73 6B 20 62           DB 13,10,'Disk boot failure',13,10,0
+F1F4  6F 6F 74 20 66 61 69 6C   
+F1F4  75 72 65 0D 0A 00         
+F20A  49 4F 20 20 20 20 20 20   IONAM:  DB 'IO      SYS'
+F20A  53 59 53                  
+F215  4D 53 44 4F 53 20 20 20   DOSNAM: DB 'MSDOS   SYS'
+F215  53 59 53                  
+F220                            BIOSEND:                        ; the end of Z86.SYS
                                 ; CPMZ80.ASM - the Z80 part of CPM.COM: CP/M 2.2 programs on the FDD3000's
                                 ; Z80, under MS-DOS 1.25.
                                 ;
@@ -4907,15 +4949,15 @@ F221                            BIOSEND:                        ; the end of Z86
                                 ; back and a return from the trap to CPM.COM.
                                 ;
                                 ; P area (in the 8086's memory, above the program's):
-F221                            PBDOS   EQU 06h                 ; JP BDOSE: (0006h) points here
-F221                            PSTUB   EQU 09h                 ; 8086: INT 21h, TRAP 1Dh
-F221                            PFCB    EQU 10h                 ; the FCB of a call (37 bytes)
-F221                            PSRCH   EQU 38h                 ; the FCB of search first / next
-F221                            PDTA    EQU 60h                 ; DOS's DTA (128 bytes)
-F221                            PBIOS   EQU 100h                ; BIOS jump table, (0001h) = P+103h
-F221                            PSTK    EQU 200h                ; 8086 stack (DOS uses about 26 bytes)
-F221                            PSIZE   EQU 200h
-F221                            NBUF    EQU 8                   ; records in BUF
+F220                            PBDOS   EQU 06h                 ; JP BDOSE: (0006h) points here
+F220                            PSTUB   EQU 09h                 ; 8086: INT 21h, TRAP 1Dh
+F220                            PFCB    EQU 10h                 ; the FCB of a call (37 bytes)
+F220                            PSRCH   EQU 38h                 ; the FCB of search first / next
+F220                            PDTA    EQU 60h                 ; DOS's DTA (128 bytes)
+F220                            PBIOS   EQU 100h                ; BIOS jump table, (0001h) = P+103h
+F220                            PSTK    EQU 200h                ; 8086 stack (DOS uses about 26 bytes)
+F220                            PSIZE   EQU 200h
+F220                            NBUF    EQU 8                   ; records in BUF
                                 
                                 
                                         END

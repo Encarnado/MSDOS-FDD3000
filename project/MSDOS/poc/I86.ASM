@@ -75,20 +75,25 @@ SHORIG  EQU REGS+60             ; operand before a shift
 ; The FDD3000's WD2123 holds two 8251A-compatible channels with their own
 ; baud-rate generators: channel A data 80h, control and status 81h, baud
 ; 10h; channel B 40h, 41h, 11h. Status bits: 0 TxRDY, 1 RxRDY, 2 TxEMPTY,
-; 3 parity, 4 overrun, 5 framing error, 6 break, 7 DSR. As in CBIOS A1.1,
+; 3 parity, 4 overrun, 5 framing error, 6 break, 7 CTS (the WD2123 has no
+; DSR; on the FDD3000's DE-9s CTS is pin 5, RTS pin 4). Commands: bit 0
+; transmit, 1 CS, 2 receive, 3 break, 4 error reset, 5 RTS, 6 internal
+; reset. CS (an 8251A's DTR) must be 1: both clocks then come from the
+; baud-rate generator (SELCLK is tied high), with 0 the receiver's comes
+; from SELCLK and nothing is received (WD2123 datasheet). As in CBIOS A1.1,
 ; the printer is channel A (CP/M's LIST) and AUX channel B (PUNCH, READER).
 ; C = the channel's control port throughout.
 
 ; SPRN, SAUXO: A to channel A, B; SAUXI: A from channel B; SLSTS: A = FFh
-; if channel A's DSR is on, else 0. They wait for ever, as CBIOS A1.1.
+; if channel A's CTS is on, else 0. They wait for ever, as CBIOS A1.1.
 SPRN:   LD C,81h
         JR SPF
 SAUXO:  LD C,41h
 SPF:    LD E,A
         LD HL,0
-; SPUT: E to the channel when DSR and TxRDY are on. HL: polls before
+; SPUT: E to the channel when CTS and TxRDY are on. HL: polls before
 ; giving up with CF=1 (0: for ever).
-SPUT:   LD A,27h                ; transmit, receive, DTR, RTS on
+SPUT:   LD A,27h                ; transmit, CS, receive, RTS on
         OUT (C),A
         CALL SERR
 SP1:    IN A,(C)
@@ -148,7 +153,10 @@ SERR:   IN A,(C)
         RET
 ; SSET: set the channel up: mode byte D, baud code E (0-15: 50 75 110
 ; 134.5 150 200 300 600 1200 1800 2400 3600 4800 7200 9600 19200, as TMX
-; CONFIGUR lists them). The three 0s and 40h reset the 8251A from any state.
+; CONFIGUR lists them; the WD2123's table for 1.8432 MHz, x16). The
+; three 0s, as CBIOS A1.1 writes them, do no harm; 40h (internal reset)
+; makes the next control write the mode, as the datasheet has it.
+; Uses A, HL.
 SSET:   XOR A
         OUT (C),A
         OUT (C),A
@@ -165,11 +173,18 @@ SSET:   XOR A
         PUSH BC
         LD C,A
         OUT (C),E
+        LD HL,SAVED-10h         ; kept for INT 14h F0h: the chip can't
+        ADD A,L                 ;   be read back
+        LD L,A
+        LD (HL),D
+        INC L
+        INC L
+        LD (HL),E
         POP BC
         RET
 ; SSTAT: INT 14h's status: AH = line status (0 data ready, 1 overrun,
 ; 2 parity, 3 framing, 4 break, 5 and 6 transmitter empty), AL = modem
-; status (5 DSR; 4 CTS, always on: the 8251A handles CTS itself)
+; status (4 CTS, from status bit 7; 5 DSR, always on: there is none)
 SSTAT:  IN A,(C)
         LD D,A
         LD HL,LSMAP
@@ -187,7 +202,8 @@ SS1:    LD A,D
         AND 80h
         RRCA
         RRCA
-        OR 10h
+        RRCA
+        OR 20h
         LD (R_AL),A
         RET
 LSMAP:  DB 04h,01h,40h,20h,08h,10h,02h  ; the 8251A's bits for AH bits 6-0
@@ -199,6 +215,40 @@ BOOTJP: JP COLD                 ; D0FDh: the boot sector jumps here
 ; ----------------------------------------------- opcode and ModR/M tables
 ;@TABLE OPLO OPHI ops           ; 256 handlers, low bytes then high bytes
 ;@TABLE EALO EAHI ea            ; ModR/M 00-BF: memory operand routines
+;@FILL                          ; the rest of the EALO page:
+; ---- INT 14h's FDD3000 calls (from BIOS.ASM's T_I14; A = AH-4, Z: AH = 4)
+;   AH = F0h: AL = the channel's mode byte, AH = its baud code, as last set
+;   AH = F1h: set the channel up: AL = mode byte (bits 1-0 are forced to
+;             10b, x16 clock), CL = baud code 0-15 (see SSET); -> status
+I14X:   JP Z,I14EXT
+        SUB 0F0h-4
+        JR Z,I14RD
+        DEC A
+        RET NZ
+        LD A,(R_CL)
+        CP 16
+        RET NC
+        LD E,A
+        LD A,(R_AL)
+        AND 0FCh
+        OR 2
+        LD D,A
+        CALL SSET
+        JP SSTAT
+I14RD:  LD HL,SAVED+1
+        BIT 7,C                 ; channel A: SAVED, B: SAVED+1
+        JR Z,I14R1
+        DEC L
+I14R1:  LD A,(HL)
+        LD (R_AL),A
+        INC L
+        INC L
+        LD A,(HL)
+        LD (R_AH),A
+        RET
+;@FILL                          ; the rest of the EAHI page:
+SAVED:  DS 4                    ; mode bytes for A, B, then baud codes (SSET)
+;@END
 
 ; ------------------------------------------------- ALU cores, 16-byte slots
 ; In: HL = destination operand, E = source. Index: (op >> 3) & 7.

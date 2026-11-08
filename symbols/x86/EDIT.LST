@@ -1,4 +1,4 @@
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-1
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-1
 
 
 
@@ -55,7 +55,7 @@
 33	 = 0010	 	 	 	FMAX    EQU     16              ; longe
 	 	 	 	st search string
 34	 = 0400	 	 	 	OBSZ    EQU     1024            ; outpu
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-2
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-2
 
 
 
@@ -112,7 +112,7 @@
 65	 011D  0040	 	 	COLS    DW      64              ; termi
 	 	 	 	nal columns (/nn)
 66	 011F  0017	 	 	NR      DW      23              ; text 
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-3
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-3
 
 
 
@@ -169,7 +169,7 @@
 	 	 	 	 first letter, upper case,
 95	 014D  00	 	 	FC2     DB      0               ;   low
 	 	 	 	er case
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-4
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-4
 
 
 
@@ -226,7 +226,7 @@
 137	       78 74 20 5B 2F 38	
 138	       30 5D 0D 0A 24	 	
 139	 0242  46 69 6C 65 20 74	BIGMSG  DB      "File too big for memor
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-5
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-5
 
 
 
@@ -283,7 +283,7 @@
 	 	 	 	    ^F word right",13,10
 185	       20 20 5E 41 20 77	
 186	       6F 72 64 20 6C 65	
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-6
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-6
 
 
 
@@ -340,7 +340,7 @@
 231	       20 20 5E 4E 20 73	
 232	       70 6C 69 74 20 6C	
 233	       69 6E 65 20 20 20	
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-7
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-7
 
 
 
@@ -397,7 +397,7 @@
 274	 0507  BA 0201 R	 	USAGE:  MOV     DX,OFFSET USEMSG
 275	 050A  B4 09	 	 	DOSMSG: MOV     AH,9
 276	 050C  CD 21	 	 	        INT     33
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-8
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-8
 
 
 
@@ -454,7 +454,7 @@
 321	 057D  89 1E 0156 R	 	        MOV     [OLD24],BX
 322	 0581  89 0E 0158 R	 	        MOV     [OLD24+2],CX
 323	 0585  CD 21	 	 	        INT     33
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-9
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-9
 
 
 
@@ -511,7 +511,7 @@
 371	 05EE  E8 0656 R	 	        CALL    PREFIX
 372	 05F1  3C 53	 	 	        CMP     AL,"S"
 373	 05F3  75 03	 	 	        JNZ     KP1
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-10
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-10
 
 
 
@@ -568,7 +568,7 @@
 	 	 	 	)
 423	 0656  89 36 012C R	 	PREFIX: MOV     [MSG],SI
 424	 065A  E8 1132 R	 	        CALL    STATUS
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-11
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-11
 
 
 
@@ -625,7 +625,7 @@
 472	 	 	 	 	;
 473	 06B8  A1 0109 R	 	LOADF:  MOV     AX,[BUFS]
 474	 06BB  A3 010B R	 	        MOV     [GAPS],AX
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-12
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-12
 
 
 
@@ -666,7 +666,7 @@
 505	 071C  03 D9	 	 	        ADD     BX,CX           ;   128
 	 	 	 	 bytes (CP/M fills its last record
 506	 071E  8B FB	 	 	        MOV     DI,BX           ;   wit
-	 	 	 	h them); a scan costs 300 T a byte
+	 	 	 	h them)
 507	 0720  B9 0080	 	 	        MOV     CX,128
 508	 0723  2B F9	 	 	        SUB     DI,CX
 509	 0725  3B 3E 0109 R	 	        CMP     DI,[BUFS]
@@ -682,7 +682,7 @@
 519	 073C  8B 36 0109 R	 	LD3:    MOV     SI,[BUFS]       ; drop 
 	 	 	 	the CRs: copy what is between them
 520	 0740  8B CB	 	 	        MOV     CX,BX
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-13
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-13
 
 
 
@@ -739,7 +739,7 @@
 564	 079D  CD 21	 	 	        INT     33
 565	 079F  BA 01B7 R	 	        MOV     DX,OFFSET TFCB
 566	 07A2  B4 16	 	 	        MOV     AH,22           ; make
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-14
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-14
 
 
 
@@ -796,7 +796,7 @@
 614	 082D  BF 01F5 R	 	        MOV     DI,OFFSET RFCB+25
 615	 0830  E8 086C R	 	        CALL    BAKEXT
 616	 0833  BA 01DC R	 	        MOV     DX,OFFSET RFCB
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-15
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-15
 
 
 
@@ -853,7 +853,7 @@
 661	 0892  F2/ AE	 	 	        REPNE   SCASB
 662	 0894  8B D1	 	 	        MOV     DX,CX           ; left 
 	 	 	 	after this line
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-16
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-16
 
 
 
@@ -910,7 +910,7 @@
 710	 	 	 	 	
 711	 	 	 	 	; WFLUSH: the write buffer to the file 
 	 	 	 	(random block write); after a
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-17
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-17
 
 
 
@@ -967,7 +967,7 @@
 760	 	 	 	 	
 761	 	 	 	 	; MOVETO: GAPMV, and LINE counts the LF
 	 	 	 	s passed
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-18
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-18
 
 
 
@@ -1024,7 +1024,7 @@
 810	 09BB  B0 0A	 	 	        MOV     AL,LF
 811	 09BD  F2/ AE	 	 	        REPNE   SCASB
 812	 09BF  75 03	 	 	        JNZ     NLN
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-19
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-19
 
 
 
@@ -1081,7 +1081,7 @@
 859	 0A0C  3C 61	 	 	        CMP     AL,"a"
 860	 0A0E  72 03	 	 	        JB      IWN
 861	 0A10  3C 7B	 	 	        CMP     AL,"z"+1
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-20
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-20
 
 
 
@@ -1138,7 +1138,7 @@
 909	 0A72  56	 	 	        PUSH    SI
 910	 0A73  E8 09B5 R	 	        CALL    NEXTLF
 911	 0A76  8B DF	 	 	        MOV     BX,DI
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-21
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-21
 
 
 
@@ -1195,7 +1195,7 @@
 959	 0AD9  3B 36 0109 R	 	WL1:    CMP     SI,[BUFS]
 960	 0ADD  74 1C	 	 	        JZ      WL3
 961	 0ADF  8A 44 FF	 	 	        MOV     AL,[SI-1]
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-22
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-22
 
 
 
@@ -1252,7 +1252,7 @@
 1011	 0B54  C7 06 012C R 027B R	MFULL:  MOV     WORD PTR [MSG],OFFSET M
 	 	 	 	MEM
 1012	 0B5A  C3	 	 	        RET
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-23
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-23
 
 
 
@@ -1309,7 +1309,7 @@
 1059	 0BDD  5F	 	 	        POP     DI
 1060	 0BDE  89 3E 010D R	 	        MOV     [GAPE],DI
 1061	 0BE2  C6 06 0123 R 01	 	        MOV     [MODIF],1
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-24
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-24
 
 
 
@@ -1366,7 +1366,7 @@
 1109	 0C53  E8 0D1E R	 	FIND:   CALL    PROMPT
 1110	 0C56  73 01	 	 	        JNB     FI0
 1111	 0C58  C3	 	 	        RET
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-25
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-25
 
 
 
@@ -1423,7 +1423,7 @@
 1157	 0CCA  A0 014C R	 	        MOV     AL,[FC1]
 1158	 0CCD  E8 0CEF R	 	        CALL    SCANF
 1159	 0CD0  A3 014E R	 	        MOV     [FP1],AX
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-26
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-26
 
 
 
@@ -1480,7 +1480,7 @@
 1205	 0D2E  C7 06 012E R 0001	        MOV     WORD PTR [SHMSG],1     
 	 	 	 	 ; the message area is sent again later
 1206	 0D34  C7 06 0148 R 0000	        MOV     WORD PTR [TLEN],0
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-27
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-27
 
 
 
@@ -1537,7 +1537,7 @@
 	 	 	 	ARKR: the rows from AX on
 1254	 0D9F  A1 011B R	 	MARKB:  MOV     AX,[CROW]
 1255	 0DA2  40	 	 	        INC     AX
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-28
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-28
 
 
 
@@ -1594,7 +1594,7 @@
 1300	 0DF3  3C 09	 	 	        CMP     AL,TAB
 1301	 0DF5  75 04	 	 	        JNZ     FS2A
 1302	 0DF7  81 CA 0007	 	        OR      DX,7
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-29
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-29
 
 
 
@@ -1651,7 +1651,7 @@
 1348	 0E7C  8B 1E 0117 R	 	        MOV     BX,[LEFT]
 1349	 0E80  03 1E 0121 R	 	        ADD     BX,[W]
 1350	 0E84  4B	 	 	        DEC     BX
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-30
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-30
 
 
 
@@ -1708,7 +1708,7 @@
 1399	 	 	 	 	; top row moves them down. The marks mo
 	 	 	 	ve with the rows; the status line
 1400	 	 	 	 	; is sent again.
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-31
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-31
 
 
 
@@ -1765,7 +1765,7 @@
 1448	 0F62  FD	 	 	        STD
 1449	 0F63  F3/ AE	 	 	        REPE    SCASB
 1450	 0F65  FC	 	 	        CLD
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-32
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-32
 
 
 
@@ -1822,7 +1822,7 @@
 1498	 0FF9  C6 06 013F R 00	 	        MOV     [DREOT],0
 1499	 0FFE  73 05	 	 	        JNB     DR3
 1500	 1000  C6 06 013F R 01	 	        MOV     [DREOT],1
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-33
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-33
 
 
 
@@ -1879,7 +1879,7 @@
 1547	 1080  E8 12C9 R	 	ROWOUT: CALL    FLUSHQ
 1548	 1083  BF 172D R	 	        MOV     DI,OFFSET BUFFERS+EBOFF
 1549	 1086  8B 16 0117 R	 	        MOV     DX,[LEFT]
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-34
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-34
 
 
 
@@ -1936,7 +1936,7 @@
 1596	 10F8  72 0C	 	 	        JB      EXC
 1597	 10FA  3C 7F	 	 	        CMP     AL,7FH
 1598	 10FC  73 04	 	 	        JAE     EXQ
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-35
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-35
 
 
 
@@ -1993,7 +1993,7 @@
 1648	 1168  A1 0119 R	 	SS2:    MOV     AX,[CCOL]
 1649	 116B  40	 	 	        INC     AX
 1650	 116C  3B 06 0132 R	 	        CMP     AX,[SHCOL]
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-36
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-36
 
 
 
@@ -2050,7 +2050,7 @@
 1698	 11F1  E8 121B R	 	        CALL    PUTLN
 1699	 11F4  BE 02D1 R	 	        MOV     SI,OFFSET MCOL
 1700	 11F7  E8 12BE R	 	        CALL    PUTS
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-37
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-37
 
 
 
@@ -2107,7 +2107,7 @@
 1749	 1256  89 36 012E R	 	        MOV     [SHMSG],SI
 1750	 125A  0B F6	 	 	        OR      SI,SI
 1751	 125C  74 03	 	 	        JZ      PMS1
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-38
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-38
 
 
 
@@ -2164,7 +2164,7 @@
 1800	 12BC  5F	 	 	        POP     DI
 1801	 12BD  C3	 	 	        RET
 1802	 	 	 	 	
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-39
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-39
 
 
 
@@ -2221,7 +2221,7 @@
 1850	 	 	 	 	
 1851	 	 	 	 	; HELP: the keys, until a key is presse
 	 	 	 	d
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-40
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-40
 
 
 
@@ -2242,7 +2242,7 @@
 1866	 132D	 	 	 	CODE    ENDS
 1867	 	 	 	 	        END     BEGIN
 
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	Symbols
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols
 	 	 	 	-1
 
 
@@ -2299,7 +2299,7 @@ DR1. . . . . . . . . . . . . . .	L NEAR 	0F8C	CODE
 DR1A . . . . . . . . . . . . . .	L NEAR 	0FC8	CODE
 DR2. . . . . . . . . . . . . . .	L NEAR 	0FCE	CODE
 DR3. . . . . . . . . . . . . . .	L NEAR 	1005	CODE
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	Symbols
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols
 	 	 	 	-2
 
 
@@ -2356,7 +2356,7 @@ FN1. . . . . . . . . . . . . . .	L NEAR 	0CA8	CODE
 FN2. . . . . . . . . . . . . . .	L NEAR 	0CB4	CODE
 FN3. . . . . . . . . . . . . . .	L NEAR 	0CD4	CODE
 FNEXT. . . . . . . . . . . . . .	L NEAR 	0C70	CODE
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	Symbols
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols
 	 	 	 	-3
 
 
@@ -2413,7 +2413,7 @@ LD3. . . . . . . . . . . . . . .	L NEAR 	073C	CODE
 LD4. . . . . . . . . . . . . . .	L NEAR 	0746	CODE
 LD5. . . . . . . . . . . . . . .	L NEAR 	0755	CODE
 LD6. . . . . . . . . . . . . . .	L NEAR 	0763	CODE
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	Symbols
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols
 	 	 	 	-4
 
 
@@ -2470,7 +2470,7 @@ NEWLN. . . . . . . . . . . . . .	L NEAR 	0B25	CODE
 NEXTLF . . . . . . . . . . . . .	L NEAR 	09B5	CODE
 NLN. . . . . . . . . . . . . . .	L NEAR 	09C4	CODE
 NOKEY. . . . . . . . . . . . . .	L NEAR 	05CB	CODE
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	Symbols
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols
 	 	 	 	-5
 
 
@@ -2527,7 +2527,7 @@ QPRE . . . . . . . . . . . . . .	L NEAR 	0625	CODE
 QUIT . . . . . . . . . . . . . .	L NEAR 	060B	CODE
 REDRAW . . . . . . . . . . . . .	L NEAR 	0DC7	CODE
 RFCB . . . . . . . . . . . . . .	L BYTE 	01DC	CODE	Length =0025
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	Symbols
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols
 	 	 	 	-6
 
 
@@ -2584,7 +2584,7 @@ USAGE. . . . . . . . . . . . . .	L NEAR 	0507	CODE
 USEMSG . . . . . . . . . . . . .	L BYTE 	0201	CODE
 VERT . . . . . . . . . . . . . .	L BYTE 	0128	CODE
 W. . . . . . . . . . . . . . . .	L WORD 	0121	CODE
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	Symbols
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols
 	 	 	 	-7
 
 

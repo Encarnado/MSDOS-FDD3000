@@ -44,12 +44,15 @@ Conventions in `symbols/`:
    | `G80J`, `G81J`, `G83J` | `LD (G8xJ+1),A` | the same cores, for opcodes 80h / 81h / 83h |
    | `SHB2`, `SHW2: JP SHPG` | `LD (SHB2+1),A` | SHPG (D700h): 16-bit shifts at k*16, 8-bit at 128 + k*16 |
 
-6. **An overlay:** `CPMZ80.BIN` runs at F12Ch-FAF5h, over the end of
-   `Z86.SYS` (`COLD`, F12Ch-F220h), which is needed only at boot.
+6. **Overlays:** `CPMZ80.BIN` runs at F12Bh-FAF4h and `TERMZ80.BIN` at
+   F12Bh-FEB6h, over the end of `Z86.SYS` (`COLD`, F12Bh-F21Fh), which is
+   needed only at boot.
 7. **Code in data pages:** the serial routines sit in the unused end of
-   the register page (D03Eh-D0F0h, with two small tables at D0E1h and
-   D0E8h) and INT 14h's set-up in the unused end of the BCORE page
-   (D5A2h-D5FFh). They are reached by CALL / JP from the BIOS and CPMZ80. Disassemble
+   the register page (D03Eh-D0FAh, with two small tables at D0EBh and
+   D0F2h), INT 14h's FDD3000 calls F0h / F1h (`I14X`) after the EALO
+   table (D3C0h-D3EFh), their saved settings (`SAVED`, 4 bytes) after the
+   EAHI table (D4C0h), and INT 14h's set-up in the unused end of the
+   BCORE page (D5A2h-D5FAh). They are reached by CALL / JP from the BIOS and CPMZ80. Disassemble
    the two as separate images at the same address.
 
 ## Z80 binaries
@@ -68,7 +71,7 @@ Conventions in `symbols/`:
   and the `Non-System disk` text.
 - Listing and symbols: `symbols/z80/BOOT.lst`, `BOOT.sym`.
 
-### `binaries/z80/Z86.SYS` (8 737 bytes): the interpreter and BIOS
+### `binaries/z80/Z86.SYS` (8 736 bytes): the interpreter and BIOS
 
 - Loaded at **D000h** (the file's byte 0 is D000h); entry at **D0FDh**
   (`JP COLD`), from the boot sector.
@@ -77,13 +80,15 @@ Conventions in `symbols/`:
 | Range | Contents | Kind |
 |---|---|---|
 | D000h-D03Dh | REGS: 8086 registers (D000h AX..., D010h segment registers, D018h their bases), interpreter state, a reg8 offset table at D030h | data (variables; see the `equ` names) |
-| D03Eh-D0E0h | serial routines (SPRN, SAUXO, SPUT, SAUXI, SGET, SLSTS, SWAIT, SERR, SSET, SSTAT) | code |
-| D0E1h-D0F0h | LSMAP (7 bytes), BAUDT (9 bytes) | data |
-| D0F1h-D0FCh | padding | data |
+| D03Eh-D0EAh | serial routines (SPRN, SAUXO, SPUT, SAUXI, SGET, SLSTS, SWAIT, SERR, SSET, SSTAT) | code |
+| D0EBh-D0FAh | LSMAP (7 bytes), BAUDT (9 bytes) | data |
+| D0FBh-D0FCh | padding | data |
 | D0FDh-D0FFh | `JP COLD` | code |
 | D100h-D1FFh | OPLO: low bytes of the 256 opcode handlers | data (split table) |
 | D200h-D2FFh | OPHI: high bytes | data (split table) |
-| D300h-D3BFh, D400h-D4BFh | EALO / EAHI: ModR/M 00h-BFh memory-operand routines, low / high bytes (rest of each page: padding) | data (split table) |
+| D300h-D3BFh, D400h-D4BFh | EALO / EAHI: ModR/M 00h-BFh memory-operand routines, low / high bytes | data (split table) |
+| D3C0h-D3EFh | I14X: INT 14h AH = 4, F0h, F1h (then padding to D3FFh) | code |
+| D4C0h-D4C3h | SAVED: the mode bytes of channels A and B, then their baud codes (then padding to D4FFh) | data |
 | D500h-D5FFh | BCORE: 8-bit ALU routines in 16-byte slots, then INC16 / DEC16 / LOGF16, then INT 14h's set-up (I14EXT D5A2h, I14INI D5C9h) | code |
 | D600h-D6FFh | WCORE: 16-bit ALU routines in 32-byte slots | code |
 | D700h-D7FFh | SHPG: shift / rotate routines in 16-byte slots | code |
@@ -92,19 +97,19 @@ Conventions in `symbols/`:
 | D83Bh-EB45h | handlers and helpers, with a few small DW tables (e.g. REPTAB, the REP string handlers) | code, some data |
 | EB46h | TRAP: BIOS dispatcher (A = trap number) | code |
 | EB61h-EB9Ch | TTAB: trap table, 30 DW entries | data |
-| EB9Dh-F12Bh | the BIOS functions, then SKEW (F0F8h, 18-byte interleave table) and variables to F12Bh | code, then data |
-| F12Ch-F220h | COLD (boot loader), `Disk boot failure`, the names `IO      SYS` and `MSDOS   SYS` | code, then data |
+| EB9Dh-F12Ah | the BIOS functions, then SKEW (F0F7h, 18-byte interleave table) and variables to F12Ah | code, then data |
+| F12Bh-F21Fh | COLD (boot loader), `Disk boot failure`, the names `IO      SYS` and `MSDOS   SYS` | code, then data |
 
 Seeds for code discovery: D0FDh, D800h, D83Bh, EB46h, every entry of the
 OPLO/OPHI and EALO/EAHI tables (address = hi*256 + lo), every DW in TTAB
-and REPTAB, the BCORE / WCORE / SHPG slots, the serial routines above,
+and REPTAB, the BCORE / WCORE / SHPG slots, the serial routines above, I14X,
 and the RST 38h handler FDCINT (EDE3h; installed into 0038h at run time
 during disk transfers).
 
 ### `binaries/z80/CPMZ80.BIN` (2 506 bytes): CPM.COM's Z80 part
 
-- Runs at **F12Ch**; entry `T_CPM` at F12Ch (from trap 1Ch with BP = 0).
-  The buffer FAF6h-FEF5h follows it at run time (not in the file).
+- Runs at **F12Bh**; entry `T_CPM` at F12Bh (from trap 1Ch with BP = 0).
+  The buffer FAF5h-FEF4h follows it at run time (not in the file).
 - Inside CPM.COM it sits at file offset 2FCh (address 03FCh in the .COM)
   behind a 16-byte header: length (2 bytes), then the addresses of NEXT,
   JPHL, PEEKEY, GETKEY, CONOUT, DCSP, ENDBIOS in Z86.SYS (2 bytes each),
@@ -114,11 +119,27 @@ during disk transfers).
   others: see `CPMZ80.sym`, which lists both).
 - It builds, in a page just above the CP/M program (P), a `JP BDOSE` at
   P+06h, the 8086 stub `CD 21 0F 1D` at P+09h, two FCBs and a DTA, and at
-  P+100h a 17-entry CP/M BIOS jump table pointing into BIOSV (F9E6h).
-- BDOSE (F2FFh) dispatches BDOS functions through BDTAB (F325h, 41 DW
+  P+100h a 17-entry CP/M BIOS jump table pointing into BIOSV (F9E5h).
+- BDOSE (F2FEh) dispatches BDOS functions through BDTAB (F324h, 41 DW
   entries). LIST, PUNCH, READER and LISTST call the serial routines in
   Z86.SYS's register page.
 - Listing `symbols/z80/CPMZ80.lst`, symbols `CPMZ80.sym`.
+
+### `binaries/z80/TERMZ80.BIN` (3 468 bytes): TERM.COM's Z80 part
+
+- Runs at **F12Bh**; entry `T_TERM` at F12Bh (trap 1Ch with BP = 0),
+  which dispatches on the 8086's AH through `FTAB` (10 DW entries: INIT,
+  SESS, DRAW, RECV, SEND, BRK, LOG, CRC, FLUSH, MODE).
+- Inside TERM.COM at file offset C7Bh (address 0D7Bh), behind the same
+  16-byte header as CPMZ80.
+- Data inside the code: `FTAB`; `CTAB` and `PTAB`, the CSI final byte
+  tables (entries: 1 character, then a DW handler; 0 ends them); the reply
+  strings `DA100`, `DA52`, `DSROK` (0-terminated); `GRTAB`, 32 bytes of
+  ASCII for DEC line drawing 5Fh-7Eh; the variables from `PB` (the
+  parameter block INIT copies) to `TERMEND`.
+- Two dispatches to watch: `CH0` pushes a return address and a handler
+  and does RET into it; `IL0` calls the line routine through `JPHL`.
+- Listing `symbols/z80/TERMZ80.lst`, symbols `TERMZ80.sym`.
 
 ## 8086 binaries
 
@@ -132,6 +153,8 @@ All MASM 1.10 + LINK 2.00 + EXE2BIN; listings in `symbols/x86/`.
 | `FORMAT.COM` (1 628 bytes) | .COM | 0100h (`JMP START`) | Variables right after the jump. Trap `0F 1B` writes a track image built in the buffer after the program (offsets `VEROFF`, `FATOFF` etc. are relative to the label TRACK). |
 | `CPM.COM` (3 286 bytes) | .COM | 0100h | 8086 code and data to 03FBh, then the CPMZ80 header and image (Z80 code: data to an 8086 disassembler). Traps `0F 1C`. |
 | `EDIT.COM` (4 653 bytes) | .COM | 0100h (`JMP START`) | 0103h: the ASCII signature `EDIT86`, then the editor's state words (BUFS, GAPS, GAPE, TEND, TOP, TOPLN, LINE, LEFT, CCOL, CROW, COLS, NR, W) and MODIF; strings and a 32-entry DW key table `CTAB` (indexed by control code, `JMP CTAB[BX]`) before `START`. Buffers and the text follow the label BUFFERS at the end (not in the file). No traps: console through INT 10h / INT 16h, files through INT 21h FCB calls. |
+| `TERM.COM` (6 679 bytes) | .COM | 0100h (`JMP START`) | Variables, the INIT parameter block `PBLK`, FCBs (LFCB log, XFCB XMODEM), the port and baud tables (as MODE.COM), messages; code from `START` (0518h). Traps `0F 1C` (load / call the Z80 part); INT 14h AH = F0h / F1h; INT 21h. From 0D7Bh the Z80 part (Z80 code: data to an 8086 disassembler); at run time the screen copy, ring, log buffer and XMODEM block are over it. |
+| `MODE.COM` (1 119 bytes) | .COM | 0100h (`JMP START`) | Variables (CHAN, MODEB, BAUDC), name tables (PORTS: 4 characters + channel; BAUDS: 16 x 6 characters, indexed by baud code; ABAUDS: 6 characters + code) and messages before `START`. Calls INT 14h with AH = F0h / F1h (the FDD3000 calls) and INT 21h; no traps. |
 
 ## The disk image
 
