@@ -254,13 +254,12 @@ FLUSH_DRAIN:				; (src: FL1)
 ; Callers: T_STAT, I16A (INT 16h AH=1); CPMZ80's DIO1, F_CST and B_CONST
 ;         by absolute address (EBF6h - in the CPMSYM header).
 ;
-; BUG (latent): the "no key" exit is `cp KEYRDY / ret nz`, and CP sets
-; carry when A < 04h.  A link value of 00h-03h after MASK would return
-; CF=1 - a phantom key, the stale KBUF - with KFLAG still 0, so the next
-; GETKEY waits for a real key.  The terminal model (fdd86.py Link) idles
-; at 50h or 04h and never shows 00h-03h; what a real terminal, or a
-; disconnected link, reads there is untested (provisional).  `xor KEYRDY`
-; in place of the CP (same 2 bytes) would make the exit always NC.
+; FIXED 2026-11-08: the "no key" exit was `cp KEYRDY / ret nz`, and CP
+; sets carry when A < 04h: a link value of 00h-03h returned CF=1 - a
+; phantom key, the stale KBUF - with KFLAG still 0, so the next GETKEY
+; waited for a real key.  Now `xor KEYRDY` (same 2 bytes): XOR always
+; clears carry, so the exit is NC for every value but 04h
+; (test_peekey.py: phantom keys on the old build, none now).
 ; =====================================================================
 PEEKEY:
 	ld	a,(KFLAG)	; already holding one from an earlier peek?
@@ -268,9 +267,8 @@ PEEKEY:
 	jr	nz,PEEKEY_HELD	; yes: report it again
 	in	a,(COM)		; the terminal's idle code
 	and	MASK		; link bits only
-	cp	KEYRDY		; the terminal has a key
-	ret	nz		; no - NC only if the link reads 05h or more (BUG
-					;   above: CF=1 for 00h-03h)
+	xor	KEYRDY		; the terminal has a key?  (XOR: carry always
+	ret	nz		;   clear - no: NC, whatever the link reads)
 	call	CONIN		; it can only be seen by taking it ...
 	ld	(KBUF),a	; ... so keep it
 	ld	a,1		; KFLAG = 1:
@@ -808,7 +806,8 @@ FDCINT:
 ; and tries again from there, RETRIES (10) times - the CBIOS SEEKLP
 ; pattern.  A timeout ends it at once.  The target is re-read from DTRK
 ; each time: FDCCMD's timer uses B, where it used to be kept.
-; FHOME and FDTOUT live in the EAHI page's free end (z86_interp.asm).
+; FHOME lives in the EAHI page's free end, FDTOUT in the REGS page's
+; (z86_interp.asm).
 ; =====================================================================
 SEEK:
 	ld	a,(DTRK)	; the track this call wants

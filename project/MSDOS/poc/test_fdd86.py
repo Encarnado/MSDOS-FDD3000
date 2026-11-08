@@ -277,6 +277,23 @@ def format_disk():
     print('  track 10 bad: its 6 clusters marked, CHKDSK agrees')
 
     m = fdd86.FDD86([sysdisk(), blank()])
+    end_track1 = m.fdc.end_track
+
+    def bad1():                         # track 1: inside Z86.SYS's clusters
+        cyl = m.fdc.wtrack[1]
+        end_track1()
+        if cyl == 1:
+            m.disks[1].unformatted.add((1, 0))
+    m.fdc.end_track = bad1
+    m.boot()
+    step(m, '')
+    step(m, '\r\r')
+    out = formats(m, 'FORMAT B:/S')
+    check('Bad track in the system area' in out and 'System transferred' not in out,
+          'FORMAT B:/S over a bad system area %r' % out)
+    print('  FORMAT B:/S, track 1 bad: refused, not "System transferred"')
+
+    m = fdd86.FDD86([sysdisk(), blank()])
     m.boot()
     step(m, '')
     step(m, '\r\r')

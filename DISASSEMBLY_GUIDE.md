@@ -112,7 +112,7 @@ transfers).
 
 - Runs at **F12Ch**; entry `T_CPM` at F12Ch (from trap 1Ch with BP = 0).
   The buffer FAF6h-FEF5h follows it at run time (not in the file).
-- Inside CPM.COM it sits at file offset 2FCh (address 03FCh in the .COM)
+- Inside CPM.COM it sits at file offset 31Ah (address 041Ah in the .COM; 2FCh / 03FCh before the 2026-11-08 build)
   behind a 16-byte header: length (2 bytes), then the addresses of NEXT,
   JPHL, PEEKEY, GETKEY, CONOUT, DCSP, ENDBIOS in Z86.SYS (2 bytes each),
   which trap 1Ch compares with its own before copying. After the copy CPM.COM
@@ -136,9 +136,9 @@ All MASM 1.10 + LINK 2.00 + EXE2BIN; listings in `symbols/x86/`.
 | `IO.SYS` (332 bytes) | 0040:0000 (linear 0400h) | 0040:0000, `JMP SHORT INIT` | 0003h-002Ch: 14 DOS device entries, each `0F nn CB` (TRAP n / RETF). INIT sets vectors 10h, 11h, 12h, 14h, 16h, 17h, 1Ah to stubs `0F nn CA 02 00` (TRAP n / RETF 2), calls DOS init at 0060:xxxx (`DOSENT`), then loads COMMAND.COM through INT 21h. Drive parameter table `DPT40`. |
 | `MSDOS.SYS` (6 190 bytes) | 0060:0000 | its init, called far by IO.SYS | Microsoft's MS-DOS 1.25 kernel (MSDOS.ASM with STDDOS.ASM options). `MSDOS.LST` is the full listing; the source is in Microsoft's repository. |
 | `COMMAND.COM` (4 879 bytes) | .COM (DOS sets CS = PSP, IP = 100h) | 0100h | Microsoft's COMMAND 1.17; it relocates its transient part to the top of memory. `COMMAND.LST` has its segments; offsets in the listing are per segment. |
-| `FORMAT.COM` (1 628 bytes) | .COM | 0100h (`JMP START`) | Variables right after the jump. Trap `0F 1B` writes a track image built in the buffer after the program (offsets `VEROFF`, `FATOFF` etc. are relative to the label TRACK). |
-| `CPM.COM` (3 286 bytes) | .COM | 0100h | 8086 code and data to 03FBh, then the CPMZ80 header and image (Z80 code: data to an 8086 disassembler). Traps `0F 1C`. |
-| `EDIT.COM` (4 653 bytes) | .COM | 0100h (`JMP START`) | 0103h: the ASCII signature `EDIT86`, then the editor's state words (BUFS, GAPS, GAPE, TEND, TOP, TOPLN, LINE, LEFT, CCOL, CROW, COLS, NR, W) and MODIF; strings and a 32-entry DW key table `CTAB` (indexed by control code, `JMP CTAB[BX]`) before `START`. Buffers and the text follow the label BUFFERS at the end (not in the file). No traps: console through INT 10h / INT 16h, files through INT 21h FCB calls. |
+| `FORMAT.COM` (1 735 bytes) | .COM | 0100h (`JMP START`) | Variables right after the jump. Trap `0F 1B` writes a track image built in the buffer after the program (offsets `VEROFF`, `FATOFF` etc. are relative to the label TRACK). |
+| `CPM.COM` (3 316 bytes) | .COM | 0100h | 8086 code and data to 0419h, then the CPMZ80 header and image (Z80 code: data to an 8086 disassembler). Traps `0F 1C`. |
+| `EDIT.COM` (4 720 bytes) | .COM | 0100h (`JMP START`) | 0103h: the ASCII signature `EDIT86`, then the editor's state words (BUFS, GAPS, GAPE, TEND, TOP, TOPLN, LINE, LEFT, CCOL, CROW, COLS, NR, W) and MODIF; strings and a 32-entry DW key table `CTAB` (indexed by control code, `JMP CTAB[BX]`) before `START`. Buffers and the text follow the label BUFFERS at the end (not in the file). No traps: console through INT 10h / INT 16h, files through INT 21h FCB calls. |
 
 ## The disk image
 

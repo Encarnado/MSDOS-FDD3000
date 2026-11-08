@@ -8,8 +8,8 @@
 ;  when there is no .CPM) as a CP/M 2.2 program.  The FDD3000's CPU is
 ;  a Z80, so the program runs natively; only its file calls go through
 ;  DOS.  This file is two programs in one: 764 bytes of 8086 code and
-;  data (0100h-03FBh), run by Z86.SYS's interpreter like any .COM, and
-;  from 03FCh the Z80 part, CPMZ80 (volume 3), behind a 16-byte header.
+;  data (0100h-0419h), run by Z86.SYS's interpreter like any .COM, and
+;  from 041Ah the Z80 part, CPMZ80 (volume 3), behind a 16-byte header.
 ;  The 8086 part does what CP/M's CCP would do (find the program, load
 ;  it, build the two FCBs and the command tail) and works out where the
 ;  program, its BDOS/BIOS page P and the save area will go; the Z80
@@ -17,7 +17,7 @@
 ;
 ;  WHERE IT SITS IN THE RUN CHAIN
 ;     COMMAND.COM 1.17H  ->  THIS PROGRAM (8086, START)
-;       ->  TRAP 1Ch, BP = linear address of the header at 03FCh:
+;       ->  TRAP 1Ch, BP = linear address of the header at 041Ah:
 ;           Z86.SYS's T_CPML (volume 2) checks the header's 7 addresses
 ;           and copies the 2506-byte image to ENDBIOS (F12Ch, over COLD)
 ;       ->  open the program, read it over the image (STAGE, 0400h on),
@@ -54,8 +54,9 @@
 ;     typical layout), about 9.7 KB less than the TPA it then gets
 ;     (0100h-P, 40 960 bytes).  test_fdd86.py's BIG.CPM (40 000 bytes)
 ;     is refused "Program too big" although it would fit the TPA.
-;   - The random block read's result (AL) is not checked: a short or
-;     failed read would run a partly loaded program.
+;   - FIXED 2026-11-08 (this build): the random block read's result was
+;     not checked, so a short or failed read would run a partly loaded
+;     program.  Now "Program read error" (test_cpm_smoke.py runs CPM.COM).
 ;   - `JMP MSG` after the trap is EB 3E 90: MASM 1.10 reserved a near
 ;     jump for the forward reference and padded the short form with NOP.
 ;   - Trap 1Ch's header holds 7 Z86.SYS addresses; the REGS page that
@@ -65,7 +66,7 @@
 ;  VERIFICATION.  Reassembles BYTE-IDENTICAL to bin/CPM.COM with NASM
 ;  (nasm -O0 -f bin, tools/roundtrip.sh).  Every instruction matches
 ;  the MASM listing ../symbols/x86/CPM.LST; every label is at the
-;  address CPM.COM.sym gives.  The header at 03FCh was checked against
+;  address CPM.COM.sym gives.  The header at 041Ah was checked against
 ;  ../symbols/z80/Z86.SYS.sym, and the 2506 bytes after it are
 ;  bin/CPMZ80.BIN, byte for byte (volume 3), included here with incbin.
 ;  The four error messages and the CP/M runs are exercised by
@@ -76,9 +77,9 @@
 ;  disk: verified on one machine.  Which program, and the error paths,
 ;  are not recorded.
 ;
-;  FILE:    CPM.COM, 3286 bytes
-;  MD5:     905eabb7a3f742a40e953f95fafb298f
-;  SHA256:  9ae44884ee8e26ba33e046fe1181bf16ec97f7201fb62874e13856a2cce15794
+;  FILE:    CPM.COM, 3316 bytes (2026-11-08 build; the shipped one was 3286)
+;  MD5:     df11f3d21c20ce16b6abdfbe6528f587
+;  SHA256:  39952ecc4db26115bb9032dd3adb3ce438f1f4811591c40227662db8abe0d9db
 ;  SOURCE:  ../project/MSDOS/poc/CPM.ASM (MASM 1.10), with CPMZ80.INC
 ;           (z86.py cpmz80(): header + CPMZ80.ASM's code) by build.py
 ;
@@ -188,7 +189,7 @@ FCB_SIZEHI	equ	18	;   ... high word)
 FCB_RR		equ	33	; random record (3-4 bytes, two words here)
 
 ; ---- Z86.SYS addresses CPMZ80 was assembled against (Z86.SYS.sym) ----
-; The author's names; the header at 03FCh carries them in BIOS.ASM's
+; The author's names; the header at 041Ah carries them in BIOS.ASM's
 ; CPMSYM order and T_CPML compares them with its own CPMSYM.
 NEXT		equ	0D83Bh	; the 8086 dispatcher (interpreter main loop)
 JPHL		equ	0EB60h	; JP (HL): CPMZ80's indirect CALL
@@ -257,6 +258,8 @@ NFMSG:
 	db "Program not found",13,10,"$"	; neither .CPM nor .COM opens
 BIGMSG:
 	db "Program too big",13,10,"$"	; does not fit between SWLEN and P
+RDMSG:
+	db "Program read error",13,10,"$"	; the read came back short (2026-11-08)
 VERMSG:
 	db "CPM.COM does not match Z86.SYS",13,10,"$"	; trap 1Ch: CF=1
 
@@ -286,8 +289,8 @@ START:
 	mov cl,4	;   0000h-CFFFh, so a linear address is a Z80
 	shl ax,cl	;   address (16 bits: all of it is below 64K)
 	mov [BASE],ax	; kept for SWLEN, PARMS and DOSLEN
-	mov_d bp,ax	; BP = linear address of the header at Z80 (03FCh)
-	add bp,Z80	;   = BASE + 03FCh
+	mov_d bp,ax	; BP = linear address of the header at Z80 (041Ah)
+	add bp,Z80	;   = BASE + 041Ah
 	TRAP TRAP_CPM	; T_CPML: check the 7 addresses, copy to ENDBIOS
 	jnc short PROG	; CF=0: in place
 	mov dx,VERMSG	; CF=1: this CPM.COM was built against another
@@ -362,13 +365,13 @@ MSG:
 ;
 ; The source comment "COMMAND's resident part is above it" is right for
 ; this COMMAND (1.17H, HIGHMEM): see the preface.  The read's AL result
-; is not checked (findings).
+; is checked since 2026-11-08 (READ_OK).
 ; =====================================================================
 CHKSZ:
 	cmp word [PFCB+FCB_SIZEHI],byte 0x0	; 64 KB or more?
 	jnz short TOOBIG	; no CP/M program is that big
 	mov bx,STAGE+15	; STAGE on a paragraph: CPMZ80
-	and bx,0xfff0	;   exchanges in multiples of 8 (03FCh -> 0400h)
+	and bx,0xfff0	;   exchanges in multiples of 8 (041Ah -> 0400h)
 	mov [STGOFF],bx	; where the program will be read
 	add bx,[BASE]	; BX = SWLEN, linear
 	mov dx,[PSP_TOP]	; the end of our memory, a segment: COMMAND's
@@ -396,7 +399,12 @@ CHKSZ:
 	mov word [PFCB+FCB_RR+2],0x0	;   ... and 35-36)
 	mov dx,PFCB	; AH=27h random block read: CX bytes from the
 	mov ah,27h	;   start of the file; AL (0 ok, 1/3 short,
-	int 21h		;   2 DTA wrap) is NOT examined
+	int 21h		;   2 DTA wrap)
+	or_d al,al	; not all of it: a disk error answered with Ignore
+	jz short READ_OK	;   must not run half a program (it used to)
+	mov dx,RDMSG	; "Program read error"
+	jmp short MSG	; print, end
+READ_OK:				; (src: RDOK)
 
 ; =====================================================================
 ; The command tail: what follows the program's name, in upper case
@@ -491,7 +499,7 @@ OPENP:
 	or_d al,al	; AL = 0: found
 	ret	; ZF tells the caller
 
-; ---- the stack: 64 words, 037Ch-03FBh ----
+; ---- the stack: 64 words, 039Ah-0419h ----
 	times 64 dw 0
 STKTOP:
 
@@ -522,7 +530,7 @@ Z80_SYMS:
 	dw ENDBIOS	; F12Ch  must equal Z86.SYS ENDBIOS (the copy target)
 
 ; The code, assembled to run at ENDBIOS (F12Ch): CPMZ80.BIN, narrated
-; in asm/cpmz80.asm (volume 3).  File offset 030Ch to the end of
+; in asm/cpmz80.asm (volume 3).  File offset 032Ah to the end of
 ; CPM.COM; nothing follows it.  (Path relative to DISASM/, where
 ; tools/roundtrip.sh assembles.)
 Z80_CODE:

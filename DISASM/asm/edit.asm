@@ -63,12 +63,14 @@
 ;     handler; after a save AFTDOS redraws everything if DOS printed its
 ;     "Abort, Retry, Ignore?".  The old vector is read straight from
 ;     0000:0090h: DOS 1.25 has no AH=35h get-vector call.
-;   - Edges found by reading (not covered by the tests): every CR in the
-;     file is dropped on reading, not only those before LF; an arrow key
-;     pressed at a ^K / ^Q prefix or at "Find:" inserts its letter A-D
-;     into the text; ^Y answers Y at the abandon question; Abort at DOS's
-;     question during a save ends EDIT (DOS's ABORT) with name.$$$ left;
-;     the results of CLOSE and of both RENAMEs are not checked.
+;   - FIXED 2026-11-08 (this build): an arrow key at a ^K / ^Q prefix or
+;     at "Find:" inserted its letter A-D into the text; ^Y answered Y at
+;     "Abandon changes (Y/N)?" (losing the work); CLOSE and the last RENAME
+;     of a save were not checked ("Saved" after a failure).  Tested:
+;     test_edit.py group 7 (fails on the old EDIT, passes now).
+;   - Still as designed / not fixed: every CR is dropped on reading, not
+;     only those before LF (EDIT keeps lines as LF); Abort at DOS's
+;     question during a save ends EDIT (DOS's ABORT) with name.$$$ left.
 ;   - Two NOPs (INVON / INVOFF) are MASM's padding of a forward JMP that
 ;     turned out short; the stack starts at an odd address (243Dh).
 ;
@@ -91,9 +93,9 @@
 ;  quoted below (0.03-0.07 s a key, ~1 s a page) are emulator figures
 ;  at an assumed 4 MHz; no timing was taken on the machine.
 ;
-;  FILE:    EDIT.COM, 4 653 bytes
-;  MD5:     156483314936f390d2a0dff5e05f1f4c
-;  SHA256:  9098847463466bcaedf1ebb6dba1ca56eb0c21dbf79562738ea6e3cc2de94b99
+;  FILE:    EDIT.COM, 4 720 bytes (2026-11-08 build; the shipped one was 4 653)
+;  MD5:     a3ca407746916d8b2891404f09a0a178
+;  SHA256:  15afaccbe6c7e1e8d2b19fbd1ba0ae8e2fcd2dc78dbef244f183c3ef08e670f5
 ;  SOURCE:  project/MSDOS/poc/EDIT.ASM (MASM 1.10 + LINK 2.00 + EXE2BIN),
 ;           listing symbols/x86/EDIT.LST
 ;
@@ -407,6 +409,8 @@ MMEM:
 	db "Memory full",0	; the gap is empty
 MDFULL:
 	db "Disk full: not saved",0
+MREN:
+	db "Not renamed: text in .$$$",0	; SAVE's last rename failed (2026-11-08)
 MDIR:
 	db "Directory full",0	; DOS_MAKE failed
 MABAN:
@@ -649,8 +653,10 @@ QUIT:
 	cmp byte [MODIF],0x0	; nothing to lose?
 	jz short EXIT		; unchanged: just go
 	mov si,MABAN		; "Abandon changes (Y/N)? "
-	call PREFIX		; shown; AL = the answer, folded
-	cmp al,'Y'		; yes: changes lost
+	call PREFIX		; shown; AL folded, AH the key as typed
+	cmp ah,'Y'		; only a real Y or y abandons: AL would
+	jz short EXIT		;   also say Y for ^Y (fixed 2026-11-08 -
+	cmp ah,'y'		;   ^Y, delete line, used to abandon)
 	jz short EXIT		; leave
 	ret			; anything else: carry on editing
 
@@ -698,19 +704,26 @@ QPRE_NONE:				; (src: QP6)
 ; ---------------------------------------------------------------------
 ; Entry:  SI = 0-terminated message.
 ; Exit:   AL = the next key as a capital letter: a control code is
-;         raised by 40h (^S -> S), a-z lowered by 20h.  MSG = 0 again,
-;         so the next STATUS rubs the prompt out.
+;         raised by 40h (^S -> S), a-z lowered by 20h; AH = the key as
+;         typed.  MSG = 0 again, so the next STATUS rubs the prompt out.
 ; Corrupts AX and what STATUS / FLUSH corrupt.  Callers: KPRE, QPRE,
 ; QUIT.  UPPER (a-z only, no control folding) is called by FIND and
 ; MATCH.
-; An arrow key here sends ESC A..D: ESC folds to '[' (no match) and the
-; letter is left for MAIN to insert (findings).
+; An arrow key here sends ESC A..D.  Since 2026-11-08 ESC takes the next
+; key too, as ESCK does, so the letter no longer reaches MAIN (it used
+; to be inserted into the text: test_edit.py group 7).
 ; =====================================================================
 PREFIX:
 	mov [MSG],si		; the message field shows SI ...
 	call STATUS		; ... sent now
 	call FLUSH		; so the prompt is seen now
 	call GETKEY		; the second key of the command
+	cmp al,KESC		; ESC (an arrow key's first half)?
+	jnz short PREFIX_KEY
+	call GETKEY		; then its letter goes too
+	mov al,KESC		; and ESC stands (folds to '[': no match)
+PREFIX_KEY:				; (src: PFX1)
+	mov_d ah,al		; AH = the key as typed (QUIT's Y test)
 	mov word [MSG],0x0	; the prompt goes at the next STATUS
 	cmp al,0x20		; a control code: its letter
 	jnc short UPPER		; printable: as it is
@@ -929,9 +942,13 @@ SAVE_MADE:				; (src: SV1)
 	call WBYTE		; the last byte of the file
 	call WFLUSH		; the last part block
 	mov dx,TFCB		; name.$$$
-	mov ah,DOS_CLOSE	; close (its result is not looked at)
+	mov ah,DOS_CLOSE	; close
 	int byte 0x21		; the directory entry gets its size
-	cmp byte [DFULL],0x0	; did a write fail?
+	or_d al,al		; a failed close counts as not saved
+	jz short SAVE_CLOSED	;   (it used to be ignored)
+	mov byte [DFULL],0x1
+SAVE_CLOSED:				; (src: SVCL)
+	cmp byte [DFULL],0x0	; did a write (or the close) fail?
 	jz short SAVE_RENAME	; all written: replace the old file
 	mov dx,TFCB		; yes: drop name.$$$, keep the old file
 	mov ah,DOS_DELETE	; delete
@@ -970,8 +987,13 @@ SAVE_RENAME:				; (src: SV2)
 	mov cx,NAMELEN		; 8 + 3
 	rep movsb		; copied
 	mov dx,RFCB		; rename name.$$$ -> name.ext
-	mov ah,DOS_RENAME	; (not checked: "Saved" follows regardless)
-	int byte 0x21		; (not checked)
+	mov ah,DOS_RENAME	; name.$$$ -> name.ext
+	int byte 0x21
+	or_d al,al		; refused: the text is safe in name.$$$, but
+	jz short SAVE_OK	;   say so and keep MODIF (it used to say
+	mov word [MSG],MREN	;   "Saved" whatever happened)
+	jmp short SVFAIL
+SAVE_OK:				; (src: SVOK)
 	mov byte [MODIF],0x0	; the file now matches the text
 	mov word [MSG],MSAVED	; "Saved" on the status line
 	call AFTDOS		; DOS's question on the screen?
@@ -1819,7 +1841,7 @@ PROMPT_KEY:				; (src: PR1)
 	cmp al,CR		; RETURN: done
 	jz short PRX		; done
 	cmp al,KESC		; ESC or ^U: give up
-	jz short PRQ
+	jz short PROMPT_ESC	; (ESC: an arrow's letter follows)
 	cmp al,KEY_CTLU		; ^U?
 	jz short PRQ		; (^U)
 	mov bx,[TLEN]		; BX = characters so far
@@ -1849,6 +1871,8 @@ PRDEL:
 PRX:
 	clc			; a string (maybe empty) in TBUF / TLEN
 	ret			; CF=0
+PROMPT_ESC:				; (src: PRESC)
+	call GETKEY		; take the arrow's letter too, as ESCK does
 PRQ:
 	stc			; given up
 	ret			; CF=1

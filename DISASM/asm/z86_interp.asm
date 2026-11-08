@@ -348,7 +348,23 @@ LSMAP:
 ; AH=4's CL) -> WD2123 baud code (see SSET).
 BAUDT:
 	defb	2,4,6,7,8,10,12,14,15	; 110 150 300 600 1200 2400 4800 9600 19200
-	defs	REGS+253-$	; D0F1-D0FC: free (zero)
+; ---------------------------------------------------------------------
+; FDTOUT  (BIOS code in the REGS page's free end, D0F1h; ;@SLACK REGS)
+; ---------------------------------------------------------------------
+; FDTOUT - a floppy wait timed out (FDCCMD, FHOME, XFER, FMT's seek).
+; Force Interrupt with no condition (D0h) stops the command and raises no
+; INTRQ; DI because the hook at 0038h must not fire any more.  Returns
+; NZ, A = 20h: never a WD177x status here (those leave ANDed with 5Ch),
+; and DFAIL's ERRTAB maps it to DOS error 2, "Not ready".  Reached by JP
+; from the waits, so the RET goes straight to their caller.
+FDTOUT:
+	di
+	ld	a,0D0h		; Force Interrupt, no condition
+	out	(FDCMD),a
+	ld	a,20h		; "not ready"
+	or	a		; NZ
+	ret
+	defs	REGS+253-$	; the rest, to BOOTJP at D0FDh: free (zero)
 
 ; =====================================================================
 ; BOOTJP - the boot sector's entry into Z86.SYS
@@ -456,8 +472,8 @@ OPHI:
 ; HL = host address = segment base + effective address (16-bit sum).
 ; C0h-FFh (mod 11, a register) never reach this table - every decoder
 ; tests CP 0C0h first and indexes REGS instead - so the rest of each
-; page is free: since 2026-11-08 it holds BIOS floppy code (XFER in
-; EALO's end, FHOME and FDTOUT in EAHI's), zero fill after it.  O_LEA reuses the table for the bare offset: it
+; page is free: since 2026-11-08 it holds code - MWSLOW and XFER in
+; EALO's end, MWCHK and FHOME in EAHI's - with zero fill after it.  O_LEA reuses the table for the bare offset: it
 ; zeroes EADS / EASS around its CALL EAMEM, then restores them.
 ; =====================================================================
 EALO:
@@ -485,6 +501,33 @@ EALO:
 	defb	EA20&0FFh, EA21&0FFh, EA22&0FFh, EA23&0FFh, EA24&0FFh, EA25&0FFh, EA26&0FFh, EA27&0FFh	; A8-AF  EA20-EA27, reg 5
 	defb	EA20&0FFh, EA21&0FFh, EA22&0FFh, EA23&0FFh, EA24&0FFh, EA25&0FFh, EA26&0FFh, EA27&0FFh	; B0-B7  EA20-EA27, reg 6
 	defb	EA20&0FFh, EA21&0FFh, EA22&0FFh, EA23&0FFh, EA24&0FFh, EA25&0FFh, EA26&0FFh, EA27&0FFh	; B8-BF  EA20-EA27, reg 7
+; ---------------------------------------------------------------------
+; MWSLOW - REP MOVSW one word at a time  (EALO page end: interpreter code)
+; ---------------------------------------------------------------------
+; Entry:  from MWCHK, only for a one-byte overlap; stack: RMOVSW_GO's
+;         saved BC (the 8086 code pointer).  Exit: JP (IX) as any handler.
+; Runs the single-step handler O_MOVSW CX times with IX pointed back at
+; MWSLOW_NEXT: each step reads its word before writing it, exactly as the
+; 8086, and advances SI / DI itself.  IX is saved: it is NEXT, or RESTORE
+; when a segment override is in force (RESTORE must still run at the end).
+; Added 2026-11-08 (;@SLACK EALO in I86.ASM).
+; =====================================================================
+MWSLOW:
+	push	ix		; NEXT, or RESTORE after a segment override
+	ld	ix,MWSLOW_NEXT	; O_MOVSW's closing JP (IX) comes back here
+MWSLOW_STEP:				; (src: MWS0)
+	jp	O_MOVSW		; one exact MOVSW
+MWSLOW_NEXT:				; (src: MWS1)
+	ld	hl,(R_CX)	; CX - 1
+	dec	hl
+	ld	(R_CX),hl
+	ld	a,h
+	or	l
+	jr	nz,MWSLOW_STEP	; more words
+	pop	ix		; the real dispatcher back
+	pop	bc		; the 8086 code pointer
+	jp	(ix)		; next instruction (or RESTORE)
+
 ; ---------------------------------------------------------------------
 ; XFER - one sector through the WD177x  (C0h-FFh of this page: BIOS code)
 ;   >>> BIOS CODE IN AN INTERPRETER PAGE: the free end of EALO, placed by
@@ -558,8 +601,35 @@ EAHI:
 	defb	EA20>>8, EA21>>8, EA22>>8, EA23>>8, EA24>>8, EA25>>8, EA26>>8, EA27>>8	; B0-B7  EA20-EA27, reg 6
 	defb	EA20>>8, EA21>>8, EA22>>8, EA23>>8, EA24>>8, EA25>>8, EA26>>8, EA27>>8	; B8-BF  EA20-EA27, reg 7
 ; ---------------------------------------------------------------------
-; FHOME / FDTOUT  (C0h-FFh of this page: BIOS code)
-;   >>> BIOS CODE IN AN INTERPRETER PAGE: the free end of EAHI (;@SLACK)
+; MWCHK - does this REP MOVSW overlap by one byte?  (EAHI page end)
+; ---------------------------------------------------------------------
+; Entry:  CALLed by R_MOVSW with HL = source, DE = destination (host
+;         addresses), BC = bytes.  Exit: A = (STEP1+1), HL/DE/BC as they
+;         were, back in R_MOVSW - or, for DI = SI + 1 going up (source -
+;         dest = -1) or DI = SI - 1 going down (+1), the return address is
+;         dropped and MWSLOW takes over.  Interpreter code (;@SLACK EAHI).
+; =====================================================================
+MWCHK:
+	push	hl
+	or	a
+	sbc	hl,de		; source - destination
+	ld	a,(STEP1+1)	; 00h: DF = 0, FFh: DF = 1
+	or	a
+	jr	z,MWCHK_UP
+	dec	hl		; DF = 1: overlap if source - dest = +1
+	dec	hl
+MWCHK_UP:				; (src: MWC1)
+	inc	hl		; DF = 0: overlap if source - dest = -1
+	ld	a,h
+	or	l		; Z: the one-byte overlap
+	pop	hl
+	ld	a,(STEP1+1)	; what R_MOVSW used to load here
+	ret	nz		; no overlap: LDIR / LDDR as before
+	pop	de		; overlap: drop the return address
+	jp	MWSLOW
+
+; ---------------------------------------------------------------------
+; FHOME  (BIOS code in this interpreter page: the free end of EAHI)
 ; ---------------------------------------------------------------------
 ; FHOME - restore the selected drive to track 0, polled (CBIOS F7B5h).
 ; Entry:  RESCMD = the restore command (05h: with verify; T_FMT sets 01h).
@@ -596,19 +666,6 @@ FHOME_DONE:				; (src: FH2)
 	and	10h		; seek error bit: NZ = no track 0
 	ret
 
-; FDTOUT - a floppy wait timed out (FDCCMD, FHOME, XFER, FMT's seek).
-; Force Interrupt with no condition (D0h) stops the command and raises no
-; INTRQ; DI because the hook at 0038h must not fire any more.  Returns
-; NZ, A = 20h: never a WD177x status here (those leave ANDed with 5Ch),
-; and DFAIL's ERRTAB maps it to DOS error 2, "Not ready".  Reached by JP
-; from the waits, so the RET goes straight to their caller.
-FDTOUT:
-	di
-	ld	a,0D0h		; Force Interrupt, no condition
-	out	(FDCMD),a
-	ld	a,20h		; "not ready"
-	or	a		; NZ
-	ret
 EAHIEND:
 	defs	EAHI+256-$	; the rest of the page: zero fill
 
@@ -3786,11 +3843,13 @@ RMOVSB_DONE:				; (src: RMB3)
 ; ---------------------------------------------------------------------
 ; Entry/exit as R_MOVSB.  Downwards, the copy starts at the HIGH byte
 ; of the first word (SI+1 -> DI+1) and runs down byte by byte.
-; DIVERGENCE (verified, notes/z86_part04_findings.md): a byte copy is
-; not a word copy when the operands overlap by ONE byte - DI = SI + 1
-; with DF = 0, or DI = SI - 1 with DF = 1.  The 8086 (and cpu86.py)
-; reads each whole word before writing it; LDIR/LDDR smear the first
-; byte instead.  Overlap by 2 or more, or no overlap, is identical.
+; A byte copy is not a word copy when the operands overlap by ONE byte -
+; DI = SI + 1 with DF = 0, or DI = SI - 1 with DF = 1: the 8086 (and
+; cpu86.py) reads each whole word before writing it, LDIR/LDDR smear
+; the first byte.  FIXED 2026-11-08: MWCHK (EAHI page) sends exactly
+; those cases to MWSLOW (EALO page), which runs O_MOVSW CX times;
+; everything else keeps the LDIR / LDDR (fuzz_z86.py --overlap: 814
+; mismatches on the old build, 0 now).
 ; CX >= 8000h makes 2 * CX wrap (8000h -> BC = 0 = 64K, still right;
 ; above that, fewer bytes): beyond any 52K guest, so of no consequence.
 ; =====================================================================
@@ -3807,8 +3866,9 @@ RMOVSW_GO:				; (src: RMW1)
 	call	SRCPTR		; HL = host DS:SI
 	pop	de		; DE = host ES:DI
 	pop	bc		; BC = 2 * CX
-	ld	a,(STEP1+1)	; DF -> carry
-	rla			; (STEP1+1 = FFh when DF = 1)
+	call	MWCHK		; A = (STEP1+1); a one-byte overlap leaves for
+				;   MWSLOW instead of returning
+	rla			; DF -> carry (STEP1+1 = FFh when DF = 1)
 	jr	c,RMOVSW_DOWN	; DF = 1: downwards
 	ldir			; DF = 0: upwards
 	jr	RMOVSW_DONE	; (skip LDDR)

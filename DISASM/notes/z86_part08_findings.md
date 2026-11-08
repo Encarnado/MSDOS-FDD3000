@@ -92,3 +92,8 @@ instruction lines.
 - Timeouts for INT 14h/17h (HL = FFFFh polls): ~1.6 s SPUT, ~2.3 s SGET at an
   assumed 4 MHz (T-state counts of the SWAIT loops). Provisional.
 - WTKCMD FEh "as FORMAT 2.0" rests on the source comment only.
+
+## Fixed 2026-11-08
+- FDCCMD's endless wait: FIXED (timeout -> FDTOUT, "not ready"); the RST 38h
+  design is unchanged. FORMAT TRACK's write-track loop stays untimed
+  (documented residual); the seek before it is timed.

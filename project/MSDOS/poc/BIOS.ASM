@@ -125,8 +125,8 @@ PEEKEY: LD A,(KFLAG)
         JR NZ,PK1
         IN A,(2Fh)
         AND 5Fh
-        CP 04h                  ; the terminal has a key
-        RET NZ                  ; (NC)
+        XOR 04h                 ; the terminal has a key? (XOR, not CP: CP
+        RET NZ                  ; left carry set below 04h - a phantom key)
         CALL CONIN
         LD (KBUF),A
         LD A,1
@@ -441,6 +441,18 @@ SK1:    LD A,(DTRK)             ; (from memory: FDCCMD's timer uses B)
 SKOK:   XOR A
         RET
 
+;@SLACK REGS
+; FDTOUT: a floppy wait timed out.  Stop the command (Force Interrupt with
+; no condition raises no INTRQ) and return NZ, A = 20h ("not ready").
+; Reached by JP from the waits, so its RET goes to their caller.
+FDTOUT: DI
+        LD A,0D0h
+        OUT (0C0h),A
+        LD A,20h
+        OR A
+        RET
+;@END
+
 ;@SLACK EALO
 ; XFER: one sector at HL, command A (80h read / A0h write), the transfer
 ; instruction at XFI patched by SECTIO (INI / OUTI).  CBIOS A1.1's loop
@@ -496,15 +508,6 @@ FH2:    POP BC
         AND 10h
         RET
 
-; FDTOUT: a floppy wait timed out.  Stop the command (Force Interrupt with
-; no condition raises no INTRQ) and return NZ, A = 20h ("not ready").
-; Reached by JP from the waits, so its RET goes to their caller.
-FDTOUT: DI
-        LD A,0D0h
-        OUT (0C0h),A
-        LD A,20h
-        OR A
-        RET
 ;@END
 
 ; SELECT: drive A on, head loaded; the FDC track register is set to

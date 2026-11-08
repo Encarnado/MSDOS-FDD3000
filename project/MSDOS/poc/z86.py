@@ -109,7 +109,9 @@ def table_text(lo, hi, labels, slack=None):
 
 def preprocess(text):
     """;@FOR V a b c ... ;@END repeats a block with {V} replaced;
-    ;@TABLE LO HI ops|ea inserts a split 256-entry jump table."""
+    ;@TABLE LO HI ops|ea inserts a split 256-entry jump table;
+    ;@SLACK NAME ... ;@END blocks are lifted out and assembled in the free
+    end of table page NAME (EALO, EAHI) or at a ;@SLACKAT NAME marker."""
     lines = text.split('\n')
     # ;@SLACK PART ... ;@END: lift the block out; it is assembled in the free
     # end of the table page PART (see table_text)
@@ -137,6 +139,11 @@ def preprocess(text):
             for v in vals:
                 out += [l.replace('{%s}' % var, v) for l in lines[i + 1:j]]
             i = j + 1
+            continue
+        m = re.match(r'\s*;@SLACKAT\s+(\w+)', line)
+        if m:                           # a free page end marked in the source
+            out += slack.get(m.group(1), [])
+            i += 1
             continue
         m = re.match(r'\s*;@TABLE\s+(\w+)\s+(\w+)\s+(\w+)', line)
         if m:
@@ -172,6 +179,7 @@ def _build(bios):
     assert syms['WCORE'] == syms['BCORE'] + 0x100, 'the end of the BCORE page overflows'
     if bios:
         assert syms['SKEW'] == syms['SKEWAT'], 'BIOS code runs past SKEWAT (F0F8h)'
+    assert syms['BOOTJP'] == 0xD0FD, 'the REGS page slack overflows into BOOTJP'
     for part in ('EALO', 'EAHI'):
         assert syms[part + 'END'] <= syms[part] + 0x100, 'the ;@SLACK block overflows ' + part
     if bios:

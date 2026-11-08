@@ -25,8 +25,9 @@
 ;       calls) DOSCALL: INT 21h on the interpreter, TRAP 1Dh back
 ;     warm boot  ->  CPEXIT: DOS back, RET out of TRAP 1Ch into CPM.COM,
 ;       which resets the disks and exits to COMMAND
-;  Inside CPM.COM the image sits at file offset 30Ch behind a 16-byte
-;  header at 2FCh: the length (09CAh) and the Z86.SYS addresses it was
+;  Inside CPM.COM the image sits at file offset 32Ah behind a 16-byte
+;  header at 31Ah (30Ch / 2FCh in the shipped CPM.COM, before its
+;  2026-11-08 read check): the length (09CAh) and the Z86.SYS addresses it was
 ;  assembled against, NEXT D83Bh, JPHL EB60h, PEEKEY EBF6h, GETKEY
 ;  EC13h, CONOUT EC21h, DCSP F12Ah, ENDBIOS F12Ch (BIOS.ASM's CPMSYM).
 ;  Trap 1Ch refuses to copy an image whose header differs ("CPM.COM does
@@ -71,7 +72,7 @@
 ;
 ;  VERIFICATION.  Reassembles BYTE-IDENTICAL to bin/CPMZ80.BIN with
 ;  Wijnen z80asm v1.8 (tools/roundtrip.sh).  The image equals CPM.COM
-;  from file offset 30Ch to its end; the 16-byte header before it was
+;  from file offset 32Ah to its end (2026-11-08 CPM.COM); the header was
 ;  checked against ../symbols/z80/Z86.SYS.sym.  Every instruction
 ;  matches the build listing ../symbols/z80/CPMZ80.lst.
 ;
