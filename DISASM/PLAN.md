@@ -13,7 +13,7 @@ tools/  z80decode.py z80dis.py images.py roundtrip.sh   build/ disposable
 | # | Volume | Binary | State |
 |---|---|---|---|
 | 1 | `boot.asm` | BOOT.BIN (254 B, Z80 @3F00h) | ✅ narrated, gate PASS |
-| 2 | `z86sys.asm` | Z86.SYS (8 737 B, Z80 @D000h) | ✅ narrated (8 regions in parallel, joined), gate PASS, lint 0 errors, 87.8% commented |
+| 2 | `z86sys.asm` (+ `z86_interp.asm`, `z86_bios.asm`) | Z86.SYS (8 737 B, Z80 @D000h) | ✅ narrated (8 regions in parallel, joined), gate PASS, lint 0 errors, 87.8% commented |
 | 3 | `cpmz80.asm` | CPMZ80.BIN (2 506 B, Z80 @F12Ch) | ✅ narrated, gate PASS, 89.5% commented |
 | 4 | `iosys.asm` | IO.SYS (332 B, 8086) | ✅ narrated, gate PASS, 92% commented |
 | 5 | `format.asm` | FORMAT.COM (1 628 B) | ✅ narrated, gate PASS, 98% commented |
