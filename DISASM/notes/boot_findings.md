@@ -6,12 +6,12 @@ Image = first 254 bytes of DSK logical sector 0; sector bytes 254-255 = 00h.
 
 1. **Source gloss "head loaded" for latch 5Eh is fiction.** 5Eh = LED off,
    /BOOT=1 (ROM out), DDEN#=0 (MFM), SIDE1#=1 (side 0), drive 0. No latch bit loads a
-   head (fdd3000b HRD_* map); the WD1770 has no HLD output. *verified (bit map).*
+   head (the latch's bit map); the WD1770 has no HLD output. *verified (bit map).*
 2. **Track D never reaches the FDC.** LOAD writes only the sector register. The
    track compare uses the FDC track register (Restore → 0, Step-In u=1 → +1). D is
    bookkeeping only. *verified (code).*
 3. **No verify, no settle.** Restore 01h / Step-In 51h with V=0; Read Sector 80h
-   with E=0. fdd3000b uses E=1 (8Ch). **Works on real hardware:** the system booted
+   with E=0. The FDD3000 boot ROM uses E=1 (8Ch). **Works on real hardware:** the system booted
    on a real FDD3000 on 2026-11-07 (notes/hardware_run.md). One drive tested, so a
    marginal drive's settle time stays the first suspect for a boot that fails at a
    track change.
@@ -30,10 +30,8 @@ Timing (4 MHz assumed; nothing documents the FDD3000 crystal): LOAD_BUSY_DELAY 9
 7. **Latch bit 7 (IN USE LED) is active low**: 0 = on. Evidence: CBIOS A1.1
    (`ROMS/FDD_Interface/bios_z80asm.asm`) routine `LIGHTOF` does `set LUZ,a` (LUZ =
    7) before `out (HRD),a`, and drive selection does `res LUZ,a`. This matches the
-   Shugart convention (all interface lines active low). It **contradicts ROMDIS
-   `fdd3000b.asm` HRD_LED "1 = on"**, and it dissolves that file's explanation that
-   the drive LED "still lights" at 1Eh: with an active-low bit, 1Eh simply means LED
-   on during the boot read. *Provisional* (CBIOS code + naming; no hardware
-   observation; the 2026-11-07 hardware run did not record the LED). **For the TC3256 corpus (not edited from here):** ROMDIS
-   fdd3000b.asm HRD_LED, HRD_ALL_OFF..HRD_DRV0_MFM glosses, dict/tos_fdd3000.md.
-   Also found independently by the Z86.SYS part-08 pass (`notes/z86_part08_findings.md`).
+   Shugart convention (all interface lines active low). It **contradicts an earlier reading of the FDD3000 boot ROM**, which had "1 = on" and
+   explained the LED "still lighting" at 1Eh: with an active-low bit, 1Eh simply
+   means LED on during the boot read. *Provisional* (CBIOS code + naming; no
+   hardware observation; the 2026-11-07 hardware run did not record the LED).
+   Also found independently in the Z86.SYS BIOS review (`notes/z86_part08_findings.md`).

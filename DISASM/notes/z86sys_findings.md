@@ -16,7 +16,7 @@ Cross-region items settled at the join:
 - Serial equates (part 01) used by 07/08 throughout; no raw port operands remain (lint).
 - 19 source comments on label-only lines were dropped by the skeleton generator (fixed in z80dis.py); all 19 sites carry equivalent commentary after the pass (checked).
 - LED polarity: boot_findings item 7 (bit 7 active low), agreeing with part 08.
-- Shift groups D0h-D3h live in part 05 (brief misplaced them in 06); narrated there.
+- Shift groups D0h-D3h live in part 05 (the plan had them in 06); narrated there.
 - Corrections for the package docs: OVERVIEW 2.2 AF sentence (INC/DEC -> AF = 0; AF also read by PUSHF/LAHF/INT); DISASSEMBLY_GUIDE seeds (G3BT/G3WT/G5T, LD IX targets); fdd86.py bad-opcode address off by one (part 02).
 
 ## Fixed 2026-11-08 (floppy robustness; git: "BIOS: floppy timeouts")

@@ -10,7 +10,7 @@ narration, check one part, and join them back.
                                            (then tools/roundtrip.sh)
 
 `check` assembles a part against the untouched baseline of all the others,
-so agents editing different parts never see each other's work in progress.
+so edits to different parts never see each other's work in progress.
 Consequence: a part may rename only labels that no other part refers to
 (the check fails with an undefined label otherwise) - global names stay.
 """

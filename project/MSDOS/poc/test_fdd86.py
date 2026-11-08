@@ -617,7 +617,9 @@ def mode():
             ('MODE LPT1: 134.5 , , 5 , 1.5', A, 0x92, 3, 'PRN: 134.5 baud, odd parity, 5 data bits, 1.5 stop bits\r\n'),
             ('MODE COM2:11', B, 0xFA, 2, 'AUX: 110 baud, even parity, 7 data bits, 2 stop bits\r\n'),
             ('MODE AUX:50,N,6,1', B, 0x46, 0, 'AUX: 50 baud, no parity, 6 data bits, 1 stop bit\r\n'),
-            ('MODE PRN:', A, 0x92, 3, 'PRN: 134.5 baud, odd parity, 5 data bits, 1.5 stop bits\r\n')):
+            ('MODE PRN:', A, 0x92, 3, 'PRN: 134.5 baud, odd parity, 5 data bits, 1.5 stop bits\r\n'),
+            # a comma after the port closes the (empty) baud field: parity only
+            ('MODE PRN,E', A, 0xB2, 3, 'PRN: 134.5 baud, even parity, 5 data bits, 1.5 stop bits\r\n')):
         out = step(m, cmd + '\r')
         check((ch.mode, ch.baud, ch.cmd) == (mb, bc, 7) and line in out and 'Invalid' not in out,
               '%s: mode %02X baud %d cmd %02X, %r' % (cmd, ch.mode, ch.baud, ch.cmd, out))
@@ -625,7 +627,8 @@ def mode():
     print('  ports, all fields, fields left out, PC baud names, settings shown: done')
     state = (A.mode, A.baud, B.mode, B.baud)
     for cmd in ('MODE COM3', 'MODE PRN 9601', 'MODE PRN 9600,X', 'MODE PRN 9600,N,9', 'MODE PRN 9600,N,8,3',
-                'MODE PRN 9600,N,8,1,1', 'MODE PRN 9600,N,8,1.4', 'MODE PRNTR', 'MODE PRN 1234567'):
+                'MODE PRN 9600,N,8,1,1', 'MODE PRN 9600,N,8,1.4', 'MODE PRNTR', 'MODE PRN 1234567',
+                'MODE PRN,,E'):          # E in the data bits field
         out = step(m, cmd + '\r')
         check('Invalid parameter' in out and 'Usage: MODE' in out and (A.mode, A.baud, B.mode, B.baud) == state,
               '%s: %r' % (cmd, out[-80:]))

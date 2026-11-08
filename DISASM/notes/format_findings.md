@@ -27,7 +27,7 @@ the disk that did boot on hardware: indirect support for the layout only.
    ID / data address marks; data fill E5h.  *verified (code + source).*
 4. **The interleave is not in the image.** IDs are written 0..17 in physical
    order (test_fdd86.py checks this); the 2:1 interleave comes from Z86.SYS's
-   SKEW mapping logical e -> ID 2e / 2e-17.  *verified.*  The brief's phrase
+   SKEW mapping logical e -> ID 2e / 2e-17.  *verified.*  The plan's phrase
    "18 sectors with the 2:1 interleave SKEW" should be read that way.
 5. **/S does not guarantee bootability.** boot.asm loads Z86.SYS from
    cluster 2 and COLD loads IO.SYS / MSDOS.SYS, all contiguously without the

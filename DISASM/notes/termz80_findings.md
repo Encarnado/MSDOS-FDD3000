@@ -141,3 +141,33 @@ held when the next arrives), the test covers:
 - /52 and /80.
 
 The terminal model answers the link instantly; real terminal speed is unknown.
+
+## Verified and fixed 2026-11-08
+
+Independent verification: `verify_termz80.md` (classes, T-state counts, experiments). All code
+fixes below change the image: TERMZ80 is now 3448 bytes, TERMEND FEA4h (28 bytes under
+z86.py's FEC0h limit; -22 for the fixes, +2 for TERM's HOLD function).
+
+| # | Class | Outcome |
+|---|---|---|
+| 1 RXPOLL in every wait | DESIGN | FIXED (P6): TS2 and TS3 (the echo waits) poll too; top speed with an instant terminal 1 048 -> 964 chars/s, with the 2 ms terminal 325 -> 317 |
+| 2-4, 6-8 | NOTE | confirmed; nothing to do (CONOUT is in the header but unused) |
+| 5 Timex terminal codes | HW | LEFT FOR THE AUTHOR (clear attribute, LF column: only the terminal can say) |
+| 9 Break 250 ms | NOTE | confirmed; now through HOLD's loop (17) |
+| 10 "at a quarter" | DOC | FIXED: "below an eighth (256)" |
+| 11 LOGLIM reserve unused | DOC | FIXED (P3): LOGLIM removed, SESS compares with LOGSZ (-9 bytes) |
+| 12 SERPUT / HOLD / KEYOUT times | DOC | FIXED: 3.4 s, 120 ms, 53 ms |
+| 13 "the level, less one" | DOC | FIXED: "the level with this byte, x 256" |
+| 14 SENDN "1-255" | DOC | FIXED: 0-255 |
+| 15 DROPS write-only | DESIGN | FIXED (P4): removed (-13 bytes) |
+| 16 Key reads not polled | HW | LEFT FOR THE AUTHOR: a polled CONIN (~100 bytes) does not fit; matters only if the real terminal takes over ~58 us a step at 19 200 baud. Measure LOST after typing during a flood |
+| 17 No polling in BRK; RECV overruns | DESIGN | BRK FIXED (P5): `LD HL,6250 / CALL HO1` (caveat: an XOFF due during the break is lost); RECV's uncounted overruns left (CRC catches them) |
+| 18 Error reset keeps RTS | NOTE | nothing to do |
+| 19-21 VT100 coverage | DESIGN | LEFT FOR THE AUTHOR |
+| 22 IL/DL | NOTE | nothing to do |
+| 23 CTS needed | HW | LEFT FOR THE AUTHOR |
+| N1 DRAWR gaps lose bytes at 19 200 in a region | BUG | FIXED (P1): RXPOLL at DRAWR's entry, DR2 every 8 cells. Test 5b: old build lost 10 bytes (one cell wrong), new 0 |
+| N2 A key does not cancel XMODEM | BUG | FIXED (P2): RECV asks PEEKEY (DOS had parked the key in KBUF); FR2 292 turns of 137 T = 10 ms. Test 7b |
+| N3 "under 1 800 T", "always taken" | DOC | FIXED: README / OVERVIEW now say about 2 000 T (2 122 seen once), a thin margin |
+| N4 test_term counts overruns twice | DOC | test FIXED (chip and LOST shown apart). Correction: the README's "lost 1 637" was not doubled - the chip lost 0 in that run and all 1 637 were ring-full losses in LOST. The new build's figure is 1 705 |
+| Header comment for function 10 | - | added (verify_term.md N1) |

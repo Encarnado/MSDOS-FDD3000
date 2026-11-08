@@ -7,7 +7,7 @@ boot it.
 
 | Release | Tag | Disk image SHA-256 | Real hardware |
 |---|---|---|---|
-| v1.0-rc1 | `v1.0-rc1` | `2d0c2e75bf923015a1dc6b1d670b90d7c4ae786e78e3e6446671dbf6e826fc5b` | not yet: emulators only |
+| v1.0-rc1 | `v1.0-rc1` | `a0eb02f1605446beaaaa15a163416136c3d3c3d5295ccd2f0aa031a43313b6b5` | not yet: emulators only |
 
 ## v1.0-rc1 (2026-11-08): release candidate
 
@@ -42,6 +42,17 @@ fuzzers, the whole-machine tests, EDIT and TERM tests).
 - FORMAT /S refuses a disk whose system area has a bad track, instead of
   writing an unbootable disk and saying "System transferred".
 - CPM.COM no longer runs a program it could not read completely.
+- TERM: quitting lets the host go again (XON, or RTS on); before, the host
+  stayed stopped, even through a new TERM.
+- TERM: no bytes lost at 19 200 baud while lines scroll inside a region
+  (the rows drawn again now take received bytes in time); the terminal's
+  echo waits and the break also take them.
+- TERM XMODEM: a key cancels a transfer; a line hit on a block's first
+  byte is a bad block (it no longer ends the receive as "done" with a
+  short file, or as "cancelled"), and a cancel needs two CANs; a stray
+  answer while sending no longer puts every later answer a block behind;
+  what the host sends while "done - a key" is shown is kept.
+- TERM: `/64` is in the usage message.
 
 **Also**
 - `DISASM/`: commented disassemblies of every project binary (ten volumes),
@@ -58,8 +69,13 @@ question: `DISASM/notes/boot_findings.md`, item 7).
 
 **Known limits:** FORMAT's write-track loop is not timed (a disk pulled with
 the motor running still hangs it); EDIT keeps lines as LF and drops bare
-CRs; open findings in TERM for its author are listed in
-`DISASM/notes/term_findings.md` and `termz80_findings.md`.
+CRs. TERM, left for its author (`DISASM/notes/term_findings.md` and
+`termz80_findings.md`, "Verified and fixed"): key reads are not polled (a
+terminal slower than about 58 µs a link step could cost a byte at 19 200
+baud; to be measured), one CAN still cancels a send, a failed receive keeps
+the partial file, receive waits 3 s for a block (the usual is 10 s), SGR
+takes each parameter alone, 8-bit characters show as `?`, and the README's
+hardware notes for TERM disagree (João to settle).
 
 ## Before the first release: the 2026-11-07 internal build
 

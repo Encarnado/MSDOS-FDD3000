@@ -639,7 +639,8 @@ rates below.
   channel's mode byte in AL and baud code in AH, as the BIOS last set them
   (the chip can't be read back, so `SSET` keeps a copy); AH = F1h sets
   the channel up from AL (mode byte; bits 1-0 are forced to the ×16 clock)
-  and CL (baud code 0-15) and returns the status.
+  and CL (baud code 0-15) and returns the status; with CL 16 or more
+  (or any other AH) nothing is done and AX comes back unchanged.
 - **INT 17h:** AH = 0 prints AL on channel A (giving up after about
   1.5 s), 2 returns the status: 90h ready (CTS on), 10h busy, +1 timed out.
 - **Where the code is:** the shared routines (`SPRN`, `SAUXO`, `SAUXI`,
@@ -706,18 +707,20 @@ by 64 (or 80) columns; the Timex terminal shows it and its keyboard types
 to it.
 
 ```
-TERM [port[:] [baud][,[parity][,[data bits][,stop bits]]]] [/80] [/52] [/X|/R|/N] [/E] [/C]
+TERM [port[:] [baud][,[parity][,[data bits][,stop bits]]]] [/80|/64] [/52] [/X|/R|/N] [/E] [/C]
 ```
 
 - port and settings as for MODE; with none, AUX as it is set now.
-- `/80` an 80-column terminal; `/52` a host that sends VT52 codes;
+- `/80` an 80-column terminal (`/64` the default: 64 columns); `/52` a
+  host that sends VT52 codes;
   flow control `/X` XON / XOFF (the default), `/R` RTS / CTS, `/N` none;
   `/E` local echo: what is typed shows on the screen too (Enter as CR
   LF; not ESC and the arrow keys), for a host that doesn't echo, such as
   another terminal; `/C` an implicit LF after each CR received (as
   PuTTY's "Implicit LF in every CR"), for one that ends lines with CR
   alone.
-- **Ctrl-A** shows the menu on the bottom line: `Q` quit, `L` log to a
+- **Ctrl-A** shows the menu on the bottom line: `Q` quit (the host is
+  let go: XON, or RTS on), `L` log to a
   file, `E` local echo, `C` implicit LF, `R` receive a file by XMODEM,
   `S` send one, `B` a break (250 ms), Ctrl-A a Ctrl-A; any other key goes
   back. `+` and `-` after L, E and C show which are on, and it
@@ -748,9 +751,12 @@ Z80 part does everything that has to be quick:
   about 2 100 T-states later at 19 200 baud, overwrites it. Every loop
   that waits, for the terminal's link or for the channel, calls `RXPOLL`,
   which moves a received byte to a 2 KB ring; long block moves go in
-  32-byte pieces with `RXPOLL` between them, and a character drawn or a
-  line scrolled calls it on the way. Measured on the emulator, the
-  longest time between two calls is under 1 800 T-states. At 1 KB in the ring the host
+  32-byte pieces with `RXPOLL` between them, and a character drawn, every
+  8 cells of a row drawn again or a line scrolled calls it on the way.
+  Measured on the emulator, the longest time between two calls is about
+  2 000 T-states (2 122 seen once), about one character at 19 200 baud
+  (2 083): the margin is thin, and the terminal's own answer times (not
+  modelled) come on top. At 1 KB in the ring the host
   is asked to stop (XOFF, or RTS off), below 256 it is let go (XON, RTS
   on). The menu and a full log buffer stop the host the same way first.
 - **The screen.** The Timex terminal knows only ESC H I J K L M Y and
@@ -774,29 +780,43 @@ Z80 part does everything that has to be quick:
 - **XMODEM** (CRC-16 or checksums, 128-byte blocks; receive tries `C`
   three times, then NAK): the protocol is in the 8086 part, the bytes in
   the Z80 part (RECV takes a whole block in one call, sending the answer
-  to the last one first; CRC in Z80 code).
+  to the last one first; CRC in Z80 code). A received EOT counts only
+  when nothing follows it, a cancel only as two CANs (a line hit on a
+  block's SOH is a bad block); sending, any answer but ACK waits for a
+  quiet line before the block goes again (a late answer is not taken for
+  the next block's). A key cancels a transfer. While "done - a key" is
+  shown the host is stopped (HOLD), so what it sends then is not lost.
 
 **The test** (`test_term.py`) runs TERM on the FDD3000 model with a host
 on channel B that sends at the real rate (`fdd86.WD2123`: a byte the
 chip holds is lost when the next one comes in), and checks the terminal
 model's screen, cell by cell and the cursor, against `VT`, a Python
 model of the VT100 / VT52 above: 21 cases of codes, then 60 batches of
-random ones; keys; the log (12 KB at 19 200 baud, through the 8 KB
-buffer); XMODEM receive (CRC with a corrupted block sent again, at 9 600
-and 19 200; checksums) and send (CRC; checksums): the files are the same
-bytes. With a terminal model that takes 2 ms a character and 20 ms a
+random ones; keys; a scrolling region at 19 200 baud (400 lines drawn
+again from the copy: nothing lost); the log (12 KB at 19 200 baud,
+through the 8 KB buffer); XMODEM receive (CRC with a corrupted block
+sent again, at 9 600 and 19 200; checksums) and send (CRC; checksums):
+the files are the same bytes; a key cancels a transfer; a line hit on a
+block's SOH (into EOT or CAN) is taken as a bad block, two CANs cancel;
+a stale 'C' while sending, then a NAK, still gives the same bytes; the
+host's prompt after a transfer is kept (`/R`); `Q` lets the host go
+(XON, RTS on). With a terminal model that takes 2 ms a character and 20 ms a
 scroll (a guess: the real terminal's speed isn't known), 6 KB of text:
 
 | | lost | chars/s |
 |---|---|---|
-| 9 600 or 19 200 baud, XON / XOFF | 0 | 325 |
-| 9 600 or 19 200 baud, RTS / CTS | 0 | 325 |
-| 9 600 baud, no flow control | 1 637 | - |
-| a terminal that takes no time, 9 600 / 19 200 baud | 0 | 861 / 1 048 |
+| 9 600 or 19 200 baud, XON / XOFF | 0 | 317 |
+| 9 600 or 19 200 baud, RTS / CTS | 0 | 317 |
+| 9 600 baud, no flow control | 1 705 (the ring full) | - |
+| a terminal that takes no time, 9 600 / 19 200 baud | 0 | 861 / 964 |
 
-So the terminal's speed sets the pace; flow control keeps it from losing
-anything. With a terminal that takes no time, TERM itself manages about
-1 050 characters a second of text.
+"Lost" is TERM's own count (`LOST`, shown in the menu): the bytes that
+found the ring full, and one for each overrun of the chip (the chip
+model counts those too; the test shows the two apart, and here the chip
+lost none). So the terminal's speed sets the pace; flow control keeps it
+from losing anything. With a terminal that takes no time, TERM itself
+manages about 960 characters a second of text (the terminal's echoes
+are waited for with the channel polled).
 
 **Not known:** the real terminal's speed over the link, and anything on
 real hardware.

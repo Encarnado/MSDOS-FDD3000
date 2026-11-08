@@ -8,7 +8,7 @@ so they are kept.
 Region contents: DAA DAS AAA AAS (27h 2Fh 37h 3Fh); INC / DEC / POP / PUSH reg16 (40h-5Fh)
 and PUSHX; Jcc (60h-7Fh) with J_TAKE / JREL8 / J_NOT (EBh); the 80h-83h immediate group;
 TEST / XCHG / MOV 84h-8Bh; MOV r/m,sreg; LEA; MOV sreg,r/m; POP r/m16.
-**Not in this part,** although the brief lists them: PUSH / POP of segment registers
+**Not in this part,** although the plan lists them: PUSH / POP of segment registers
 (06h 07h 0Eh 16h 17h 1Eh 1Fh, part 02), PUSHF / POPF / SAHF / LAHF (9Ch-9Fh, part 04),
 GETF / SETF / SETCO (part 02). The flag findings below still cover them where they matter.
 

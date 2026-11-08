@@ -1,11 +1,10 @@
 # Naming & narration conventions — FDD3000-MSDOS disassemblies
 
-Adopted 2026-11-08 from the TC3256 corpus (`TC3256/SIM/ROMDIS/dict/CONVENTIONS.md`,
-whose rules apply here unless changed below). Change only by recorded decision.
+Adopted 2026-11-08. Change only by recorded decision.
 
 ## Toolchain
 
-- **Z80: Wijnen `z80asm` v1.8**, the corpus assembler of record. Gate: `tools/roundtrip.sh`.
+- **Z80: Wijnen `z80asm` v1.8**, the assembler of record. Gate: `tools/roundtrip.sh`.
 - **8086: NASM 3.02, `nasm -O0 -f bin`** (installed 2026-11-08). `-O0`: NASM never
   re-sizes, so explicit `short` / `byte` / `word` keywords fix each encoding.
   Skeletons by `tools/x86dis.py`: MASM listing for line offsets and code/data,
@@ -50,17 +49,16 @@ whose rules apply here unless changed below). Change only by recorded decision.
 - **Cryptic numbered locals are renamed** to names derived from their parent
   (`LD2` → `LOAD_POLL`, `CK1` → `IPL_CHECK_NAME`). The label line carries
   `; (src: LD2)`, and the dictionary keeps the alias.
-- **Hardware uses corpus names**, shared with `fdd3000b.asm`, TOSDIS and the CP/M
-  CBIOS: `FDCSTS/FDCMD/FDCTRK/FDCSEC/FDCDAT`, `HRD` (E0h latch), `COM` (2Fh link, bit 7 =
+- **Hardware uses the FDD3000's CP/M CBIOS A1.1 names** and the datasheets': `FDCSTS/FDCMD/FDCTRK/FDCSEC/FDCDAT`, `HRD` (E0h latch), `COM` (2Fh link, bit 7 =
   DRQ), CBIOS link codes `MASK BYTEON SERVICO CSTAT BSTAT STMSK` (STMSK, CBIOS's alias of its DSTAT, because Z86.SYS has its own DSTAT variable), WD2123 `UART_*`.
   FDC command constants are named after CBIOS's (`RDSCMD`); a value that differs
   from CBIOS's gets a suffix (`RSTCMD_NOVFY` = 01h vs CBIOS `RSTCMD` 05h). One name,
-  one value, across both corpora.
+  one value, in every volume.
 - 8086 volumes: the author's MASM names; `TRAP_*` constants for trap numbers.
 
 ## Narration
 
-As in the corpus: comments state **intent, not mechanics**. Routine headers give
+Comments state **intent, not mechanics**. Routine headers give
 purpose, entry, exit, what is corrupted, callers, and lineage (what came from CBIOS
 A1.1, what mirrors cpu86.py). Tables are decoded inline. File preface: role, place
 in the boot/run chain, key findings, verification, hashes, source, credits.

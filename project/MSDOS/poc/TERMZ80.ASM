@@ -19,12 +19,14 @@
 ;   7 CRC   CX bytes at SI: DX = their CRC-16 (XMODEM), AL = their sum
 ;   8 FLUSH forget what has been received
 ;   9 MODE  DL = the flags 8 (local echo) and 10h (LF after each CR)
+;  10 HOLD  stop the host (XOFF / RTS off) till the next SESS, RECV,
+;           SEND or BRK
 ; Addresses are the 8086's linear ones, which are the Z80's.
 ;
 ; Received bytes go to a 2 KB ring as soon as they are seen: the loops
 ; that wait for the terminal or the channel call RXPOLL, so the one byte
 ; the WD2123 holds is taken in time. With the ring half full the host is
-; asked to stop (XOFF, or RTS off), at a quarter it is let go again.
+; asked to stop (XOFF, or RTS off), below an eighth (256) it is let go.
 ;
 ; The screen: the host sees a VT100 (or, with flag 1, a VT52) of ROWS x
 ; COLS; a shadow copy of it is kept in the 8086's memory. The Timex
@@ -52,7 +54,7 @@ LOWAT   EQU 1                   ; let it go below 256
 
         ORG ENDBIOS
 T_TERM: LD A,(R_AH)
-        CP 10
+        CP 11
         RET NC
         ADD A,A
         LD L,A
@@ -65,7 +67,7 @@ T_TERM: LD A,(R_AH)
         LD L,A
         JP (HL)
 FTAB:   DW F_INIT, F_SESS, F_DRAW, F_RECV, F_SEND, F_BRK, F_LOG, F_CRC
-        DW F_FLSH, F_MODE
+        DW F_FLSH, F_MODE, HOLD
 
 ; ---------------------------------------------------------------- 0 INIT
 F_INIT: LD HL,(R_SI)
@@ -75,15 +77,11 @@ F_INIT: LD HL,(R_SI)
         LD A,(ROWS)
         CALL ROWP
         LD (SCREND),HL
-        LD HL,(LOGSZ)
-        DEC H
-        LD (LOGLIM),HL          ; 256 bytes kept for the host's overrun
         XOR A
         LD (LOGON),A
         LD (STOPF),A
         LD (HOLDF),A
         LD (TXQ),A
-        LD (DROPS),A
         LD H,A
         LD L,A
         LD (LOGN),HL
@@ -165,7 +163,7 @@ SL3:    LD C,A
         POP HL
         INC HL
         LD (LOGN),HL
-        LD DE,(LOGLIM)
+        LD DE,(LOGSZ)
         OR A
         SBC HL,DE
         JR C,SL4
@@ -193,7 +191,7 @@ SRET:   LD (R_AL),A
         LD (R_DX),HL
         JP TSYNC
 
-; HOLD: stop the host and take in what it still sends for 100 ms
+; HOLD: stop the host and take in what it still sends for 120 ms
 HOLD:   LD A,1
         LD (STOPF),A
         LD (HOLDF),A
@@ -241,14 +239,12 @@ FR1:    LD HL,(R_CX)
         LD A,(CTL)
         LD C,A
         LD DE,(TMO)
-FR2:    LD HL,470               ; about 10 ms
+FR2:    LD HL,292               ; about 10 ms
 FR3:    IN A,(C)
         BIT 1,A
         JR NZ,FR5
-        IN A,(2Fh)
-        AND 5Fh
-        CP 04h                  ; a key
-        JR Z,FR7
+        CALL PEEKEY             ; a key (DOS may have taken it to KBUF)
+        JR C,FR7
         DEC HL
         LD A,H
         OR L
@@ -312,13 +308,8 @@ F_BRK:  CALL ENSURE
         LD A,(CMDV)
         OR 08h                  ; send break
         CALL CMDA
-        LD B,25
-FB1:    LD HL,1538              ; 10 ms
-FB2:    DEC HL
-        LD A,H
-        OR L
-        JR NZ,FB2
-        DJNZ FB1
+        LD HL,6250              ; 250 ms, taking received bytes
+        CALL HO1
         JP CMDOUT
 
 ; ---------------------------------------------------------------- 6 LOG
@@ -448,7 +439,7 @@ RXP3:   DEC C
         OR A
         SBC HL,BC
         JR Z,RXP4               ; full: the byte is lost
-        LD A,H                  ; the level, less one
+        LD A,H                  ; the level with this byte, x 256
         ADD HL,BC
         LD (RHEAD),HL
         AND RINGM
@@ -532,7 +523,7 @@ CMDA:   PUSH BC
 
 ; SERPUT: A to the channel, when it is free and CTS on (status bit 7: the
 ; WD2123 has no DSR), taking received bytes meanwhile. CF=1: CTS stayed
-; off for about 2 s and the byte was dropped.
+; off for about 3.4 s and the byte was dropped.
 SERPUT: PUSH BC
         PUSH DE
         PUSH HL
@@ -549,11 +540,7 @@ QSP1:   CALL RXPOLL
         LD A,H
         OR L
         JR NZ,QSP1
-        LD A,(DROPS)
-        INC A
-        JR Z,SP0
-        LD (DROPS),A
-SP0:    SCF
+        SCF
         JR SP3
 QSP2:   DEC C
         OUT (C),E
@@ -571,7 +558,7 @@ SENDS:  LD A,(HL)
         INC HL
         JR SENDS
 
-; SENDN: A (1-255) in decimal to the channel
+; SENDN: A (0-255) in decimal to the channel
 SENDN:  LD C,0
         LD B,100
         CALL SN1
@@ -611,7 +598,7 @@ KEYOUT: LD (KCH),A
         LD A,(KCH)
         CP 1Bh
         JR NZ,KO2
-        LD HL,800               ; about 40 ms
+        LD HL,800               ; about 53 ms
 KO1:    CALL RXPOLL
         PUSH HL
         CALL PEEKEY
@@ -682,7 +669,8 @@ TO3:    POP DE
         POP BC
         RET
 
-; TSEND: B in two nibbles, each echoed back (BIOS COSEND). Z = sent.
+; TSEND: B in two nibbles, each echoed back (BIOS COSEND, but taking
+; received bytes while the echo is awaited). Z = sent.
 TSEND:  LD A,B
         AND 0Fh
         LD E,A
@@ -705,7 +693,8 @@ TS1:    CALL RXPOLL
         OUT (2Fh),A
         LD B,A
         LD C,0
-TS2:    IN A,(2Fh)
+TS2:    CALL RXPOLL
+        IN A,(2Fh)
         DEC C
         JR Z,TS4
         AND 5Fh
@@ -716,7 +705,8 @@ TS2:    IN A,(2Fh)
         OUT (2Fh),A
         LD B,A
         LD C,0
-TS3:    IN A,(2Fh)
+TS3:    CALL RXPOLL
+        IN A,(2Fh)
         DEC C
         JR Z,TS4
         AND 5Fh
@@ -824,7 +814,8 @@ CLRK:   CALL TGOTO
         JR TESC
 
 ; DRAWR: row D from column E on the terminal, from the shadow. Uses all.
-DRAWR:  LD A,(COLS)
+DRAWR:  CALL RXPOLL             ; (a row may follow a row, or a scroll)
+        LD A,(COLS)
         DEC A
         LD C,A                  ; C = the last column to draw
         LD A,(ROWS)
@@ -846,7 +837,7 @@ DR2:    LD A,(HL)               ; the last cell that is not blank
         LD A,B
         CP E
         JR Z,CLRK               ; all blank
-        AND 15
+        AND 7                   ; every 8 cells (a blank cell: 75 T)
         CALL Z,RXPOLL
         DEC HL
         DEC B
@@ -1951,7 +1942,6 @@ SCR:    DW 0
 RING:   DW 0
 LOGB:   DW 0
 LOGSZ:  DW 0
-LOGLIM: DW 0
 SCREND: DW 0
 CROW:   DB 0                    ; the host's cursor
 CCOL:   DB 0
@@ -1992,7 +1982,6 @@ LOGN:   DW 0
 RHEAD:  DW 0
 RTAIL:  DW 0
 LOST:   DW 0
-DROPS:  DB 0
 RCNT:   DW 0
 TMO:    DW 0                    ; RECV: the wait for the next byte
 SUM:    DB 0

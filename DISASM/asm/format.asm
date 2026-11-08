@@ -77,9 +77,7 @@
 ;  SOURCE:  project/MSDOS/poc/FORMAT.ASM (MASM, EXE2BIN)
 ;
 ;  CREDITS.  Original code: the FDD3000-MSDOS project (2026).  The Write
-;  Track loop on the Z80 side is CP/M FORMAT 2.0's.  Disassembly and
-;  annotation in the style of "The Complete TMX Portugal ROM
-;  Disassemblies", LoadZX Museum, 2026.
+;  Track loop on the Z80 side is CP/M FORMAT 2.0's.
 ;==============================================================================
 ; assemble: nasm -O0 -f bin
 %macro TRAP 1

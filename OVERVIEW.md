@@ -262,19 +262,22 @@ others).
 
 ### 2.9 TERM (`TERM.ASM`, `TERMZ80.ASM`)
 
-`TERM [port[:] [settings]] [/80] [/52] [/X|/R|/N] [/E] [/C]`: a serial terminal,
+`TERM [port[:] [settings]] [/80|/64] [/52] [/X|/R|/N] [/E] [/C]`: a serial terminal,
 like PuTTY's serial mode. The host on the channel gets a VT100 (or a
-VT52, `/52`) of 24 x 64 (or 80, `/80`); Ctrl-A brings a menu: quit, log
+VT52, `/52`) of 24 x 64 (`/64`, the default; or 80, `/80`); Ctrl-A brings a menu: quit, log
 to a file, local echo (also `/E`), implicit LF after CR (also `/C`), XMODEM receive / send (CRC or
 checksums), break. Flow control
 XON / XOFF (default), RTS / CTS or none.
 
 Like CPM.COM, TERM.COM carries a Z80 part (TERMZ80) that trap 1Ch copies
 over `COLD` and then calls by function (INIT, SESS, DRAW, RECV, SEND,
-BRK, LOG, CRC, FLUSH, MODE). The Z80 part polls the WD2123 (`RXPOLL`) in every
-waiting loop and between 32-byte pieces of block moves, so the one byte
-the chip holds is always taken (at 19 200 baud a byte comes every 2 100
-T-states), into a 2 KB ring; at 1 KB it stops the host. It keeps a copy
+BRK, LOG, CRC, FLUSH, MODE, HOLD). The Z80 part polls the WD2123 (`RXPOLL`) in every
+waiting loop, between 32-byte pieces of block moves and every 8 cells of
+a row drawn again, so the one byte the chip holds is taken in time (at
+19 200 baud a byte comes every 2 083 T-states; the longest gap measured
+on the emulator is about 2 100, so the margin is thin and the real
+terminal's answer times, not modelled, come on top), into a 2 KB ring;
+at 1 KB it stops the host. It keeps a copy
 of the host's screen and turns VT100 codes into the Timex terminal's few
 (ESC H I J K L M Y): the cursor by ESC Y, whole-screen scrolls by the
 terminal itself, scrolls in a region and line insert / delete by drawing

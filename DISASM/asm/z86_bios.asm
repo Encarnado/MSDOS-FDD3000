@@ -698,7 +698,7 @@ SECTIO_FAIL:
 ;
 ; Named after CBIOS A1.1's constants (bios_z80asm.asm, "Comandos de
 ; programacao"); a value CBIOS does not have, or has differently, gets a
-; suffix (dict/CONVENTIONS.md: one name, one value, across both corpora).
+; suffix (dict/CONVENTIONS.md: one name, one value, in every volume).
 ; Bit fields as the WD1770/1772 datasheet gives them:
 ;   Type I   (Restore 0000, Seek 0001, Step-In 010u):  bit 3 h (1 = no
 ;            spin-up wait), bit 2 V (verify the ID on arrival), bits 1-0
@@ -907,9 +907,9 @@ SELECT_RESTORE:				; (src: SEL2)
 ; The source glosses bit 7 low as "head loaded".  No latch bit loads a
 ; head (boot_findings #1; the WD1770 has no HLD pin).  CBIOS calls bit 7
 ; LUZ, lit by `res LUZ` in LIGHT and put out by `set LUZ` in LIGHTOF,
-; and this BIOS follows it (UNHOOK sets the bit).  fdd3000b.asm's HRD_LED
-; gives the opposite polarity (1 = on): the two corpora disagree, and
-; nothing here settles which is right (provisional).
+; and this BIOS follows it (UNHOOK sets the bit).  An earlier reading of
+; the boot ROM gave the opposite polarity (1 = on); nothing here settles
+; which is right (provisional).
 ; =====================================================================
 LATCHC:
 	ld	b,c		; B = drive + 1 turns of the loop below

@@ -1,7 +1,7 @@
 # DISASM — plan and status
 
 Commented, byte-identical disassemblies of the FDD3000-MSDOS binaries in the voice
-of the TC3256 corpus (ROMDIS / TOSDIS). Rules: `dict/CONVENTIONS.md`.
+Rules: `dict/CONVENTIONS.md`.
 Gate: `tools/roundtrip.sh`.
 
 ```

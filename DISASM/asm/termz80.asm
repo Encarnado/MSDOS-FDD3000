@@ -2,10 +2,10 @@
 ;  MS-DOS 1.25 ON THE TIMEX FDD3000  --  THE DISASSEMBLIES  --  10/10
 ;  TERMZ80.BIN - TERM.COM's Z80 part: a VT100 / VT52 serial terminal on
 ;  the WD2123, with the Timex terminal as screen and keyboard
-;  (Z80, 3468 bytes, runs at F12Ch over Z86.SYS's COLD)
+;  (Z80, 3448 bytes, runs at F12Ch over Z86.SYS's COLD)
 ;==============================================================================
 ;
-;  ROLE.  `TERM [port] [settings] [/80] [/52] [/X|/R|/N] [/E] [/C]` makes
+;  ROLE.  `TERM [port] [settings] [/80|/64] [/52] [/X|/R|/N] [/E] [/C]` makes
 ;  the FDD3000 a serial terminal: the host on one WD2123 channel (another
 ;  computer, a modem, a serial console) sees a VT100 - or with /52 a
 ;  VT52 - of 24 rows by 64 (or 80) columns, which the Timex terminal
@@ -29,35 +29,48 @@
 ;     TERM.COM's buffers (shadow screen, 2 KB ring, 8 KB log, XMODEM
 ;       block) lie in its own memory over its copy of this image; the
 ;       addresses reach INIT in a 13-byte parameter block (PB below).
-;  Inside TERM.COM the image sits at file offset C8Bh, behind a 16-byte
-;  header at C7Bh: the length (0D8Ch) and the Z86.SYS addresses it was
+;  Inside TERM.COM the image sits at file offset CC8h, behind a 16-byte
+;  header at CB8h: the length (0D78h) and the Z86.SYS addresses it was
 ;  assembled against, NEXT D83Bh, JPHL EB4Dh, PEEKEY EBE3h, GETKEY
 ;  EC00h, CONOUT EC0Eh, DCSP F12Ah, ENDBIOS F12Ch (z86.py termz80()).
 ;  This image uses JPHL, PEEKEY and GETKEY of those, and the REGS page;
 ;  it brings its own copy of the link's send routine (TSEND) instead of
-;  CONOUT.  Code and variables end at FEB7h, 72 bytes under the Z80
+;  CONOUT.  Code and variables end at FEA3h, 92 bytes under the Z80
 ;  stack (z86.py asserts TERMEND <= FF00h - 64).
 ;
 ;  KEY FINDINGS OF THIS DISASSEMBLY (notes/termz80_findings.md)
 ;   - Every wait polls the channel (RXPOLL): the WD2123 holds ONE
 ;     received byte, and the next, 2 083 T-states later at 19 200 baud,
-;     overwrites it.  The terminal link's nibble exchange, the block
-;     moves (32-byte pieces), scrolling and drawing all call RXPOLL on
-;     the way.  The exceptions: BRK's 250 ms break, and the key reads,
-;     which go through Z86.SYS's PEEKEY / GETKEY -> CONIN, a whole link
-;     exchange with no poll (a slow real terminal there could cost a
-;     byte; provisional).
-;   - The source header says the host is let go "at a quarter"; the
-;     code lets it go below 256 bytes (LOWAT = 1 page), an eighth of the
-;     ring.  It is stopped at 1 KB, half (HIWAT = 4 pages).  The README
-;     has it right.
-;   - LOGLIM keeps "256 bytes for the host's overrun", but the log never
-;     passes LOGLIM: what the host sends after the stop goes to the ring,
-;     and TERM.COM empties the log (LOGN = 0) before SESS runs again.
-;     The reserve is never used.
-;   - DROPS (bytes SERPUT gave up on) is counted and never read, by this
-;     image, TERM.COM or the tests.  SERPUT's give-up takes about 3.4 s
-;     at 4 MHz (210 T x 65 536 polls), not the source's "about 2 s".
+;     overwrites it.  The terminal link's nibble exchange (echo waits
+;     included), the block moves (32-byte pieces), scrolling and drawing
+;     all call RXPOLL on the way; the longest gap measured is about
+;     2 100 T, so the margin is thin.  The exception left: the key
+;     reads, which go through Z86.SYS's PEEKEY / GETKEY -> CONIN, a
+;     whole link exchange with no poll (a real terminal slower than
+;     ~58 us a step at 19 200 baud could cost a byte; class HW, a polled
+;     copy of CONIN does not fit).
+;   - FIXED 2026-11-08 (this build): DRAWR polled only every 16 cells
+;     and not at its entry, so a region scroll's rows drawn again left
+;     gaps of up to 3 282 T and lost bytes at 19 200 baud (10 of 13 136
+;     in test_term's region test).  It now polls at entry and every 8
+;     cells (DRAWR, DRAWR_TRIM).
+;   - FIXED 2026-11-08 (this build): RECV looked for a key only on the
+;     link, but DOS's console check while TERM.COM shows the progress
+;     takes the key to PEEKEY's buffer (KFLAG) first, so a key never
+;     cancelled a transfer.  RECV_POLL now asks PEEKEY.
+;   - FIXED 2026-11-08 (this build): TSEND's two echo waits now poll
+;     too (insurance against a terminal slow to echo; was ~2.9 ms
+;     unpolled each), and BRK's 250 ms break polls through HOLD's loop.
+;   - FIXED 2026-11-08 (this build): function 10 HOLD lets TERM.COM stop
+;     the host while its "done - a key" waits after a transfer (the
+;     host's prompt was lost there).
+;   - FIXED 2026-11-08 (this build): the write-only DROPS and the unused
+;     LOGLIM reserve (256 bytes of the log never used) are gone: the log
+;     fills to LOGSZ.  20 bytes shorter for all of the above.
+;   - FIXED 2026-11-08 (comments): the source header's "at a quarter"
+;     (LOWAT = 1 page: below 256 bytes, an eighth of the ring), SERPUT's
+;     "about 2 s" (3.4 s), HOLD's "100 ms" (120 ms), KEYOUT's "40 ms"
+;     (53 ms), RXPOLL's "less one", SENDN's "1-255".
 ;   - Error reset is CMDV OR ER: the RTS state in force is kept, unlike
 ;     Z86.SYS's SERR, whose fixed IOERR (37h) raises RTS.
 ;   - RXPOLL uses EXX: safe, because the interpreter never touches the
@@ -77,31 +90,31 @@
 ;
 ;  VERIFICATION.  Reassembles BYTE-IDENTICAL to bin/TERMZ80.BIN with
 ;  Wijnen z80asm v1.8 (tools/roundtrip.sh).  The image equals TERM.COM
-;  from file offset C8Bh to its end; the header at C7Bh was checked
+;  from file offset CC8h to its end; the header at CB8h was checked
 ;  against ../symbols/z80/Z86.SYS.sym.  Every instruction matches the
 ;  build listing ../symbols/z80/TERMZ80.lst.  Code partition
-;  (notes/partition_findings.md style): descent seeds T_TERM, the 10 DWs
+;  (notes/partition_findings.md style): descent seeds T_TERM, the 11 DWs
 ;  of FTAB, every DW of CTAB and PTAB (character + handler pairs), and
 ;  ICHS / DCHS / ECHS and CH_REDRAW (src: CH1), which CH_DISPATCH (src:
 ;  CH0) reaches by LD HL,handler / LD DE,CH_REDRAW / PUSH / PUSH / RET.
 ;  Everything is reached: no dead code.  Behaviour is exercised by
 ;  ../project/MSDOS/poc/test_term.py on the fdd86.py model (21 code
 ;  cases and 60 random batches against a Python VT100 / VT52 model, keys,
-;  local echo, /C, load with and without flow control, the log, XMODEM
-;  both ways, /52 and /80) - an emulator, with a terminal model that
-;  answers the link at once.
+;  local echo, /C, load with and without flow control, a scrolling
+;  region at 19 200 baud, the log, XMODEM both ways with a key, line
+;  hits and a stale answer, the host's output after a transfer, quit,
+;  /52 and /80) - an emulator, with a terminal model that answers the
+;  link at once.
 ;
-;  FILE:    TERMZ80.BIN, 3468 bytes
-;  MD5:     abb0d2751f017c72a716eabe318c0a07
-;  SHA256:  5823888f4d5aafe18f03f89271ecdc0c67a1e9a7bad36ff139f668c1cac1fe96
+;  FILE:    TERMZ80.BIN, 3448 bytes
+;  MD5:     5d49b74954fb4e41f3a05c6e0010d8f7
+;  SHA256:  1bc546975a61b98ed63625494ced29a6221f7e1fe6734f61887b5c4b77ae93e2
 ;  SOURCE:  ../project/MSDOS/poc/TERMZ80.ASM (z86.py termz80(), build.py
 ;           TERMZ80.INC)
 ;
 ;  CREDITS.  Original code: João Encarnado, for the FDD3000-MSDOS project
 ;  (2026).  The link protocol is CBIOS A1.1's (Antonio Nobrega, TMX
 ;  Portugal, 85/10/29); the host side follows DEC's VT100 and VT52.
-;  Disassembly and annotation in the style of "The Complete TMX Portugal
-;  ROM Disassemblies", LoadZX Museum, 2026.
 ;==============================================================================
 
 ; =====================================================================
@@ -117,7 +130,7 @@ ENDBIOS:	equ	0F12Ch		; end of the resident BIOS: COLD, then this
 
 ; ---- REGS page: TERM.COM's 8086 registers at the trap ----
 R_AL:		equ	0D000h		; AL: the result of SESS, RECV, SEND, CRC
-R_AH:		equ	0D001h		; AH: the function, 0-9
+R_AH:		equ	0D001h		; AH: the function, 0-10
 R_CL:		equ	0D002h		; CL: DRAW's first row
 R_CX:		equ	0D002h		; CX: counts in and out
 R_DX:		equ	0D004h		; DX: RECV's first wait; SESS's LOST; CRC
@@ -225,7 +238,7 @@ PS_YROW:	equ	5		; VT52 ESC Y: the row comes next
 PS_YCOL:	equ	6		;   then the column
 NPARMAX:	equ	4		; CSI parameters kept (PARS)
 
-NFUNC:		equ	10		; functions in FTAB
+NFUNC:		equ	11		; functions in FTAB
 
 
 	org	ENDBIOS
@@ -237,7 +250,7 @@ NFUNC:		equ	10		; functions in FTAB
 ;         holds TRAP's return to TRAPX (which pops IX and BC, the 8086
 ;         code pointer).  REGS = TERM.COM's registers, AH = function.
 ; Exit:   the function's RET goes to TRAPX; results are in REGS.  An AH
-;         of 10 or more returns at once, nothing done.
+;         of 11 or more returns at once, nothing done.
 ;
 ; Functions, with the register interface of TERMZ80.ASM's header:
 ;   0 INIT  SI = PB's linear address: set up, clear the screen
@@ -253,15 +266,17 @@ NFUNC:		equ	10		; functions in FTAB
 ;   7 CRC   CX bytes at SI: DX = CRC-16 (XMODEM), AL = 8-bit sum
 ;   8 FLUSH forget what has been received
 ;   9 MODE  DL: the flags 8 (local echo) and 10h (LF after CR)
+;  10 HOLD  stop the host (XOFF / RTS off) till the next SESS, RECV,
+;           SEND or BRK (TERM.COM, while "done - a key" waits)
 ; Addresses are 8086 linear ones, which are the Z80's (0000h-CFFFh).
 ; =====================================================================
 T_TERM:
 	ld	a,(R_AH)	; the function
-	cp	NFUNC		; 0-9 only: anything else is a no-op
+	cp	NFUNC		; 0-10 only: anything else is a no-op
 	ret	nc		; (back to TRAPX, REGS untouched)
 	add	a,a		; word index
 	ld	l,a		; HL = 2 x AH ...
-	ld	h,0		; (AH < 10: no overflow)
+	ld	h,0		; (AH < 11: no overflow)
 	ld	de,FTAB		; ... + the table
 	add	hl,de		; HL -> the entry
 	ld	a,(hl)		; the handler, low byte ...
@@ -270,19 +285,19 @@ T_TERM:
 	ld	l,a		; HL = handler
 	jp	(hl)		; its RET returns from the trap
 
-; FTAB - function number -> handler (AH = 0..9)
+; FTAB - function number -> handler (AH = 0..10)
 FTAB:
 	defw	F_INIT, F_SESS, F_DRAW, F_RECV, F_SEND, F_BRK, F_LOG, F_CRC
 					; 0 INIT  1 SESS  2 DRAW  3 RECV
 					; 4 SEND  5 BRK   6 LOG   7 CRC
-	defw	F_FLSH, F_MODE	; 8 FLUSH 9 MODE
+	defw	F_FLSH, F_MODE, HOLD	; 8 FLUSH 9 MODE  10 HOLD
 
 ; =====================================================================
 ; F_INIT - function 0: take the parameter block, set the channel's
 ; command, reset the terminal and clear the screen
 ; ---------------------------------------------------------------------
 ; Entry:  SI = linear address of TERM.COM's PBLK (13 bytes, PB layout).
-; Exit:   PB filled; SCREND, LOGLIM computed; log off, host not stopped,
+; Exit:   PB filled; SCREND computed; log off, host not stopped,
 ;         ring empty, counts 0; WD2123 command SIOWORD (RTS on); then
 ;         RESET (screen blank, terminal home).
 ; The channel's mode and baud rate were set by TERM.COM (INT 14h F1h)
@@ -296,16 +311,11 @@ F_INIT:
 	ld	a,(ROWS)	; the end of the shadow: row ROWS's start,
 	call	ROWP		;   SCR + ROWS x COLS
 	ld	(SCREND),hl	; (CLRALL and EDN fill up to it)
-	ld	hl,(LOGSZ)	; the log's limit: its size less 256 (DEC H)
-	dec	h		; (LOGSZ is a multiple of 256)
-	ld	(LOGLIM),hl	; 256 bytes kept for the host's overrun - never
-					;   used: see SESS_BYTE (src: SL3)
 	xor	a		; all off:
 	ld	(LOGON),a	; no log
 	ld	(STOPF),a	; the host not stopped
 	ld	(HOLDF),a	; nor held
 	ld	(TXQ),a		; no XON / XOFF queued
-	ld	(DROPS),a	; no bytes given up on
 	ld	h,a		; HL = 0
 	ld	l,a		; (L too)
 	ld	(LOGN),hl	; the log buffer empty
@@ -414,10 +424,10 @@ SESS_BYTE:				; (src: SL3)
 	pop	hl		; HL = LOGN
 	inc	hl		; one more
 	ld	(LOGN),hl		; (the new count)
-	ld	de,(LOGLIM)	; at the limit?  The test follows the store,
-	or	a		;   so LOGN never passes LOGLIM; what comes
-	sbc	hl,de		;   meanwhile goes to the ring and is logged
-	jr	c,SESS_SHOW	;   after TERM.COM has emptied the buffer
+	ld	de,(LOGSZ)	; full?  The test follows the store, so LOGN
+	or	a		;   never passes LOGSZ; what comes meanwhile
+	sbc	hl,de		;   goes to the ring and is logged after
+	jr	c,SESS_SHOW	;   TERM.COM has emptied the buffer
 	ld	a,c		; full: this byte still shown,
 	call	EMUL		; (shown before the stop, so nothing is skipped)
 	call	HOLD		; the host stopped,
@@ -430,8 +440,8 @@ SESS_SHOW:				; (src: SL4)
 	or	a		; (Z: running freely)
 	jr	z,SESS_LOOP	; no
 	call	LEVEL		; yes: let it go when the ring is below
-	ld	a,h		;   LOWAT pages (256 bytes: an eighth, not
-	cp	LOWAT		;   the source header's "a quarter")
+	ld	a,h		;   LOWAT pages (256 bytes: an eighth of
+	cp	LOWAT		;   the ring)
 	call	c,RESUME		; below LOWAT pages: XON / RTS on
 	jr	SESS_LOOP		; round again
 SMENU:
@@ -449,11 +459,13 @@ SRET:
 ; HOLD - stop the host and keep taking what it still sends, ~120 ms
 ; Exit:   STOPF = HOLDF = 1: RESUME refuses until HOLDF is cleared
 ;         (F_SESS, ENSURE).  Corrupts A, HL.
-; Callers: F_SESS (menu key, full log).
+; Callers: F_SESS (menu key, full log); T_TERM as function 10 (TERM.COM
+; after a transfer, so the host waits while "done - a key" is shown).
+; F_BRK uses HOLD_DRAIN alone, as a polled 250 ms wait.
 ; FLOWOFF is called directly, not STOP: the XOFF is queued again even
 ; if the host was already stopped.  3000 polls of 160 T are about
-; 120 ms at 4 MHz (the source says 100 ms): long enough for the XOFF to
-; go and a host's in-flight bytes to land in the ring.
+; 120 ms at 4 MHz: long enough for the XOFF to go and a host's
+; in-flight bytes to land in the ring.
 ; ---------------------------------------------------------------------
 HOLD:
 	ld	a,1		; stopped, and held so
@@ -507,7 +519,10 @@ DRAW_FROM:				; (src: FD1)
 ; by SERPUT's RXPOLL while BL went out); then the channel is read
 ; directly, without the ring and without flow control: XMODEM's
 ; lock-step is the flow control.  An overrun here is reset but not
-; counted in LOST.  The inner loop is 85 T: 470 turns = 10 ms at 4 MHz.
+; counted in LOST.  A key is asked of PEEKEY, not read off the link:
+; DOS's console check (TERM.COM's progress line) may already have taken
+; it to PEEKEY's buffer (KFLAG), where the link no longer shows it.
+; The inner loop is 137 T: 292 turns = 10 ms at 4 MHz.
 ; =====================================================================
 F_RECV:
 	call	ENSURE		; host let go, RTS on, the XON gone
@@ -531,15 +546,13 @@ RECV_NEXT:				; (src: FR1)
 	ld	c,a		; (C: IN A,(C) below)
 	ld	de,(TMO)	; DE = 10 ms units left
 RECV_10MS:				; (src: FR2)
-	ld	hl,470		; about 10 ms
+	ld	hl,292		; about 10 ms
 RECV_POLL:				; (src: FR3)
 	in	a,(c)		; the channel's status: RxRDY?
 	bit	1,a		; (status bit 1)
 	jr	nz,RECV_GOT		; a byte: take it
-	in	a,(COM)		; the terminal's idle code:
-	and	MASK		; (link bits only)
-	cp	KEYRDY		; a key
-	jr	z,RECV_KEY		; a key: the transfer is cancelled
+	call	PEEKEY		; a key?  (no key: only A and F change,
+	jr	c,RECV_KEY		;   so HL, DE, C live) cancels the transfer
 	dec	hl		; one poll of 10 ms fewer
 	ld	a,h		; (16-bit zero test)
 	or	l		; (HL = 0?)
@@ -617,24 +630,18 @@ SEND_RET:				; (src: FS3)
 ; F_BRK - function 5: a break of about 250 ms
 ; ---------------------------------------------------------------------
 ; The command's break bit holds TxD at space; it is written without
-; going into CMDV, so CMDOUT ends it.  25 x 10 ms: 1538 turns of a
-; 26 T loop are 39 988 T, 10 ms at 4 MHz.  No RXPOLL meanwhile: a host
-; that sends during the break loses all but its last byte.
+; going into CMDV, so CMDOUT ends it.  The wait is HOLD's polled loop:
+; 6250 turns of 160 T are 1.0 M T, 250 ms at 4 MHz, and what the host
+; sends meanwhile goes to the ring.  (If the ring reached HIWAT during
+; the break, STOP's XOFF would go out under the break and be lost.)
 ; =====================================================================
 F_BRK:
 	call	ENSURE		; host let go, RTS on
 	ld	a,(CMDV)	; the command in force ...
 	or	SIO_SBRK	; ... with send break
 	call	CMDA		; TxD held at space (CMDV unchanged)
-	ld	b,25		; 25 x 10 ms
-BRK_10MS:				; (src: FB1)
-	ld	hl,1538		; 10 ms
-BRK_SPIN:				; (src: FB2)
-	dec	hl		; one 26 T turn
-	ld	a,h		; (16-bit zero test)
-	or	l		; (HL = 0?)
-	jr	nz,BRK_SPIN		; until 10 ms
-	djnz	BRK_10MS		; 25 times
+	ld	hl,6250		; 250 ms, taking received bytes
+	call	HOLD_DRAIN	; (HOLD's loop: RXPOLL 6250 times)
 	jp	CMDOUT		; CMDV again: the break ends
 
 ; =====================================================================
@@ -829,7 +836,7 @@ RXPOLL_TAKE:				; (src: RXP3)
 	sbc	hl,bc		; new head - tail
 	jr	z,RXPOLL_FULL	; full: the byte is lost
 	ld	a,h		; A = the level's high byte, this byte
-	add	hl,bc		;   included (the source: "less one")
+	add	hl,bc		;   included
 	ld	(RHEAD),hl	; the byte is in
 	and	RINGM		; (wrapped: head - tail mod 2048)
 	cp	HIWAT		; half full?
@@ -946,13 +953,11 @@ CMDA:
 ; ---------------------------------------------------------------------
 ; Entry:  A = the byte.
 ; Exit:   CF = 0 sent; CF = 1 CTS (status bit 7: the WD2123 has no DSR)
-;         or TxRDY stayed off for 65 536 polls and the byte was dropped
-;         (DROPS + 1, saturating at 255 - a count nothing reads).
+;         or TxRDY stayed off for 65 536 polls and the byte was dropped.
 ;         Keeps BC, DE, HL; corrupts A.
 ; Callers: F_RECV, F_SEND, SENDS, SENDN, KEYOUT, DSR.
 ; Received bytes are taken meanwhile (RXPOLL).  A poll is 210 T, so
-; the give-up comes after ~13.8 M T = 3.4 s at 4 MHz (source: "about
-; 2 s").  The CTS test is Z86.SYS SPUT's (IOMASK), so an unwired CTS
+; the give-up comes after ~13.8 M T = 3.4 s at 4 MHz.  The CTS test is Z86.SYS SPUT's (IOMASK), so an unwired CTS
 ; input stops TERM's sending as it stops PRN / AUX.
 ; ---------------------------------------------------------------------
 SERPUT:
@@ -973,12 +978,7 @@ SERPUT_WAIT:				; (src: QSP1)
 	ld	a,h		; (16-bit zero test)
 	or	l		; (HL = 0?)
 	jr	nz,SERPUT_WAIT		; keep trying
-	ld	a,(DROPS)	; given up: one more dropped, at most 255
-	inc	a		; DROPS + 1 ...
-	jr	z,SERPUT_FAIL		; ... unless it would wrap to 0
-	ld	(DROPS),a		; (DROPS kept at 255 at most)
-SERPUT_FAIL:				; (src: SP0)
-	scf			; CF = 1: not sent
+	scf			; given up: CF = 1, not sent
 	jr	SERPUT_RET		; (common exit)
 SERPUT_SEND:				; (src: QSP2)
 	dec	c		; the data port
@@ -1004,8 +1004,8 @@ SENDS:
 
 ; ---------------------------------------------------------------------
 ; SENDN - A in decimal to the channel, no leading zeros
-; Entry:  A = 0-255 (the source says 1-255; 0 sends "0": the units
-;         digit is always sent).  Corrupts A, BC, DE.
+; Entry:  A = 0-255 (0 sends "0": the units digit is always sent).
+;         Corrupts A, BC, DE.
 ; Callers: DSR (the cursor position report).
 ; SENDN_DIGIT: one digit of weight B; C = 1 once a digit has gone.
 ; ---------------------------------------------------------------------
@@ -1050,7 +1050,7 @@ SENDN_OUT:				; (src: SN3)
 ; The Timex terminal's arrow keys send ESC A..D.  For a VT100 host they
 ; become ESC [ A..D, or ESC O A..D in cursor key mode (CKM, set by
 ; ESC [ ? 1 h).  An ESC not followed within ~53 ms (800 polls of
-; ~265 T; the source says 40 ms) by A..D goes alone, and the key that
+; ~265 T) by A..D goes alone, and the key that
 ; came after it stays held in PEEKEY's buffer for SESS.  A VT52 host
 ; gets the keys as they are.
 ; Local echo (FL_ECHO): the key also goes to the screen (EMUL), CR as
@@ -1065,7 +1065,7 @@ KEYOUT:
 	ld	a,(KCH)		; ESC?
 	cp	ESC		; (the arrows start with ESC)
 	jr	nz,KEYOUT_SEND	; no: as it is
-	ld	hl,800		; about 50 ms for an arrow's letter
+	ld	hl,800		; about 53 ms for an arrow's letter
 KEYOUT_WAIT:				; (src: KO1)
 	call	RXPOLL		; the channel is not forgotten while waiting
 	push	hl		; (PEEKEY corrupts A BC DE; HL kept to be safe)
@@ -1169,8 +1169,9 @@ TOUT_RET:				; (src: TO3)
 ; Z86.SYS's COSEND (CBIOS A1.1 TXBY) code for code - BYTEON until
 ; SERVICO, low nibble + CSTAT and high nibble + BSTAT each until echoed,
 ; STMSK - with RXPOLL in the endless BYTEON wait, the one that waits for
-; the terminal.  The echo waits stay short (255 x ~45 T, ~2.9 ms) and
-; unpolled, as COSEND's.  Same codes, so the terminal cannot tell.
+; the terminal, and in both echo waits (255 x ~179 T, ~11.4 ms: only a
+; dead link times out, so the longer wait does no harm).  Same codes,
+; so the terminal cannot tell.
 ; ---------------------------------------------------------------------
 TSEND:
 	ld	a,b		; low nibble in E
@@ -1197,6 +1198,7 @@ TSEND_OFFER:				; (src: TS1)
 	ld	b,a		; the echo to wait for
 	ld	c,0		; 255 polls
 TSEND_ECHO_LO:				; (src: TS2)
+	call	RXPOLL		; (a slow echo must not cost a byte)
 	in	a,(COM)		; the terminal's side
 	dec	c		; one poll fewer
 	jr	z,TSEND_FAIL	; no echo in time
@@ -1209,6 +1211,7 @@ TSEND_ECHO_LO:				; (src: TS2)
 	ld	b,a		; the echo to wait for
 	ld	c,0		; 255 polls
 TSEND_ECHO_HI:				; (src: TS3)
+	call	RXPOLL		; (as for the low nibble)
 	in	a,(COM)		; the terminal's side
 	dec	c		; one poll fewer
 	jr	z,TSEND_FAIL	; no echo in time
@@ -1362,9 +1365,13 @@ CLRK:
 ; Only up to the last non-blank cell is drawn; the rest of the line,
 ; if any, is cleared with one ESC K.  C = the last column drawable:
 ; COLS-1, or COLS-2 on the bottom row (TPUT would skip it anyway).
-; The trailing-blank scan polls the channel every 16 cells.
+; DRAWR polls on entry (a row may follow a row, or a scroll's block
+; move) and the trailing-blank scan every 8 cells (75 T a cell): with
+; 16 and no entry poll the gaps reached 3 282 T, over a character at
+; 19 200 baud.
 ; ---------------------------------------------------------------------
 DRAWR:
+	call	RXPOLL		; (a row may follow a row, or a scroll)
 	ld	a,(COLS)	; C = the last column to draw ...
 	dec	a		; COLS - 1
 	ld	c,a
@@ -1389,8 +1396,8 @@ DRAWR_TRIM:				; (src: DR2)
 	ld	a,b		; back at the first column: all blank
 	cp	e
 	jr	z,CLRK		; all blank
-	and	15		; a poll every 16 cells
-	call	z,RXPOLL		; (every 16 columns, a poll)
+	and	7		; a poll every 8 cells
+	call	z,RXPOLL		; (every 8 columns, a poll)
 	dec	hl		; one cell left ...
 	dec	b		; ... one column left
 	jr	DRAWR_TRIM		; round again
@@ -2842,8 +2849,6 @@ LOGB:
 LOGSZ:
 	defw	0		;   and its size
 ; ---- derived by F_INIT ----
-LOGLIM:
-	defw	0		; LOGSZ - 256: SESS stops at it
 SCREND:
 	defw	0		; SCR + ROWS x COLS
 ; ---- the host's screen ----
@@ -2928,12 +2933,10 @@ RTAIL:
 	defw	0		; ... and tail (next to read), 0-2047
 LOST:
 	defw	0		; bytes lost: overruns, ring full (SESS's DX)
-DROPS:
-	defb	0		; bytes SERPUT gave up on (never read)
 RCNT:
 	defw	0		; RECV: bytes received
 TMO:
 	defw	0	; RECV: the wait for the next byte
 SUM:
 	defb	0		; CRC: the 8-bit sum
-TERMEND:				; FEB8h: 72 bytes below the Z80 stack's FF00h
+TERMEND:				; FEA4h: 92 bytes below the Z80 stack's FF00h

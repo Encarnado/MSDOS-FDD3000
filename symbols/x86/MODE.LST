@@ -13,21 +13,22 @@
 	 	 	 	 (DOS's PRN), AUX or COM2 for
 7	 	 	 	 	; channel B (DOS's AUX); COM1 and COM2 
 	 	 	 	are INT 14H's ports 0 and 1.
-8	 	 	 	 	; baud: 50 75 110 134.5 150 200 300 600
-	 	 	 	 1200 1800 2400 3600 4800 7200 9600
-9	 	 	 	 	; 19200, or the PC's 11 15 30 60 12 24 
-	 	 	 	48 96 19. parity: N, O or E. data
-10	 	 	 	 	; bits: 5 to 8. stop bits: 1, 1.5 or 2.
-	 	 	 	 A setting left out stays as it
-11	 	 	 	 	; is. MODE with a port alone shows its 
-	 	 	 	settings, with no port both.
+8	 	 	 	 	; baud: 50 75 110 134.5 (or 134) 150 20
+	 	 	 	0 300 600 1200 1800 2400 3600 4800
+9	 	 	 	 	; 7200 9600 19200, or the PC's 11 15 30
+	 	 	 	 60 12 24 48 96 19. parity: N, O or
+10	 	 	 	 	; E. data bits: 5 to 8. stop bits: 1, 1
+	 	 	 	.5 or 2. A setting left out stays
+11	 	 	 	 	; as it is. MODE with a port alone show
+	 	 	 	s its settings, with no port both.
 12	 	 	 	 	;
 13	 	 	 	 	; The settings go to the chip through I
-	 	 	 	NT 14H's FDD3000 calls (BIOS.ASM,
-14	 	 	 	 	; I86.ASM's I14X): F0H reads the mode b
-	 	 	 	yte and baud code the BIOS last
-15	 	 	 	 	; set, F1H sets them. CP/M programs run
-	 	 	 	 by CPM.COM use the same settings.
+	 	 	 	NT 14H's FDD3000 calls (BIOS.ASM's
+14	 	 	 	 	; I14X, with I86.ASM's I14RD and SSET):
+	 	 	 	 F0H reads the mode byte and baud
+15	 	 	 	 	; code the BIOS last set, F1H sets them
+	 	 	 	. CP/M programs run by CPM.COM use the same set
+	 	 	 	tings.
 16	 	 	 	 	; Every boot sets both channels to 1200
 	 	 	 	 baud, no parity, 8 bits, 1.5 stop
 17	 	 	 	 	; bits, as the FDD3000's CP/M does: put
@@ -54,11 +55,11 @@
 32	 0107  20 20 20 20	 	NAMBUF  DB      "    "          ; the p
 	 	 	 	ort's name, then a field
 33	 010B  20 20 20 20 20 20	TOKEN   DB      "      "
-34	 	 	 	 	
  The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-2
 
 
 
+34	 	 	 	 	
 35	 	 	 	 	; port names: 4 characters, then the ch
 	 	 	 	annel
 36	 0111  50 52 4E 20 00 4C	PORTS   DB      "PRN ",0,"LPT1",0,"COM1
@@ -111,11 +112,11 @@
 76	 01D0  50 52 4E 3A 20 24	PRNMSG  DB      "PRN: $"
 77	 01D6  41 55 58 3A 20 24	AUXMSG  DB      "AUX: $"
 78	 01DC  20 62 61 75 64 2C	BAUMSG  DB      " baud, $"
-79	       20 24	 	 	
  The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-3
 
 
 
+79	       20 24	 	 	
 80	 01E4  6E 6F 24	 	 	NOPMSG  DB      "no$"
 81	 01E7  6F 64 64 24	 	ODDMSG  DB      "odd$"
 82	 01EB  65 76 65 6E 24	 	EVNMSG  DB      "even$"
@@ -168,11 +169,11 @@
 124	       36 30 30 20 31 32	
 125	       30 30 20 31 38 30	
 126	       30 20 32 34 30 30	
-127	       20 33 36 30 30 0D	
  The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-4
 
 
 
+127	       20 33 36 30 30 0D	
 128	       0A	 	 	
 129	 02EC  20 20 20 20 20 20	        DB      "        4800 7200 9600
 	 	 	 	 19200",13,10,"$"
@@ -225,11 +226,11 @@
 172	 0359  5E	 	 	        POP     SI
 173	 035A  74 09	 	 	        JZ      PORT2
 174	 035C  83 C3 05	 	 	        ADD     BX,5
-175	 035F  FE CA	 	 	        DEC     DL
  The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-5
 
 
 
+175	 035F  FE CA	 	 	        DEC     DL
 176	 0361  75 EB	 	 	        JNZ     PORT1
 177	 0363  EB 16	 	 	        JMP     SHORT BAD
 178	 0365  8A 47 04	 	 	PORT2:  MOV     AL,[BX+4]
@@ -282,11 +283,11 @@
 222	 03CD  88 16 0106 R	 	BAUD3:  MOV     [BAUDC],DL
 223	 03D1  E8 045B R	 	PAR:    CALL    COMMA           ; parit
 	 	 	 	y
-224	 03D4  72 71	 	 	        JB      SETX
  The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-6
 
 
 
+224	 03D4  72 71	 	 	        JB      SETX
 225	 03D6  74 1C	 	 	        JZ      DBITS
 226	 03D8  B4 00	 	 	        MOV     AH,0            ; AH: t
 	 	 	 	he parity bits
@@ -339,11 +340,11 @@
 270	 0444  E9 037B R	 	BAD1:   JMP     BAD
 271	 0447  B4 F1	 	 	SETX:   MOV     AH,0F1H
 272	 0449  A0 0105 R	 	        MOV     AL,[MODEB]
-273	 044C  8A 0E 0106 R	 	        MOV     CL,[BAUDC]
  The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-7
 
 
 
+273	 044C  8A 0E 0106 R	 	        MOV     CL,[BAUDC]
 274	 0450  8B 16 0103 R	 	        MOV     DX,[CHAN]
 275	 0454  CD 14	 	 	        INT     20
 276	 0456  E8 04B7 R	 	        CALL    SHOW
@@ -396,11 +397,11 @@
 318	 0497  AA	 	 	        STOSB
 319	 0498  46	 	 	        INC     SI
 320	 0499  49	 	 	        DEC     CX
-321	 049A  EB E3	 	 	        JMP     GETW1
  The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-8
 
 
 
+321	 049A  EB E3	 	 	        JMP     GETW1
 322	 049C  3B CB	 	 	GETW3:  CMP     CX,BX
 323	 049E  74 07	 	 	        JZ      GETWX
 324	 04A0  B0 20	 	 	        MOV     AL," "
@@ -453,11 +454,11 @@
 368	 04F5  BA 01E7 R	 	        MOV     DX,OFFSET ODDMSG
 369	 04F8  F6 C3 20	 	 	        TEST    BL,20H
 370	 04FB  74 03	 	 	        JZ      SHOW2
-371	 04FD  BA 01EB R	 	        MOV     DX,OFFSET EVNMSG
  The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-9
 
 
 
+371	 04FD  BA 01EB R	 	        MOV     DX,OFFSET EVNMSG
 372	 0500  E8 054C R	 	SHOW2:  CALL    PUTS
 373	 0503  BA 01F0 R	 	        MOV     DX,OFFSET PARMSG
 374	 0506  E8 054C R	 	        CALL    PUTS

@@ -1,7 +1,7 @@
 ;==============================================================================
 ;  MS-DOS 1.25 ON THE TIMEX FDD3000  --  THE DISASSEMBLIES  --  9/10
 ;  TERM.COM - a serial terminal on the WD2123, with XMODEM and a log
-;  (8086 .COM, 6679 bytes, runs at CS:0100h; carries volume 10 inside)
+;  (8086 .COM, 6720 bytes, runs at CS:0100h; carries volume 10 inside)
 ;==============================================================================
 ;
 ;  ROLE.  `TERM [port[:] [settings]] [/opts]` turns the Timex terminal
@@ -9,9 +9,9 @@
 ;  serial channels: what the host sends is drawn, what is typed goes to
 ;  the host.  Ctrl-A brings a menu on the bottom line: quit, log to a
 ;  file, local echo, implicit LF, XMODEM receive / send, break.  Like
-;  CPM.COM (volume 6) it is two programs in one: 3195 bytes of 8086 code
-;  and data (0100h-0D7Ah), run by Z86.SYS's interpreter like any .COM,
-;  and from 0D7Bh the Z80 part, TERMZ80 (volume 10), behind a 16-byte
+;  CPM.COM (volume 6) it is two programs in one: 3256 bytes of 8086 code
+;  and data (0100h-0DB7h), run by Z86.SYS's interpreter like any .COM,
+;  and from 0DB8h the Z80 part, TERMZ80 (volume 10), behind a 16-byte
 ;  header.  The division of labour follows speed: everything that must
 ;  keep up with the line (the WD2123 holds one received byte; at 19 200
 ;  baud the next one overwrites it about 2 100 T-states later) is Z80
@@ -26,14 +26,15 @@
 ;       ->  options, port and settings parsed; INT 14h AH=F1h sets the
 ;           channel (only when settings were given)
 ;       ->  TRAP 1Ch, BP = linear address of the header at Z80IMG
-;           (0D7Bh): Z86.SYS's T_CPML (volume 2) checks the header's 7
-;           addresses and copies the 3468-byte image to ENDBIOS (F12Ch,
+;           (0DB8h): Z86.SYS's T_CPML (volume 2) checks the header's 7
+;           addresses and copies the 3448-byte image to ENDBIOS (F12Ch,
 ;           over COLD); the image's place here becomes the buffers
 ;       ->  TRAP 1Ch, BP = 0, AH = function: JP ENDBIOS = TERMZ80's
-;           T_TERM, which dispatches AH 0-9 (TZ_INIT .. TZ_MODE below)
+;           T_TERM, which dispatches AH 0-10 (TZ_INIT .. TZ_HOLD below)
 ;           and RETs out of the trap.  SESS (AH = 1) is the session; it
 ;           comes back only for the menu key or a full log buffer
-;       ->  menu Q: log closed, cursor to the bottom line, INT 20h
+;       ->  menu Q: log closed, the host let go (SEND of nothing =
+;           ENSURE), cursor to the bottom line, INT 20h
 ;
 ;  THE TERMZ80 FUNCTIONS (TERMZ80.ASM header; trap 1Ch with BP = 0)
 ;     AH 0 INIT   SI = linear PBLK (13 bytes, below): set up, clear screen
@@ -49,51 +50,67 @@
 ;     AH 7 CRC    CX bytes at linear SI: DX = CRC-16 (XMODEM), AL = sum
 ;     AH 8 FLUSH  forget what has been received (empty the ring)
 ;     AH 9 MODE   DL = PFLAGS: bits 8 (echo) and 10h (LF after CR) taken
+;     AH 10 HOLD  stop the host (XOFF / RTS off) till the next SESS, RECV,
+;                 SEND or BRK (XDONE / XEND, while "a key" waits)
 ;  Addresses passed are linear (BASE + offset): the 8086's memory is the
 ;  Z80's 0000h-CFFFh, so a linear address is a Z80 address.
 ;
 ;  MEMORY OF THIS PROGRAM ONCE TERMZ80 IS LOADED (offsets in our segment)
-;     0100h-0D7Ah  8086 code, variables, tables, messages, 128-byte stack
-;     0D7Bh        SCRBUF   shadow of the host's screen, 24 x 80 at most
-;     14FBh        RINGBUF  the receive ring, RINGSZ = 2048
-;     1CFBh        LOGBUF   the log buffer, LOGSZ = 8192
-;     3CFBh-3D7Fh  XBUF     one XMODEM block, 133 bytes
-;  The file ends at 1B16h; the buffers cover the dead image and run on
+;     0100h-0DB7h  8086 code, variables, tables, messages, 128-byte stack
+;     0DB8h        SCRBUF   shadow of the host's screen, 24 x 80 at most
+;     1538h        RINGBUF  the receive ring, RINGSZ = 2048
+;     1D38h        LOGBUF   the log buffer, LOGSZ = 8192
+;     3D38h-3DBCh  XBUF     one XMODEM block, 133 bytes
+;  The file ends at 1B3Fh; the buffers cover the dead image and run on
 ;  past it (the .COM owns the whole segment; nothing checks the size).
 ;
 ;  KEY FINDINGS OF THIS DISASSEMBLY (notes/term_findings.md)
-;   - QUIT leaves the host stopped.  The menu is entered through
-;     TERMZ80's HOLD (XOFF queued and sent, or RTS dropped with /R), and
-;     only a later SESS / RECV / SEND lets the host go again.  Q goes
-;     straight to INT 20h, so after TERM ends the host sits XOFFed (or
-;     with RTS off) until something else sends XON.  By reading both
-;     sources; test_term.py never presses Q.
-;   - XMODEM: one CAN as a block's first byte ends a transfer ("Cancelled
-;     by the other side"; most programs want two); the sender's wait for
-;     'C' / NAK restarts its 60 s on every other byte (only a key or
-;     silence ends it); a block numbered BLK-1 is ACKed and dropped,
-;     which also quietly skips a YMODEM block 0; a failed or cancelled
-;     receive keeps the partial file; retries: 10 on receive (JA), 9
-;     re-sends on send (JB).  The received file is whole blocks: ^Z
-;     padding included (test_term.py compares against `padded`).
-;   - /64 is accepted (64 columns, the default) but not in the usage.
-;   - Three MASM 1.10 forward-reference NOPs: `JMP LOGSW` (EB 64 90),
-;     `JMP SHOW1` (EB 22 90), and `MOV [XBUF],SOH` (C6 06 FB 3C 01 90):
+;   - FIXED 2026-11-08 (this build): QUIT left the host stopped.  The
+;     menu is entered through TERMZ80's HOLD (XOFF, or RTS off with /R)
+;     and Q went straight to INT 20h, so the host stayed XOFFed (a new
+;     TERM did not free it either: INIT clears STOPF, so no XON until
+;     Ctrl-Q).  QUIT_EXIT now does a SEND of nothing, TERMZ80's ENSURE.
+;   - FIXED 2026-11-08 (this build): receiving, the first byte alone
+;     decided: a line hit turning a block's SOH into EOT ended the
+;     transfer as "done" with a short file, into CAN as "cancelled".
+;     Now an EOT counts only alone (CX = 1) and a cancel only as two
+;     CANs (YMODEM's graceful abort); anything else is a bad block.
+;   - FIXED 2026-11-08 (this build): sending, a stale byte (a second
+;     start-up 'C' crossing block 1) made TERM read every later answer
+;     one block late, and a later NAK then killed the transfer.  Any
+;     answer but ACK now waits for a quiet line (PURGE, which reads into
+;     ANSB, not into the XBUF about to be sent again).
+;   - FIXED 2026-11-08 (this build): what the host sent while "done - a
+;     key" waited (the shell's prompt) was lost: XDONE and XEND now stop
+;     it first with TERMZ80's new HOLD function (AH = 10).
+;   - FIXED 2026-11-08 (this build): /64 (64 columns, the default) is in
+;     the usage now.
+;   - XMODEM, left as they are: one CAN still cancels a send (as an
+;     answer, or in the wait for 'C'); the sender's wait for 'C' / NAK
+;     restarts its 60 s on every other byte (only a key or silence ends
+;     it); a block numbered BLK-1 is ACKed and dropped, which also
+;     quietly skips a YMODEM block 0; a failed or cancelled receive
+;     keeps the partial file; retries: 10 on receive (JA), 9 re-sends on
+;     send (JB); receive waits 3 s for a block (the convention: 10 s).
+;     The received file is whole blocks: ^Z padding included
+;     (test_term.py compares against `padded`).
+;   - Three MASM 1.10 forward-reference NOPs: `JMP LOGSW` (EB 69 90),
+;     `JMP SHOW1` (EB 27 90), and `MOV [XBUF],SOH` (C6 06 38 3D 01 90):
 ;     XBUF is an EQU defined after the code, so pass 1 sized the move
 ;     before knowing it was a BYTE location.
 ;   - The header carries the same 7 Z86.SYS addresses as CPM.COM's
 ;     (z86.py termz80() reuses cpmz80()'s names); TERMZ80 uses JPHL,
-;     PEEKEY, GETKEY, CONOUT and ENDBIOS but not NEXT or DCSP, and it
+;     PEEKEY, GETKEY and ENDBIOS but not NEXT, CONOUT or DCSP, and it
 ;     also uses REGS-page names (R_AH, R_SI ...) the header does not
-;     check.  TERMZ80 ends at FEB8h, 8 bytes under z86.py's FEC0h limit.
+;     check.  TERMZ80 ends at FEA4h, 28 bytes under z86.py's FEC0h limit.
 ;   - A logging session that fills the disk while being closed closes
 ;     LFCB twice (LOGWR's disk-full path, then LOGOFF's own close).
 ;
 ;  VERIFICATION.  Reassembles BYTE-IDENTICAL to bin/TERM.COM with NASM
 ;  (nasm -O0 -f bin, tools/roundtrip.sh term).  Every instruction
 ;  matches the MASM listing ../symbols/x86/TERM.LST; every label is at
-;  the address TERM.COM.sym gives.  The header at 0D7Bh was checked
-;  against ../symbols/z80/Z86.SYS.sym, and the 3468 bytes after it are
+;  the address TERM.COM.sym gives.  The header at 0DB8h was checked
+;  against ../symbols/z80/Z86.SYS.sym, and the 3448 bytes after it are
 ;  bin/TERMZ80.BIN byte for byte (volume 10), included with incbin.
 ;  On the emulated FDD3000 (fdd86.py, a host on channel B sending in
 ;  real time) test_term.py checks: start-up (AUX:9600 gives mode 8Eh,
@@ -104,9 +121,12 @@
 ;  (12 KB at 19200 through the 8 KB buffer: the file is every byte);
 ;  XMODEM receive with CRC (block 6 corrupted once, 9600; and 19200)
 ;  and with checksums after three 'C's, and send with CRC and with
-;  checksums (the files are the same bytes); /52 and /80.  Not tested:
-;  Q, the usage / port / baud error paths, disk full, cancel by key or
-;  by CAN, the retry limits, a duplicated block.
+;  checksums (the files are the same bytes); a key cancelling a
+;  receive; a line hit on a block's SOH (into EOT, into CAN) and two
+;  CANs; a stale 'C' and a NAK while sending; the host's prompt after a
+;  transfer kept (/R); Q letting the host go (/X, /R); /52 and /80.
+;  Not tested: the usage / port / baud error paths, disk full, the
+;  retry limits.
 ;  HARDWARE: the merged build containing TERM has NOT been run on a real
 ;  FDD3000 (notes/hardware_run.md has no TERM run).  João's own build:
 ;  his poc README records an interactive TERM session against PuTTY
@@ -117,9 +137,9 @@
 ;  timing figure are emulator results (test_term.py).  To be confirmed
 ;  with João.
 ;
-;  FILE:    TERM.COM, 6679 bytes
-;  MD5:     e28710898db1d2cb34972e30b1201089
-;  SHA256:  a50bf0384031f6e1e67d3b011464030fb82e17d3ca15c338b7a48cb62403c875
+;  FILE:    TERM.COM, 6720 bytes
+;  MD5:     e90007ca84fbc6f8b53da643c9d17e12
+;  SHA256:  38af8d79fcf965599ea4f939c98a383cc387e2d95fb5755f2b74e227649423d7
 ;  SOURCE:  ../project/MSDOS/poc/TERM.ASM (MASM 1.10), with TERMZ80.INC
 ;           (z86.py termz80(): header + TERMZ80.ASM's code) by build.py
 ;
@@ -127,8 +147,7 @@
 ;  project (2026).  Not Microsoft code: MS-DOS 1.25 has no terminal
 ;  program.  XMODEM after Ward Christensen (1977), CRC-16 variant after
 ;  John Byrns; the command line's port and settings as MODE.COM
-;  (volume 8).  Disassembly and annotation in the style of "The Complete
-;  TMX Portugal ROM Disassemblies", LoadZX Museum, 2026.
+;  (volume 8).
 ;==============================================================================
 
 ; =====================================================================
@@ -233,6 +252,7 @@ TZ_LOG		equ	6	; DX = log on / off, CX = LOGN
 TZ_CRC		equ	7	; DX = CRC-16, AL = sum of CX bytes at SI
 TZ_FLUSH	equ	8	; empty the receive ring
 TZ_MODE		equ	9	; DL = flags (echo, LF after CR)
+TZ_HOLD		equ	10	; stop the host till SESS / RECV / SEND / BRK
 
 ; ---- PFLAGS bits (TERMZ80's P_FLAGS) ----
 PF_VT52		equ	01h	; /52: the host sends VT52 codes
@@ -317,7 +337,7 @@ PRING:
 PLOG:
 	dw 0	; +9  P_LOG: linear LOGBUF
 PLOGSZ:
-	dw LOGSZ	; +11 P_LOGSZ: 8192 (TERMZ80 keeps 256 for overrun)
+	dw LOGSZ	; +11 P_LOGSZ: 8192 (TERMZ80 fills it to the end)
 
 ; ---- the log ----
 LOGON:
@@ -406,11 +426,11 @@ NABAUDS equ 10
 USEMSG:
 	db "Invalid parameter",13,10,13,10	; any command-line error
 	db "Usage: TERM [port[:] [baud][,[N|O|E][,[5-8][,[1|1.5|2]]]]]",13,10
-	db "            [/80] [/52] [/X|/R|/N] [/E] [/C]",13,10
+	db "            [/80|/64] [/52] [/X|/R|/N] [/E] [/C]",13,10
 	db "  port: PRN, LPT1 or COM1 (channel A), AUX or COM2 (channel B)",13,10
 	db "  /80 80 columns, /52 VT52 host, /X XON/XOFF, /R RTS/CTS, /N none",13,10
-	db "  /E local echo, /C LF after each CR received",13,10
-	db "  Ctrl-A: the menu$"	; (/64 is accepted too, not listed)
+	db "  /E local echo, /C LF after each CR received, /64 64 columns",13,10
+	db "  Ctrl-A: the menu$"	; (all on 64 columns or fewer)
 CRLF:
 	db 13,10,"$"	; ends the usage
 VERMSG:
@@ -520,7 +540,7 @@ OPT:
 	mov bl,0x2	; BL: the option's length
 	cmp ax,'0'*256+'8'	; "80": 80 columns
 	jz short OPT80	; /80
-	cmp ax,'4'*256+'6'	; "64": 64 columns (the default; not in USEMSG)
+	cmp ax,'4'*256+'6'	; "64": 64 columns (the default)
 	jz short OPT64	; /64
 	cmp ax,'2'*256+'5'	; "52": a VT52 host
 	jz short OPT52	; /52
@@ -726,7 +746,7 @@ SETX:
 ; =====================================================================
 LOAD:
 	mov bp,[BASE]	; BP = linear address of the header
-	add bp,Z80IMG	;   = BASE + 0D7Bh
+	add bp,Z80IMG	;   = BASE + 0DB8h
 	TRAP TRAP_CPM	; T_CPML: check the 7 addresses, copy to ENDBIOS
 	jnc short LOAD_OK	; CF=0: in place
 	mov dx,VERMSG	; CF=1: built against another Z86.SYS
@@ -860,7 +880,7 @@ MENU_CMD:				; (src: MENU2A)
 	jnz short MENU_R	; no
 	jmp short LOGSW	; yes
 	nop		; MASM's padding: the forward JMP was given 3 bytes
-			;   (TERM.LST 07BA: EB 64 90)
+			;   (TERM.LST 07CE: EB 69 90)
 MENU_R:					; (src: MENU3)
 	cmp al,'R'	; R: XMODEM receive
 	jnz short MENU_S	; no
@@ -909,14 +929,18 @@ ONOFF_PUT:				; (src: ONOFF1)
 ; ---------------------------------------------------------------------
 ; QUIT - menu Q: the log closed, DOS's cursor to the bottom line, end.
 ; DOS calls: AH=02h display (CR), INT 20h.  The Z80 part stays at
-; ENDBIOS (nothing to undo).  NOTE: the host is still held as the menu
-; left it (XOFF sent, or RTS off): nothing lets it go before INT 20h.
+; ENDBIOS (nothing to undo).  The menu left the host held (XOFF sent,
+; or RTS off): a SEND of nothing is TERMZ80's ENSURE, which lets it go
+; (XON queued and sent, RTS on) - after LOGOFF's disk work, as late as
+; possible.  FIXED 2026-11-08: Q used to end with the host still held.
 ; ---------------------------------------------------------------------
 QUIT:
 	cmp byte [LOGON],0x0	; logging?
 	jz short QUIT_EXIT	; no: just go
 	call LOGOFF	; the rest written, the file closed
 QUIT_EXIT:				; (src: QUIT1)
+	xor_d cx,cx	; the host let go (SEND of nothing:
+	call SEND	;   the Z80 part's ENSURE)
 	call BOTTOM	; DOS goes on from the bottom line
 	call BOTEND	;   (blank, normal video)
 	mov dl,0xd	; AH=02h display: CR, column 0
@@ -1034,9 +1058,14 @@ LOGWR_DONE:				; (src: LOGW1)
 ;                      sum.  Bad -> XRBAD: PURGE, TRIES + 1, NAK.  Good,
 ;                      number = BLK: written, BLK + 1, ACK; number =
 ;                      BLK - 1 (our ACK was lost): ACK only; else XFAIL
-;     EOT           -> ACK, XDONE (one EOT is enough)
-;     CAN           -> "Cancelled by the other side" (one CAN is enough)
+;     EOT alone     -> ACK, XDONE (CX = 1: nothing followed it)
+;     CAN CAN       -> "Cancelled by the other side"
+;     EOT or CAN + more -> XRBAD: a block whose SOH a line hit changed
+;     CAN alone     -> noise, as other
 ;     other         -> noise: XREPLY = 0, wait on
+; FIXED 2026-11-08: the first byte alone decided, so a line hit turning
+; a block's SOH into EOT ended the receive as "done" with a short file,
+; and into CAN cancelled it.
 ; =====================================================================
 XRECV:
 	mov dx,RCVASK	; "Receive (XMODEM) as file: "
@@ -1076,14 +1105,22 @@ XR_WAIT:				; (src: XR1)
 	jz short XRSOH
 	cmp al,EOT	; the end
 	jnz short XR_NOT_EOT	; no
+	cmp cx,byte 0x1	; an EOT alone, not a block's first byte
+	jnz short XR_HIT	;   hit by noise
 	jmp XREOT
 XR_NOT_EOT:				; (src: XR2)
 	cmp al,CAN	; cancelled
 	jnz short XR_NOISE	; no
+	cmp cx,byte 0x1	; two CANs, as YMODEM's graceful abort
+	jna short XR_NOISE	; (one alone: noise)
+	cmp byte [XBUF+1],CAN	; the second a CAN too?
+	jnz short XR_HIT	; no: a block with a damaged SOH
 	jmp XRCAN
 XR_NOISE:				; (src: XR3)
 	mov byte [XREPLY],0x0	; noise: wait on (the reply went already)
 	jmp short XR_WAIT
+XR_HIT:				; (src: XR4)
+	jmp XRBAD	; PURGE, NAK: the block again
 XRUSR:
 	jmp XUSER	; a key: cancel
 XRTO:
@@ -1176,8 +1213,9 @@ XRCAN:
 ;   checksums, CAN -> cancelled; any other byte: wait again (60 s anew)
 ;   then per block: read 128 bytes (CX = what came; 0 -> EOT), pad
 ;   with ^Z, SOH n ~n data check; send; wait 10 s for the answer: ACK ->
-;   next, CAN -> cancelled, anything else or nothing -> again, up to 10
-;   sends in all; CTS off for ~2 s during a block -> XFAIL
+;   next, CAN -> cancelled, anything else or nothing -> PURGE (a quiet
+;   line, so a late answer is not taken for the next block's), again,
+;   up to 10 sends in all; CTS off for ~3.4 s during a block -> XFAIL
 ;   EOT, until ACKed (10 tries)
 ; =====================================================================
 XSEND:
@@ -1242,7 +1280,7 @@ XS_FILL:				; (src: XS31)
 	mov al,0x1a	; the last block filled with ^Z
 	rep stosb	; pad
 	mov byte [XBUF],SOH	; the header: SOH, number, complement
-	nop		; MASM's padding (TERM.LST 0A74: C6 06 3CFB 01 90):
+	nop		; MASM's padding (TERM.LST 0AA1: C6 06 3D38 01 90):
 			;   XBUF is a forward EQU, sized before its type was known
 	mov al,[BLK]	; block number
 	mov [XBUF+1],al
@@ -1272,6 +1310,10 @@ XS_SENDBLK:				; (src: XS5)
 	jnz short XS_RETRY	; no
 	jmp XRCAN
 XS_RETRY:				; (src: XS51)
+	call PURGE	; not ACK: the line quiet first, so no
+				;   late answer is taken for the next
+				;   (FIXED 2026-11-08: one stale 'C' put
+				;   every later answer a block behind)
 	inc byte [TRIES]	; NAK, 'C', noise or nothing: again
 	cmp byte [TRIES],10	; 10 sends in all
 	jc short XS_SENDBLK	; again
@@ -1378,15 +1420,18 @@ XCHECK:
 	jmp Z80	; DX, AL back to the caller
 
 ; ---------------------------------------------------------------------
-; PURGE - wait till nothing comes for 0.3 s (the rest of a bad block),
-; so the NAK is not lost in it.  A key pressed meanwhile is taken and
-; ignored.  Callers: XRBAD.
+; PURGE - wait till nothing comes for 0.3 s (the rest of a bad block,
+; or what follows a wrong answer), so the NAK or the block sent again
+; is not lost in it.  One byte at a time into ANSB, never into XBUF:
+; XS_RETRY sends XBUF again.  A key pressed meanwhile is taken and
+; ignored.  Callers: XRBAD, XS_RETRY.
 ; ---------------------------------------------------------------------
 PURGE:
-	mov cx,133	; take anything, up to a block
+	mov cx,0x1	; take anything, a byte at a time
 	mov dx,30	; 0.3 s for the first byte
 	xor_d bx,bx	; send nothing
-	call XGET	; RECV
+	mov di,ANSB	; (not XBUF: it may be sent again)
+	call XGETDI	; RECV
 	jcxz short PURGE_RET	; quiet: done
 	jmp short PURGE	; something came: again
 PURGE_RET:				; (src: PURGE1)
@@ -1406,9 +1451,16 @@ SEND:
 ; XDONE - the transfer ended well: the file closed, "n bytes: done".
 ; XUSER / XFAIL - give up: three CANs to the other side, then XEND.
 ; XEND - the file closed (a partial file is kept), the message DX.
+; Both first stop the host with TERMZ80's HOLD (function 10): SHOW's
+; wait for a key polls nothing, and what the host sent meanwhile (its
+; prompt after sx / rx) was lost; the next SESS lets it go.  (FIXED
+; 2026-11-08.  With /X the XOFF may reach a program still in raw mode;
+; with /R it is complete.)
 ; DOS calls: AH=10h close FCB.
 ; ---------------------------------------------------------------------
 XDONE:
+	mov ah,TZ_HOLD	; HOLD: the host stopped till SESS
+	call Z80
 	mov dx,XFCB	; AH=10h close FCB
 	mov ah,0x10
 	int 21h	; directory entry written
@@ -1417,7 +1469,7 @@ XDONE:
 	call PUTNB	; "Receiving: n" / "Sending: n"
 	mov dx,DONEM	; ... " bytes: done - a key"
 	jmp short SHOW1	; then wait for a key
-	nop		; MASM's padding (TERM.LST 0BB4: EB 22 90)
+	nop		; MASM's padding (TERM.LST 0BEC: EB 27 90)
 XUSER:
 	mov dx,CANM	; "Cancelled"
 	jmp short XCAN
@@ -1431,6 +1483,8 @@ XCAN:
 	pop dx
 XEND:
 	push dx
+	mov ah,TZ_HOLD	; HOLD
+	call Z80
 	mov dx,XFCB	; AH=10h close FCB: what came is kept
 	mov ah,0x10
 	int 21h
@@ -1675,7 +1729,7 @@ SAME6:
 	pop si
 	ret	; ZF = equal
 
-; ---- the stack: 64 words, 0CFBh-0D7Ah ----
+; ---- the stack: 64 words, 0D38h-0DB7h ----
 	times 64 dw 0
 STKTOP:
 
@@ -1691,12 +1745,12 @@ STKTOP:
 ; (Z86.SYS.sym) - the same as CPM.COM's header (volume 6).
 ; =====================================================================
 Z80IMG:
-SCRBUF equ Z80IMG	; 0D7Bh the host's screen, 24 x 80 at most
-RINGBUF equ SCRBUF+ROWS*80	; 14FBh the receive ring, 2048
-LOGBUF equ RINGBUF+RINGSZ	; 1CFBh the log buffer, 8192
-XBUF equ LOGBUF+LOGSZ	; 3CFBh an XMODEM block (133 bytes)
+SCRBUF equ Z80IMG	; 0DB8h the host's screen, 24 x 80 at most
+RINGBUF equ SCRBUF+ROWS*80	; 1538h the receive ring, 2048
+LOGBUF equ RINGBUF+RINGSZ	; 1D38h the log buffer, 8192
+XBUF equ LOGBUF+LOGSZ	; 3D38h an XMODEM block (133 bytes)
 Z80_LEN:
-	dw Z80_CODE_END-Z80_CODE	; 0D8Ch = 3468 bytes of code to copy
+	dw Z80_CODE_END-Z80_CODE	; 0D78h = 3448 bytes of code to copy
 Z80_SYMS:
 	dw NEXT		; D83Bh  must equal Z86.SYS NEXT
 	dw JPHL		; EB4Dh  must equal Z86.SYS JPHL
@@ -1706,8 +1760,8 @@ Z80_SYMS:
 	dw DCSP		; F12Ah  must equal Z86.SYS DCSP
 	dw ENDBIOS	; F12Ch  must equal Z86.SYS ENDBIOS (the copy target)
 
-; The code, assembled to run at ENDBIOS (F12Ch-FEB7h): TERMZ80.BIN,
-; narrated in asm/termz80.asm (volume 10).  File offset 0C8Bh to the
+; The code, assembled to run at ENDBIOS (F12Ch-FEA3h): TERMZ80.BIN,
+; narrated in asm/termz80.asm (volume 10).  File offset 0CC8h to the
 ; end of TERM.COM; nothing follows it.  (Path relative to DISASM/,
 ; where tools/roundtrip.sh assembles.)
 Z80_CODE:

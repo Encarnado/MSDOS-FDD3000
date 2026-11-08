@@ -5,7 +5,7 @@ comment coverage 81% (the uncommented lines are mid-sequence bytes of multi-byte
 moves and bit shuffles, covered by the line above or the block header).
 
 ## Scope note
-- The brief listed the BIOS trap opcode 0Fh, HLT, CALL far and JMP short as part of this
+- The plan listed the BIOS trap opcode 0Fh, HLT, CALL far and JMP short as part of this
   region. They are not here: O_TRAP (D8C1h) and O_HLT (D8BDh) are in part 02, O_CALLF
   (E027h) in part 04, EBh JMP short is O_JREL8 (DE48h, part 03), and EEh/EFh OUT DX
   dispatch straight to O_NOP. This part holds the other half of the trap mechanism:

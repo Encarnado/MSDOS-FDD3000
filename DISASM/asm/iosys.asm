@@ -80,9 +80,7 @@
 ;  CREDITS.  Original code: the FDD3000-MSDOS project (2026).  The
 ;  COMMAND.COM loader after Seattle Computer Products' I/O system
 ;  (Tim Paterson); the entry layout and DOSINIT contract are MS-DOS
-;  1.25's (Microsoft, MIT licence).  Disassembly and annotation in the
-;  style of "The Complete TMX Portugal ROM Disassemblies", LoadZX
-;  Museum, 2026.
+;  1.25's (Microsoft, MIT licence).
 ;==============================================================================
 ;
 ; ASSEMBLER NOTES.  NASM, `-O0 -f bin`: -O0 stops NASM re-sizing

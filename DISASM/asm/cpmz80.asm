@@ -86,8 +86,6 @@
 ;  interfaces after Digital Research's (BDOS function numbers, FCB, page
 ;  zero, BIOS jump vector); LIST, PUNCH and READER as the FDD3000 CP/M
 ;  CBIOS A1.1 (Antonio Nobrega, TMX Portugal, 85/10/29) wires them.
-;  Disassembly and annotation in the style of "The Complete TMX Portugal
-;  ROM Disassemblies", LoadZX Museum, 2026.
 ;==============================================================================
 
 ; =====================================================================
