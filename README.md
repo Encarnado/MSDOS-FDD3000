@@ -18,10 +18,10 @@ connecting anything.
 
 Everything was built and tested on emulators (a Python 8086 model, and an
 emulated FDD3000 with its Z80, WD177x and boot ROM), and the disk also boots
-on FUSE. **The v1.0 build booted and ran on a real FDD3000 on 2026-11-07**
-(TT3000 terminal: DOS, EDIT, CPM and the serial ports worked; FORMAT was not
-tried). Later builds have so far been tested on the emulators only; see
-`RELEASES.md`.
+on FUSE. **An earlier internal build booted and ran on a real FDD3000 on
+2026-11-07** (git `eeadb54`; TT3000 terminal: DOS, EDIT, CPM and the serial
+ports worked; FORMAT was not tried). The current build, release candidate
+v1.0-rc1, has so far been tested on the emulators only; see `RELEASES.md`.
 
 ## Quick start
 
