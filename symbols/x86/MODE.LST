@@ -1,0 +1,598 @@
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-1
+
+
+
+1	 	 	 	 	; MODE.COM for MS-DOS 1.25 on the Timex
+	 	 	 	 FDD3000: the WD2123's serial ports.
+2	 	 	 	 	;
+3	 	 	 	 	;       MODE port[:] [baud][,[parity][,
+	 	 	 	[data bits][,stop bits]]]
+4	 	 	 	 	;       MODE [port[:]]
+5	 	 	 	 	;
+6	 	 	 	 	; port: PRN, LPT1 or COM1 for channel A
+	 	 	 	 (DOS's PRN), AUX or COM2 for
+7	 	 	 	 	; channel B (DOS's AUX); COM1 and COM2 
+	 	 	 	are INT 14H's ports 0 and 1.
+8	 	 	 	 	; baud: 50 75 110 134.5 150 200 300 600
+	 	 	 	 1200 1800 2400 3600 4800 7200 9600
+9	 	 	 	 	; 19200, or the PC's 11 15 30 60 12 24 
+	 	 	 	48 96 19. parity: N, O or E. data
+10	 	 	 	 	; bits: 5 to 8. stop bits: 1, 1.5 or 2.
+	 	 	 	 A setting left out stays as it
+11	 	 	 	 	; is. MODE with a port alone shows its 
+	 	 	 	settings, with no port both.
+12	 	 	 	 	;
+13	 	 	 	 	; The settings go to the chip through I
+	 	 	 	NT 14H's FDD3000 calls (BIOS.ASM,
+14	 	 	 	 	; I86.ASM's I14X): F0H reads the mode b
+	 	 	 	yte and baud code the BIOS last
+15	 	 	 	 	; set, F1H sets them. CP/M programs run
+	 	 	 	 by CPM.COM use the same settings.
+16	 	 	 	 	; Every boot sets both channels to 1200
+	 	 	 	 baud, no parity, 8 bits, 1.5 stop
+17	 	 	 	 	; bits, as the FDD3000's CP/M does: put
+	 	 	 	 MODE lines in AUTOEXEC.BAT to
+18	 	 	 	 	; have others.
+19	 	 	 	 	;
+20	 	 	 	 	; The mode byte is the 8251A's: bits 7-
+	 	 	 	6 stop bits (01 1, 10 1.5, 11 2),
+21	 	 	 	 	; 5 even parity, 4 parity on, 3-2 data 
+	 	 	 	bits - 5, 1-0 10 (x16 clock).
+22	 	 	 	 	
+23	 0000	 	 	 	CODE    SEGMENT
+24	 	 	 	 	        ASSUME  CS:CODE,DS:CODE,ES:CODE
+	 	 	 	,SS:CODE
+25	 0100	 	 	 	        ORG     100H
+26	 	 	 	 	
+27	 0100  E9 030B R	 	BEGIN:  JMP     START
+28	 	 	 	 	
+29	 0103  0000	 	 	CHAN    DW      0               ; INT 1
+	 	 	 	4H's port: 0 channel A, 1 channel B
+30	 0105  00	 	 	MODEB   DB      0               ; the n
+	 	 	 	ew settings
+31	 0106  00	 	 	BAUDC   DB      0
+32	 0107  20 20 20 20	 	NAMBUF  DB      "    "          ; the p
+	 	 	 	ort's name, then a field
+33	 010B  20 20 20 20 20 20	TOKEN   DB      "      "
+34	 	 	 	 	
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-2
+
+
+
+35	 	 	 	 	; port names: 4 characters, then the ch
+	 	 	 	annel
+36	 0111  50 52 4E 20 00 4C	PORTS   DB      "PRN ",0,"LPT1",0,"COM1
+	 	 	 	",0,"AUX ",1,"COM2",1
+37	       50 54 31 00 43 4F	
+38	       4D 31 00 41 55 58	
+39	       20 01 43 4F 4D 32	
+40	       01	 	 	
+41	 = 0005	 	 	 	NPORTS  EQU     5
+42	 	 	 	 	
+43	 	 	 	 	; the baud codes 0-15, as TMX CONFIGUR 
+	 	 	 	lists them
+44	 012A  35 30 20 20 20 20	BAUDS   DB      "50    75    110   134.
+	 	 	 	5 150   200   300   600   "
+45	       37 35 20 20 20 20	
+46	       31 31 30 20 20 20	
+47	       31 33 34 2E 35 20	
+48	       31 35 30 20 20 20	
+49	       32 30 30 20 20 20	
+50	       33 30 30 20 20 20	
+51	       36 30 30 20 20 20	
+52	 015A  31 32 30 30 20 20	        DB      "1200  1800  2400  3600
+	 	 	 	  4800  7200  9600  19200 "
+53	       31 38 30 30 20 20	
+54	       32 34 30 30 20 20	
+55	       33 36 30 30 20 20	
+56	       34 38 30 30 20 20	
+57	       37 32 30 30 20 20	
+58	       39 36 30 30 20 20	
+59	       31 39 32 30 30 20	
+60	 	 	 	 	; other names: 6 characters, then the c
+	 	 	 	ode
+61	 018A  31 33 34 20 20 20	ABAUDS  DB      "134   ",3,"11    ",2,"
+	 	 	 	15    ",4,"30    ",6
+62	       03 31 31 20 20 20	
+63	       20 02 31 35 20 20	
+64	       20 20 04 33 30 20	
+65	       20 20 20 06	 	
+66	 01A6  36 30 20 20 20 20	        DB      "60    ",7,"12    ",8,"
+	 	 	 	24    ",10,"48    ",12
+67	       07 31 32 20 20 20	
+68	       20 08 32 34 20 20	
+69	       20 20 0A 34 38 20	
+70	       20 20 20 0C	 	
+71	 01C2  39 36 20 20 20 20	        DB      "96    ",14,"19    ",15
+72	       0E 31 39 20 20 20	
+73	       20 0F	 	 	
+74	 = 000A	 	 	 	NABAUDS EQU     10
+75	 	 	 	 	
+76	 01D0  50 52 4E 3A 20 24	PRNMSG  DB      "PRN: $"
+77	 01D6  41 55 58 3A 20 24	AUXMSG  DB      "AUX: $"
+78	 01DC  20 62 61 75 64 2C	BAUMSG  DB      " baud, $"
+79	       20 24	 	 	
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-3
+
+
+
+80	 01E4  6E 6F 24	 	 	NOPMSG  DB      "no$"
+81	 01E7  6F 64 64 24	 	ODDMSG  DB      "odd$"
+82	 01EB  65 76 65 6E 24	 	EVNMSG  DB      "even$"
+83	 01F0  20 70 61 72 69 74	PARMSG  DB      " parity, $"
+84	       79 2C 20 24	 	
+85	 01FA  20 64 61 74 61 20	DATMSG  DB      " data bits, $"
+86	       62 69 74 73 2C 20	
+87	       24	 	 	
+88	 0207  20 73 74 6F 70 20	STPMSG  DB      " stop bit$"
+89	       62 69 74 24	 	
+90	 0211  0D 0A 24	 	 	CRLF    DB      13,10,"$"
+91	 0214  3F 20 20 31 20 20	STOPS   DB      "?  1  1.52  "  ; mode 
+	 	 	 	bits 7-6, 3 characters each
+92	       31 2E 35 32 20 20	
+93	 0220  49 6E 76 61 6C 69	USEMSG  DB      "Invalid parameter",13,
+	 	 	 	10,13,10
+94	       64 20 70 61 72 61	
+95	       6D 65 74 65 72 0D	
+96	       0A 0D 0A	 	 	
+97	 0235  55 73 61 67 65 3A	        DB      "Usage: MODE port[:] [b
+	 	 	 	aud][,[N|O|E][,[5-8][,[1|1.5|2]]]]",13,10
+98	       20 4D 4F 44 45 20	
+99	       70 6F 72 74 5B 3A	
+100	       5D 20 5B 62 61 75	
+101	       64 5D 5B 2C 5B 4E	
+102	       7C 4F 7C 45 5D 5B	
+103	       2C 5B 35 2D 38 5D	
+104	       5B 2C 5B 31 7C 31	
+105	       2E 35 7C 32 5D 5D	
+106	       5D 5D 0D 0A	 	
+107	 026F  20 20 70 6F 72 74	        DB      "  port: PRN, LPT1 or C
+	 	 	 	OM1 (channel A), AUX or COM2 (channel B)",13,10
+108	       3A 20 50 52 4E 2C	
+109	       20 4C 50 54 31 20	
+110	       6F 72 20 43 4F 4D	
+111	       31 20 28 63 68 61	
+112	       6E 6E 65 6C 20 41	
+113	       29 2C 20 41 55 58	
+114	       20 6F 72 20 43 4F	
+115	       4D 32 20 28 63 68	
+116	       61 6E 6E 65 6C 20	
+117	       42 29 0D 0A	 	
+118	 02AF  20 20 62 61 75 64	        DB      "  baud: 50 75 110 134.
+	 	 	 	5 150 200 300 600 1200 1800 2400 3600",13,10
+119	       3A 20 35 30 20 37	
+120	       35 20 31 31 30 20	
+121	       31 33 34 2E 35 20	
+122	       31 35 30 20 32 30	
+123	       30 20 33 30 30 20	
+124	       36 30 30 20 31 32	
+125	       30 30 20 31 38 30	
+126	       30 20 32 34 30 30	
+127	       20 33 36 30 30 0D	
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-4
+
+
+
+128	       0A	 	 	
+129	 02EC  20 20 20 20 20 20	        DB      "        4800 7200 9600
+	 	 	 	 19200",13,10,"$"
+130	       20 20 34 38 30 30	
+131	       20 37 32 30 30 20	
+132	       39 36 30 30 20 31	
+133	       39 32 30 30 0D 0A	
+134	       24	 	 	
+135	 	 	 	 	
+136	 030B  FC	 	 	START:  CLD
+137	 030C  BE 0081	 	 	        MOV     SI,81H          ; the c
+	 	 	 	ommand tail, in upper case, ending
+138	 030F  8A 0E 0080	 	        MOV     CL,DS:[80H]     ;   wit
+	 	 	 	h a 0
+139	 0313  32 ED	 	 	        XOR     CH,CH
+140	 0315  8B FE	 	 	        MOV     DI,SI
+141	 0317  E3 0E	 	 	UPPER:  JCXZ    UPX
+142	 0319  AC	 	 	        LODSB
+143	 031A  3C 61	 	 	        CMP     AL,"a"
+144	 031C  72 06	 	 	        JB      UP1
+145	 031E  3C 7A	 	 	        CMP     AL,"z"
+146	 0320  77 02	 	 	        JA      UP1
+147	 0322  2C 20	 	 	        SUB     AL,20H
+148	 0324  AA	 	 	UP1:    STOSB
+149	 0325  E2 F0	 	 	        LOOP    UPPER
+150	 0327  C6 05 00	 	 	UPX:    MOV     BYTE PTR [DI],0
+151	 032A  BE 0081	 	 	        MOV     SI,81H
+152	 032D  E8 0470 R	 	        CALL    BLANKS
+153	 0330  75 0C	 	 	        JNZ     PORT
+154	 0332  E8 04B7 R	 	        CALL    SHOW            ; no po
+	 	 	 	rt: both
+155	 0335  FF 06 0103 R	 	        INC     [CHAN]
+156	 0339  E8 04B7 R	 	        CALL    SHOW
+157	 033C  CD 20	 	 	        INT     32
+158	 	 	 	 	;
+159	 	 	 	 	; the port: a name of up to 4 letters a
+	 	 	 	nd digits, then maybe a colon
+160	 	 	 	 	;
+161	 033E  BF 0107 R	 	PORT:   MOV     DI,OFFSET NAMBUF
+162	 0341  B9 0004	 	 	        MOV     CX,4
+163	 0344  E8 047D R	 	        CALL    GETW
+164	 0347  75 32	 	 	        JNZ     BAD
+165	 0349  BB 0111 R	 	        MOV     BX,OFFSET PORTS
+166	 034C  B2 05	 	 	        MOV     DL,NPORTS
+167	 034E  56	 	 	PORT1:  PUSH    SI
+168	 034F  BE 0107 R	 	        MOV     SI,OFFSET NAMBUF
+169	 0352  8B FB	 	 	        MOV     DI,BX
+170	 0354  B9 0004	 	 	        MOV     CX,4
+171	 0357  F3/ A6	 	 	        REPE    CMPSB
+172	 0359  5E	 	 	        POP     SI
+173	 035A  74 09	 	 	        JZ      PORT2
+174	 035C  83 C3 05	 	 	        ADD     BX,5
+175	 035F  FE CA	 	 	        DEC     DL
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-5
+
+
+
+176	 0361  75 EB	 	 	        JNZ     PORT1
+177	 0363  EB 16	 	 	        JMP     SHORT BAD
+178	 0365  8A 47 04	 	 	PORT2:  MOV     AL,[BX+4]
+179	 0368  A2 0103 R	 	        MOV     BYTE PTR [CHAN],AL
+180	 036B  80 3C 3A	 	 	        CMP     BYTE PTR [SI],":"
+181	 036E  75 01	 	 	        JNZ     PORT3
+182	 0370  46	 	 	        INC     SI
+183	 0371  E8 0470 R	 	PORT3:  CALL    BLANKS
+184	 0374  75 0E	 	 	        JNZ     SETS
+185	 0376  E8 04B7 R	 	        CALL    SHOW            ; a por
+	 	 	 	t alone: its settings
+186	 0379  CD 20	 	 	        INT     32
+187	 037B  BA 0220 R	 	BAD:    MOV     DX,OFFSET USEMSG
+188	 037E  B4 09	 	 	        MOV     AH,9
+189	 0380  CD 21	 	 	        INT     33
+190	 0382  CD 20	 	 	        INT     32
+191	 	 	 	 	;
+192	 	 	 	 	; the settings: those of now, then each
+	 	 	 	 field given
+193	 	 	 	 	;
+194	 0384  B4 F0	 	 	SETS:   MOV     AH,0F0H
+195	 0386  8B 16 0103 R	 	        MOV     DX,[CHAN]
+196	 038A  CD 14	 	 	        INT     20
+197	 038C  A2 0105 R	 	        MOV     [MODEB],AL
+198	 038F  88 26 0106 R	 	        MOV     [BAUDC],AH
+199	 0393  80 3C 2C	 	 	        CMP     BYTE PTR [SI],","      
+	 	 	 	 ; baud
+200	 0396  74 39	 	 	        JZ      PAR
+201	 0398  BF 010B R	 	        MOV     DI,OFFSET TOKEN
+202	 039B  B9 0006	 	 	        MOV     CX,6
+203	 039E  E8 047D R	 	        CALL    GETW
+204	 03A1  75 D8	 	 	        JNZ     BAD
+205	 03A3  BB 012A R	 	        MOV     BX,OFFSET BAUDS
+206	 03A6  32 D2	 	 	        XOR     DL,DL
+207	 03A8  E8 04AA R	 	BAUD1:  CALL    SAME6
+208	 03AB  74 20	 	 	        JZ      BAUD3
+209	 03AD  83 C3 06	 	 	        ADD     BX,6
+210	 03B0  FE C2	 	 	        INC     DL
+211	 03B2  80 FA 10	 	 	        CMP     DL,16
+212	 03B5  72 F1	 	 	        JB      BAUD1
+213	 03B7  BB 018A R	 	        MOV     BX,OFFSET ABAUDS
+214	 03BA  B6 0A	 	 	        MOV     DH,NABAUDS
+215	 03BC  E8 04AA R	 	BAUD2:  CALL    SAME6
+216	 03BF  74 09	 	 	        JZ      BAUD4
+217	 03C1  83 C3 07	 	 	        ADD     BX,7
+218	 03C4  FE CE	 	 	        DEC     DH
+219	 03C6  75 F4	 	 	        JNZ     BAUD2
+220	 03C8  EB B1	 	 	        JMP     BAD
+221	 03CA  8A 57 06	 	 	BAUD4:  MOV     DL,[BX+6]
+222	 03CD  88 16 0106 R	 	BAUD3:  MOV     [BAUDC],DL
+223	 03D1  E8 045B R	 	PAR:    CALL    COMMA           ; parit
+	 	 	 	y
+224	 03D4  72 71	 	 	        JB      SETX
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-6
+
+
+
+225	 03D6  74 1C	 	 	        JZ      DBITS
+226	 03D8  B4 00	 	 	        MOV     AH,0            ; AH: t
+	 	 	 	he parity bits
+227	 03DA  3C 4E	 	 	        CMP     AL,"N"
+228	 03DC  74 0C	 	 	        JZ      PAR1
+229	 03DE  B4 10	 	 	        MOV     AH,10H
+230	 03E0  3C 4F	 	 	        CMP     AL,"O"
+231	 03E2  74 06	 	 	        JZ      PAR1
+232	 03E4  B4 30	 	 	        MOV     AH,30H
+233	 03E6  3C 45	 	 	        CMP     AL,"E"
+234	 03E8  75 5A	 	 	        JNZ     BAD1
+235	 03EA  46	 	 	PAR1:   INC     SI
+236	 03EB  80 26 0105 R CF	 	        AND     [MODEB],0CFH
+237	 03F0  08 26 0105 R	 	        OR      [MODEB],AH
+238	 03F4  E8 045B R	 	DBITS:  CALL    COMMA           ; data 
+	 	 	 	bits
+239	 03F7  72 4E	 	 	        JB      SETX
+240	 03F9  74 14	 	 	        JZ      SBITS
+241	 03FB  2C 35	 	 	        SUB     AL,"5"
+242	 03FD  3C 04	 	 	        CMP     AL,4
+243	 03FF  73 43	 	 	        JNB     BAD1
+244	 0401  46	 	 	        INC     SI
+245	 0402  D0 E0	 	 	        SHL     AL,1
+246	 0404  D0 E0	 	 	        SHL     AL,1
+247	 0406  80 26 0105 R F3	 	        AND     [MODEB],0F3H
+248	 040B  08 06 0105 R	 	        OR      [MODEB],AL
+249	 040F  E8 045B R	 	SBITS:  CALL    COMMA           ; stop 
+	 	 	 	bits
+250	 0412  72 33	 	 	        JB      SETX
+251	 0414  74 29	 	 	        JZ      SBEND
+252	 0416  B4 40	 	 	        MOV     AH,40H
+253	 0418  3C 32	 	 	        CMP     AL,"2"
+254	 041A  75 04	 	 	        JNZ     SBIT1
+255	 041C  B4 C0	 	 	        MOV     AH,0C0H
+256	 041E  EB 15	 	 	        JMP     SHORT SBIT2
+257	 0420  3C 31	 	 	SBIT1:  CMP     AL,"1"
+258	 0422  75 20	 	 	        JNZ     BAD1
+259	 0424  80 7C 01 2E	 	        CMP     BYTE PTR [SI+1],"."    
+	 	 	 	 ; "1.5"
+260	 0428  75 0B	 	 	        JNZ     SBIT2
+261	 042A  80 7C 02 35	 	        CMP     BYTE PTR [SI+2],"5"
+262	 042E  75 14	 	 	        JNZ     BAD1
+263	 0430  83 C6 02	 	 	        ADD     SI,2
+264	 0433  B4 80	 	 	        MOV     AH,80H
+265	 0435  46	 	 	SBIT2:  INC     SI
+266	 0436  80 26 0105 R 3F	 	        AND     [MODEB],3FH
+267	 043B  08 26 0105 R	 	        OR      [MODEB],AH
+268	 043F  E8 0470 R	 	SBEND:  CALL    BLANKS
+269	 0442  74 03	 	 	        JZ      SETX
+270	 0444  E9 037B R	 	BAD1:   JMP     BAD
+271	 0447  B4 F1	 	 	SETX:   MOV     AH,0F1H
+272	 0449  A0 0105 R	 	        MOV     AL,[MODEB]
+273	 044C  8A 0E 0106 R	 	        MOV     CL,[BAUDC]
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-7
+
+
+
+274	 0450  8B 16 0103 R	 	        MOV     DX,[CHAN]
+275	 0454  CD 14	 	 	        INT     20
+276	 0456  E8 04B7 R	 	        CALL    SHOW
+277	 0459  CD 20	 	 	        INT     32
+278	 	 	 	 	
+279	 	 	 	 	; COMMA: after a field: CF=1 if the lin
+	 	 	 	e ends there; otherwise past the
+280	 	 	 	 	; comma, ZF=1 if the next field is empt
+	 	 	 	y too, AL = its first character
+281	 045B  E8 0470 R	 	COMMA:  CALL    BLANKS
+282	 045E  F9	 	 	        STC
+283	 045F  74 0E	 	 	        JZ      CMX
+284	 0461  3C 2C	 	 	        CMP     AL,","
+285	 0463  75 DF	 	 	        JNZ     BAD1
+286	 0465  46	 	 	        INC     SI
+287	 0466  E8 0470 R	 	        CALL    BLANKS
+288	 0469  3C 2C	 	 	        CMP     AL,","
+289	 046B  74 02	 	 	        JZ      CMX
+290	 046D  0A C0	 	 	        OR      AL,AL
+291	 046F  C3	 	 	CMX:   RET
+292	 	 	 	 	
+293	 	 	 	 	; BLANKS: past spaces and tabs; AL = th
+	 	 	 	e next character, ZF=1 at the end
+294	 0470  AC	 	 	BLANKS: LODSB
+295	 0471  3C 20	 	 	        CMP     AL," "
+296	 0473  74 FB	 	 	        JZ      BLANKS
+297	 0475  3C 09	 	 	        CMP     AL,9
+298	 0477  74 F7	 	 	        JZ      BLANKS
+299	 0479  4E	 	 	        DEC     SI
+300	 047A  0A C0	 	 	        OR      AL,AL
+301	 047C  C3	 	 	        RET
+302	 	 	 	 	
+303	 	 	 	 	; GETW: the letters, digits and points 
+	 	 	 	at SI to DI, padded with spaces to
+304	 	 	 	 	; CX characters; ZF=0 if there are none
+	 	 	 	 or more than CX
+305	 047D  8B D9	 	 	GETW:   MOV     BX,CX
+306	 047F  8A 04	 	 	GETW1:  MOV     AL,[SI]
+307	 0481  3C 2E	 	 	        CMP     AL,"."
+308	 0483  74 10	 	 	        JZ      GETW2
+309	 0485  3C 30	 	 	        CMP     AL,"0"
+310	 0487  72 13	 	 	        JB      GETW3
+311	 0489  3C 39	 	 	        CMP     AL,"9"
+312	 048B  76 08	 	 	        JBE     GETW2
+313	 048D  3C 41	 	 	        CMP     AL,"A"
+314	 048F  72 0B	 	 	        JB      GETW3
+315	 0491  3C 5A	 	 	        CMP     AL,"Z"
+316	 0493  77 07	 	 	        JA      GETW3
+317	 0495  E3 10	 	 	GETW2:  JCXZ    GETWX
+318	 0497  AA	 	 	        STOSB
+319	 0498  46	 	 	        INC     SI
+320	 0499  49	 	 	        DEC     CX
+321	 049A  EB E3	 	 	        JMP     GETW1
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-8
+
+
+
+322	 049C  3B CB	 	 	GETW3:  CMP     CX,BX
+323	 049E  74 07	 	 	        JZ      GETWX
+324	 04A0  B0 20	 	 	        MOV     AL," "
+325	 04A2  F3/ AA	 	 	        REP     STOSB
+326	 04A4  3A C0	 	 	        CMP     AL,AL
+327	 04A6  C3	 	 	        RET
+328	 04A7  0B E4	 	 	GETWX:  OR      SP,SP           ; ZF=0
+329	 04A9  C3	 	 	        RET
+330	 	 	 	 	
+331	 	 	 	 	; SAME6: ZF=1 if TOKEN is the 6 charact
+	 	 	 	ers at BX
+332	 04AA  56	 	 	SAME6:  PUSH    SI
+333	 04AB  BE 010B R	 	        MOV     SI,OFFSET TOKEN
+334	 04AE  8B FB	 	 	        MOV     DI,BX
+335	 04B0  B9 0006	 	 	        MOV     CX,6
+336	 04B3  F3/ A6	 	 	        REPE    CMPSB
+337	 04B5  5E	 	 	        POP     SI
+338	 04B6  C3	 	 	        RET
+339	 	 	 	 	
+340	 	 	 	 	; SHOW: CHAN's settings, as "PRN: 1200 
+	 	 	 	baud, no parity, 8 data bits,
+341	 	 	 	 	; 1.5 stop bits"
+342	 04B7  B4 F0	 	 	SHOW:   MOV     AH,0F0H
+343	 04B9  8B 16 0103 R	 	        MOV     DX,[CHAN]
+344	 04BD  CD 14	 	 	        INT     20
+345	 04BF  50	 	 	        PUSH    AX
+346	 04C0  BA 01D0 R	 	        MOV     DX,OFFSET PRNMSG
+347	 04C3  83 3E 0103 R 00	 	        CMP     [CHAN],0
+348	 04C8  74 03	 	 	        JZ      SHOW1
+349	 04CA  BA 01D6 R	 	        MOV     DX,OFFSET AUXMSG
+350	 04CD  B4 09	 	 	SHOW1:  MOV     AH,9
+351	 04CF  CD 21	 	 	        INT     33
+352	 04D1  5B	 	 	        POP     BX              ; BL mo
+	 	 	 	de byte, BH baud code
+353	 04D2  53	 	 	        PUSH    BX
+354	 04D3  B0 06	 	 	        MOV     AL,6
+355	 04D5  80 E7 0F	 	 	        AND     BH,15
+356	 04D8  F6 E7	 	 	        MUL     BH
+357	 04DA  05 012A R	 	        ADD     AX,OFFSET BAUDS
+358	 04DD  8B F0	 	 	        MOV     SI,AX
+359	 04DF  B9 0006	 	 	        MOV     CX,6
+360	 04E2  E8 0551 R	 	        CALL    PUTN
+361	 04E5  BA 01DC R	 	        MOV     DX,OFFSET BAUMSG
+362	 04E8  E8 054C R	 	        CALL    PUTS
+363	 04EB  5B	 	 	        POP     BX
+364	 04EC  53	 	 	        PUSH    BX
+365	 04ED  BA 01E4 R	 	        MOV     DX,OFFSET NOPMSG
+366	 04F0  F6 C3 10	 	 	        TEST    BL,10H
+367	 04F3  74 0B	 	 	        JZ      SHOW2
+368	 04F5  BA 01E7 R	 	        MOV     DX,OFFSET ODDMSG
+369	 04F8  F6 C3 20	 	 	        TEST    BL,20H
+370	 04FB  74 03	 	 	        JZ      SHOW2
+371	 04FD  BA 01EB R	 	        MOV     DX,OFFSET EVNMSG
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-9
+
+
+
+372	 0500  E8 054C R	 	SHOW2:  CALL    PUTS
+373	 0503  BA 01F0 R	 	        MOV     DX,OFFSET PARMSG
+374	 0506  E8 054C R	 	        CALL    PUTS
+375	 0509  5B	 	 	        POP     BX
+376	 050A  53	 	 	        PUSH    BX
+377	 050B  8A D3	 	 	        MOV     DL,BL
+378	 050D  D0 EA	 	 	        SHR     DL,1
+379	 050F  D0 EA	 	 	        SHR     DL,1
+380	 0511  80 E2 03	 	 	        AND     DL,3
+381	 0514  80 C2 35	 	 	        ADD     DL,"5"
+382	 0517  B4 02	 	 	        MOV     AH,2
+383	 0519  CD 21	 	 	        INT     33
+384	 051B  BA 01FA R	 	        MOV     DX,OFFSET DATMSG
+385	 051E  E8 054C R	 	        CALL    PUTS
+386	 0521  5B	 	 	        POP     BX
+387	 0522  8A C3	 	 	        MOV     AL,BL
+388	 0524  B1 06	 	 	        MOV     CL,6
+389	 0526  D2 E8	 	 	        SHR     AL,CL
+390	 0528  50	 	 	        PUSH    AX
+391	 0529  B4 03	 	 	        MOV     AH,3
+392	 052B  F6 E4	 	 	        MUL     AH
+393	 052D  05 0214 R	 	        ADD     AX,OFFSET STOPS
+394	 0530  8B F0	 	 	        MOV     SI,AX
+395	 0532  B9 0003	 	 	        MOV     CX,3
+396	 0535  E8 0551 R	 	        CALL    PUTN
+397	 0538  BA 0207 R	 	        MOV     DX,OFFSET STPMSG
+398	 053B  E8 054C R	 	        CALL    PUTS
+399	 053E  58	 	 	        POP     AX
+400	 053F  3C 01	 	 	        CMP     AL,1
+401	 0541  74 06	 	 	        JZ      SHOW3
+402	 0543  B2 73	 	 	        MOV     DL,"s"
+403	 0545  B4 02	 	 	        MOV     AH,2
+404	 0547  CD 21	 	 	        INT     33
+405	 0549  BA 0211 R	 	SHOW3:  MOV     DX,OFFSET CRLF
+406	 054C  B4 09	 	 	PUTS:   MOV     AH,9
+407	 054E  CD 21	 	 	        INT     33
+408	 0550  C3	 	 	        RET
+409	 	 	 	 	
+410	 	 	 	 	; PUTN: up to CX characters at SI, to t
+	 	 	 	he first space
+411	 0551  AC	 	 	PUTN:   LODSB
+412	 0552  3C 20	 	 	        CMP     AL," "
+413	 0554  74 08	 	 	        JZ      PUTN1
+414	 0556  8A D0	 	 	        MOV     DL,AL
+415	 0558  B4 02	 	 	        MOV     AH,2
+416	 055A  CD 21	 	 	        INT     33
+417	 055C  E2 F3	 	 	        LOOP    PUTN
+418	 055E  C3	 	 	PUTN1:  RET
+419	 	 	 	 	
+420	 055F	 	 	 	CODE    ENDS
+421	 	 	 	 	        END     BEGIN
+
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols
+	 	 	 	-1
+
+
+
+Segments and groups:
+
+	 	N a m e	 	 	Size	align	combine	class
+
+CODE . . . . . . . . . . . . . .	055F	PARA  	NONE	
+
+Symbols:            
+
+	 	N a m e	 	 	Type	Value	Attr         
+
+ABAUDS . . . . . . . . . . . . .	L BYTE 	018A	CODE
+AUXMSG . . . . . . . . . . . . .	L BYTE 	01D6	CODE
+BAD. . . . . . . . . . . . . . .	L NEAR 	037B	CODE
+BAD1 . . . . . . . . . . . . . .	L NEAR 	0444	CODE
+BAUD1. . . . . . . . . . . . . .	L NEAR 	03A8	CODE
+BAUD2. . . . . . . . . . . . . .	L NEAR 	03BC	CODE
+BAUD3. . . . . . . . . . . . . .	L NEAR 	03CD	CODE
+BAUD4. . . . . . . . . . . . . .	L NEAR 	03CA	CODE
+BAUDC. . . . . . . . . . . . . .	L BYTE 	0106	CODE
+BAUDS. . . . . . . . . . . . . .	L BYTE 	012A	CODE
+BAUMSG . . . . . . . . . . . . .	L BYTE 	01DC	CODE
+BEGIN. . . . . . . . . . . . . .	L NEAR 	0100	CODE
+BLANKS . . . . . . . . . . . . .	L NEAR 	0470	CODE
+CHAN . . . . . . . . . . . . . .	L WORD 	0103	CODE
+CMX. . . . . . . . . . . . . . .	L NEAR 	046F	CODE
+COMMA. . . . . . . . . . . . . .	L NEAR 	045B	CODE
+CRLF . . . . . . . . . . . . . .	L BYTE 	0211	CODE
+DATMSG . . . . . . . . . . . . .	L BYTE 	01FA	CODE
+DBITS. . . . . . . . . . . . . .	L NEAR 	03F4	CODE
+EVNMSG . . . . . . . . . . . . .	L BYTE 	01EB	CODE
+GETW . . . . . . . . . . . . . .	L NEAR 	047D	CODE
+GETW1. . . . . . . . . . . . . .	L NEAR 	047F	CODE
+GETW2. . . . . . . . . . . . . .	L NEAR 	0495	CODE
+GETW3. . . . . . . . . . . . . .	L NEAR 	049C	CODE
+GETWX. . . . . . . . . . . . . .	L NEAR 	04A7	CODE
+MODEB. . . . . . . . . . . . . .	L BYTE 	0105	CODE
+NABAUDS. . . . . . . . . . . . .	Number	000A	
+NAMBUF . . . . . . . . . . . . .	L BYTE 	0107	CODE
+NOPMSG . . . . . . . . . . . . .	L BYTE 	01E4	CODE
+NPORTS . . . . . . . . . . . . .	Number	0005	
+ODDMSG . . . . . . . . . . . . .	L BYTE 	01E7	CODE
+PAR. . . . . . . . . . . . . . .	L NEAR 	03D1	CODE
+PAR1 . . . . . . . . . . . . . .	L NEAR 	03EA	CODE
+PARMSG . . . . . . . . . . . . .	L BYTE 	01F0	CODE
+PORT . . . . . . . . . . . . . .	L NEAR 	033E	CODE
+PORT1. . . . . . . . . . . . . .	L NEAR 	034E	CODE
+PORT2. . . . . . . . . . . . . .	L NEAR 	0365	CODE
+PORT3. . . . . . . . . . . . . .	L NEAR 	0371	CODE
+PORTS. . . . . . . . . . . . . .	L BYTE 	0111	CODE
+PRNMSG . . . . . . . . . . . . .	L BYTE 	01D0	CODE
+PUTN . . . . . . . . . . . . . .	L NEAR 	0551	CODE
+PUTN1. . . . . . . . . . . . . .	L NEAR 	055E	CODE
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols
+	 	 	 	-2
+
+
+
+PUTS . . . . . . . . . . . . . .	L NEAR 	054C	CODE
+SAME6. . . . . . . . . . . . . .	L NEAR 	04AA	CODE
+SBEND. . . . . . . . . . . . . .	L NEAR 	043F	CODE
+SBIT1. . . . . . . . . . . . . .	L NEAR 	0420	CODE
+SBIT2. . . . . . . . . . . . . .	L NEAR 	0435	CODE
+SBITS. . . . . . . . . . . . . .	L NEAR 	040F	CODE
+SETS . . . . . . . . . . . . . .	L NEAR 	0384	CODE
+SETX . . . . . . . . . . . . . .	L NEAR 	0447	CODE
+SHOW . . . . . . . . . . . . . .	L NEAR 	04B7	CODE
+SHOW1. . . . . . . . . . . . . .	L NEAR 	04CD	CODE
+SHOW2. . . . . . . . . . . . . .	L NEAR 	0500	CODE
+SHOW3. . . . . . . . . . . . . .	L NEAR 	0549	CODE
+START. . . . . . . . . . . . . .	L NEAR 	030B	CODE
+STOPS. . . . . . . . . . . . . .	L BYTE 	0214	CODE
+STPMSG . . . . . . . . . . . . .	L BYTE 	0207	CODE
+TOKEN. . . . . . . . . . . . . .	L BYTE 	010B	CODE
+UP1. . . . . . . . . . . . . . .	L NEAR 	0324	CODE
+UPPER. . . . . . . . . . . . . .	L NEAR 	0317	CODE
+UPX. . . . . . . . . . . . . . .	L NEAR 	0327	CODE
+USEMSG . . . . . . . . . . . . .	L BYTE 	0220	CODE
+
+Warning Severe
+Errors	Errors 
+0	0

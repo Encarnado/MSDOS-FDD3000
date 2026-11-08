@@ -36,27 +36,30 @@ disk rotation.
 | Part | File (source) | CPU | Size | Where it runs |
 |---|---|---|---|---|
 | Boot sector | `BOOT.ASM` | Z80 | 254 bytes | 3F00h |
-| Interpreter + BIOS | `I86.ASM` + `BIOS.ASM` = `Z86.SYS` | Z80 | 8 737 bytes | D000h-F220h |
+| Interpreter + BIOS | `I86.ASM` + `BIOS.ASM` = `Z86.SYS` | Z80 | 8 736 bytes | D000h-F21Fh |
 | I/O system | `IOFDD.ASM` = `IO.SYS` | 8086 | 332 bytes | 0040:0000 (linear 0400h) |
 | DOS kernel | Microsoft `MSDOS.ASM` + `STDDOS.ASM` = `MSDOS.SYS` | 8086 | 6 190 bytes | 0060:0000 |
 | Command processor | Microsoft `COMMAND.ASM` = `COMMAND.COM` | 8086 | 4 879 bytes | DOS loads it |
 | Disk formatter | `FORMAT.ASM` = `FORMAT.COM` | 8086 + trap | 1 628 bytes | .COM |
-| CP/M program runner | `CPM.ASM` = `CPM.COM`, with `CPMZ80.ASM` inside | 8086 + Z80 | 3 286 bytes | .COM; Z80 part at F12Ch |
+| CP/M program runner | `CPM.ASM` = `CPM.COM`, with `CPMZ80.ASM` inside | 8086 + Z80 | 3 286 bytes | .COM; Z80 part at F12Bh |
 | Text editor | `EDIT.ASM` = `EDIT.COM` | 8086 | 4 653 bytes | .COM |
+| Serial set-up | `MODE.ASM` = `MODE.COM` | 8086 | 1 119 bytes | .COM |
+| Serial terminal | `TERM.ASM` = `TERM.COM`, with `TERMZ80.ASM` inside | 8086 + Z80 | 6 679 bytes | .COM; Z80 part at F12Bh |
 
 ### 2.1 Memory map of the FDD3000 while DOS runs
 
 | Z80 address | Contents |
 |---|---|
 | 0000h-CFFFh | the 8086's memory: **8086 linear address n is Z80 address n** (52 KB) |
-| D000h-D0FFh | REGS: the 8086 registers and interpreter state; the serial routines in its unused end (D03Eh-D0F0h); D0FDh holds `JP COLD` |
-| D100h-D4FFh | split jump tables: opcode handlers (OPLO/OPHI), ModR/M routines (EALO/EAHI) |
+| D000h-D0FFh | REGS: the 8086 registers and interpreter state; the serial routines in its unused end (D03Eh-D0FAh); D0FDh holds `JP COLD` |
+| D100h-D4FFh | split jump tables: opcode handlers (OPLO/OPHI), ModR/M routines (EALO/EAHI); after the EALO table INT 14h's FDD3000 calls (D3C0h-D3EFh), after the EAHI table their saved settings (D4C0h-D4C3h) |
 | D500h-EB45h | the interpreter's code (some page-aligned blocks; INT 14h's set-up in the end of the first, D5A2h-D5FFh) |
-| EB46h-F12Bh | the BIOS: trap dispatcher, console, disk, serial traps, clock, PC ROM BIOS emulation |
-| F12Ch-F220h | `COLD`, the boot loader, needed only at boot |
-| F221h-FFFFh | free, and the Z80 stack from FFFFh down |
-| (CP/M program running) F12Ch-FAF5h | CPM.COM's Z80 part, loaded over `COLD` |
-| (CP/M program running) FAF6h-FEF5h | its 1 KB file buffer |
+| EB46h-F12Ah | the BIOS: trap dispatcher, console, disk, serial traps, clock, PC ROM BIOS emulation |
+| F12Bh-F21Fh | `COLD`, the boot loader, needed only at boot |
+| F220h-FFFFh | free, and the Z80 stack from FFFFh down |
+| (CP/M program running) F12Bh-FAF4h | CPM.COM's Z80 part, loaded over `COLD` |
+| (CP/M program running) FAF5h-FEF4h | its 1 KB file buffer |
+| (TERM running) F12Bh-FEB6h | TERM.COM's Z80 part, loaded over `COLD` (its buffers are in TERM.COM's memory) |
 
 The 8086 sees 0000h-CFFFh only. Segment arithmetic wraps within 64 KB
 (there is no memory above), and each segment register keeps its base
@@ -109,7 +112,7 @@ extra functions are each a trap:
 | 9-13 | disk changed, set date, set time, get time, flush console |
 | 10h, 11h, 12h, 14h, 16h, 17h, 1Ah | INT 10h (teletype, cursor as VT52 `ESC Y`, clear), 11h, 12h, 14h (serial), 16h (keyboard), 17h (printer), 1Ah (tick count) |
 | 1Bh | FORMAT TRACK: write a whole track image with the WD177x write-track command |
-| 1Ch | CPM.COM: copy its Z80 part to F12Ch (after checking it was built for this BIOS), or with BP = 0 run it |
+| 1Ch | CPM.COM: copy its Z80 part to F12Bh (after checking it was built for this BIOS), or with BP = 0 run it |
 | 1Dh | CPM.COM: the end of a DOS call its Z80 part started |
 
 - **Console:** CBIOS A1.1's send and receive routines, unchanged: each byte
@@ -130,12 +133,15 @@ extra functions are each a trap:
   (control, status), baud register 10h; B at 40h / 41h, 11h. As in CBIOS
   A1.1, channel A is the printer (CP/M's LIST, DOS's PRN) and B is
   PUNCH / READER (DOS's AUX). Both are set up at boot as CBIOS A1.1 does
-  (8 bits, no parity, 1.5 stop bits, 1200 baud). Output waits for DSR and
-  TxRDY; input raises RTS only while it waits. INT 14h (set-up in PC and
+  (8 bits, no parity, 1.5 stop bits, 1200 baud). Output waits for CTS
+  (status bit 7: the WD2123 has no DSR pin) and TxRDY; input raises RTS only while it waits. INT 14h (set-up in PC and
   PS/2 form, send, receive, status, with time-outs) and INT 17h work. The
   baud codes 0-15 are 50 75 110 134.5 150 200 300 600 1200 1800 2400 3600
-  4800 7200 9600 19200 (TMX CONFIGUR's list). The shared routines live in
-  unused page ends of the interpreter, so that they cost CPM.COM no room.
+  4800 7200 9600 19200 (TMX CONFIGUR's list). Two FDD3000 INT 14h calls
+  reach all of them: AH = F0h returns the mode byte (AL) and baud code
+  (AH) last set (the chip can't be read back, so the BIOS keeps a copy),
+  AH = F1h sets them from AL and CL. The shared routines live in unused
+  page ends of the interpreter, so that they cost CPM.COM no room.
 - **Clock:** the FDD3000 has none: date and time are what DOS was last
   told; INT 1Ah counts up by one per call so programs waiting on it don't hang.
 
@@ -149,7 +155,7 @@ extra functions are each a trap:
    cluster 2, reads the file to D000h track by track and jumps to D0FDh.
    Otherwise prints `Non-System disk` (with its own copy of the link send
    routine) and stops. Retries 8 times, then HALT.
-3. **`COLD`** (end of the BIOS, F12Ch): sets up the serial channels, clears the 8086 vectors (RAM is
+3. **`COLD`** (end of the BIOS, F12Bh): sets up the serial channels, clears the 8086 vectors (RAM is
    random at power-on), checks directory entries 1 and 2 are IO.SYS and
    MSDOS.SYS, reads them through the BIOS's own READ, sets CS = DS = 0040h,
    IP = 0, and starts the interpreter. On failure: `Disk boot failure`.
@@ -188,7 +194,7 @@ it works with one drive).
 `.COM`) **natively on the Z80**, with its files on the DOS disk.
 
 - The 8086 part checks the build (trap 1Ch compares a table of BIOS
-  addresses), has the Z80 part copied to F12Ch, reads the program, builds
+  addresses), has the Z80 part copied to F12Bh, reads the program, builds
   the FCBs and command tail as the CCP would, and calls trap 1Ch with
   BP = 0.
 - The Z80 part swaps the bottom of memory (where DOS, COMMAND and CPM.COM
@@ -236,6 +242,44 @@ Terminal codes (from the Terminal 3000 ROM): `ESC Y row+32 col+32`,
 `ESC H ESC J` clear, `ESC K` clear to end of line, `ESC L` / `ESC M`
 inverse on / off, `ESC I` on the top row scrolls down. Nothing is ever
 written in the last column (the terminal wraps there).
+
+### 2.8 MODE (`MODE.ASM`)
+
+`MODE port[:] [baud][,[parity][,[data bits][,stop bits]]]` sets a
+serial channel up; `MODE port` shows its settings, `MODE` both.
+`PRN`, `LPT1` and `COM1` are channel A, `AUX` and `COM2` channel B. Every
+WD2123 rate (50 to 19200, and the PC's short forms such as `96`), parity
+N / O / E, 5 to 8 data bits and 1, 1.5 or 2 stop bits; a field left out
+keeps its setting. It works through INT 14h F0h / F1h, so the setting
+holds for DOS and for CP/M programs under CPM.COM until the next boot
+(which sets 1200 baud, 8N1.5 again; MODE lines in `AUTOEXEC.BAT` set
+others).
+
+### 2.9 TERM (`TERM.ASM`, `TERMZ80.ASM`)
+
+`TERM [port[:] [settings]] [/80] [/52] [/X|/R|/N] [/E] [/C]`: a serial terminal,
+like PuTTY's serial mode. The host on the channel gets a VT100 (or a
+VT52, `/52`) of 24 x 64 (or 80, `/80`); Ctrl-A brings a menu: quit, log
+to a file, local echo (also `/E`), implicit LF after CR (also `/C`), XMODEM receive / send (CRC or
+checksums), break. Flow control
+XON / XOFF (default), RTS / CTS or none.
+
+Like CPM.COM, TERM.COM carries a Z80 part (TERMZ80) that trap 1Ch copies
+over `COLD` and then calls by function (INIT, SESS, DRAW, RECV, SEND,
+BRK, LOG, CRC, FLUSH, MODE). The Z80 part polls the WD2123 (`RXPOLL`) in every
+waiting loop and between 32-byte pieces of block moves, so the one byte
+the chip holds is always taken (at 19 200 baud a byte comes every 2 100
+T-states), into a 2 KB ring; at 1 KB it stops the host. It keeps a copy
+of the host's screen and turns VT100 codes into the Timex terminal's few
+(ESC H I J K L M Y): the cursor by ESC Y, whole-screen scrolls by the
+terminal itself, scrolls in a region and line insert / delete by drawing
+again from the copy, the bottom right cell never written (the terminal
+wraps at once and would scroll). The 8086 part does the menu, the files
+(DOS random block I/O, records of 1 byte) and the XMODEM protocol.
+
+Connectors (both DE-9s alike, not a PC's): 1 +5 V, 2 TxD out, 3 RxD in,
+4 RTS out, 5 CTS in, 7 GND, 9 +12 V through 1 kOhm, 6 and 8 unused. To a
+PC: 2-2, 3-3, 7-5, 4-8, 5-7.
 
 ## 3. How the work was done
 
@@ -290,6 +334,28 @@ at every point there was a known-good reference to compare with.
    from PRN and AUX, runs INT 14h / INT 17h from a small program, and runs
    `PIP LST:=`, `PIP PUN:=` and `PIP R.TXT=RDR:` under CPM.COM and under
    real CP/M with its own CBIOS on the same model: the same bytes.
+11. **MODE.COM**, with the INT 14h F0h / F1h calls it needs. The test runs
+   it with every port name, all four fields, fields left out and bad
+   parameters, and checks the mode byte and baud code the chip model
+   received after each command.
+12. **TERM.COM**, a serial terminal (section 2.9). The FDD3000's schematic
+   (KiCad, rev 1.1) came at this point: it confirmed the 1.8432 MHz baud
+   crystal and the 4 MHz Z80 clock, showed the two DE-9 connectors'
+   non-standard pinout, and that the WD2123 has no DSR pin, so status
+   bit 7 (which CBIOS A1.1 waits on, and this BIOS had called DSR) is
+   CTS. The chip model gained a host that sends in real time (a byte the
+   chip holds is lost when the next comes in), XON / XOFF and RTS, and
+   the terminal model an optional drawing time. The test checks TERM's
+   screen against a Python VT100 model, then load, the log and XMODEM.
+13. **The WD2123 datasheet** (Western Digital, "WD2123 DEUCE", pp.
+   177-192) arrived last and confirmed: status bit 7 is CTS; the status,
+   mode and command bits; the rate registers' addressing (ports 10h /
+   11h); the 16 baud codes (1.8432 MHz, x16). One correction, to comments
+   only: command bit 1 is not DTR but CS (clock select). It must be 1 on
+   the FDD3000 (SELCLK is tied high; with CS = 0 the receiver would be
+   clocked from SELCLK and receive nothing), and every command written,
+   here and in CBIOS A1.1, has it. The chip model now receives nothing
+   unless CS and receive enable are both on.
 
 ### Problems found along the way (selected)
 
@@ -322,8 +388,10 @@ at every point there was a known-good reference to compare with.
 - Under CPM.COM, MBASIC has 15 686 bytes free (33 862 under TMX CP/M): the
   interpreter, DOS and COMMAND share the 64 KB.
 - A disk error during a CP/M program run is untested.
-- Serial: the baud rates are the WD2123 codes as TMX CONFIGUR names them;
-  the FDD3000's crystal, connectors and DSR wiring are not checked.
+- Serial: the connectors and the crystal are known from the schematic,
+  not checked on hardware; the BIOS was checked against the WD2123
+  datasheet (below). The real terminal's speed over the link is not
+  known; TERM's figures assume one taking 2 ms a character.
 - `Z86.SYS` and `CPM.COM` must come from the same build (CPM.COM checks).
 
 ## 5. Running it

@@ -1,4 +1,4 @@
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-1
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-1
 
 
 
@@ -55,7 +55,7 @@
 34	                    ]	 	
 35	 	 	 	 	
 36	 	 	 	 	
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-2
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-2
 
 
 
@@ -112,7 +112,7 @@
 81	 0250  8B E8	 	 	        MOV     BP,AX           ; the Z
 	 	 	 	80 part to its place (BIOS trap 1CH)
 82	 0252  81 C5 03FC R	 	        ADD     BP,OFFSET Z80
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-3
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-3
 
 
 
@@ -169,7 +169,7 @@
 125	 02BD  B1 04	 	 	        MOV     CL,4
 126	 02BF  D3 E2	 	 	        SHL     DX,CL
 127	 02C1  81 EA 0200	 	        SUB     DX,PSIZE
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-4
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-4
 
 
 
@@ -226,7 +226,7 @@
 175	 032E  BF 014E R	 	        MOV     DI,OFFSET TAIL+1
 176	 0331  AC	 	 	TCOPY:  LODSB
 177	 0332  3C 61	 	 	        CMP     AL,"a"
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-5
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-5
 
 
 
@@ -283,121 +283,121 @@
 	 	 	 	CP/M program is read over it.
 223	 03FC	 	 	 	Z80     LABEL   BYTE
 224	 03FC	 	 	 	STAGE   LABEL   BYTE
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-6
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-6
 
 
 
 225	                             C	        INCLUDE CPMZ80.INC
 226	 03FC  CA 09 3B D8 60 EB     C	        DB      0CAH,009H,03BH,0D8H,060
-	 	 	 	H,0EBH,0F6H,0EBH,013H,0ECH,021H,0ECH,02AH,0F1H,
-	 	 	 	02CH,0F1H
+	 	 	 	H,0EBH,0F6H,0EBH,013H,0ECH,021H,0ECH,029H,0F1H,
+	 	 	 	02BH,0F1H
 227	       F6 EB 13 EC 21 EC     C	
-228	       2A F1 2C F1           C	
-229	 040C  21 00 D0 11 A7 FA     C	        DB      021H,000H,0D0H,011H,0A7
+228	       29 F1 2B F1           C	
+229	 040C  21 00 D0 11 A6 FA     C	        DB      021H,000H,0D0H,011H,0A6
 	 	 	 	H,0FAH,001H,02AH,000H,0EDH,0B0H,008H,0F5H,0E1H,
-	 	 	 	022H,08AH
+	 	 	 	022H,089H
 230	       01 2A 00 ED B0 08     C	
-231	       F5 E1 22 8A           C	
+231	       F5 E1 22 89           C	
 232	 041C  FA 08 2A 06 D0 22     C	        DB      0FAH,008H,02AH,006H,0D0
-	 	 	 	H,022H,07EH,0FAH,02AH,00EH,0D0H,022H,092H,0FAH,
+	 	 	 	H,022H,07DH,0FAH,02AH,00EH,0D0H,022H,091H,0FAH,
 	 	 	 	02AH,002H
-233	       7E FA 2A 0E D0 22     C	
-234	       92 FA 2A 02           C	
-235	 042C  D0 22 80 FA 2A 0C     C	        DB      0D0H,022H,080H,0FAH,02A
-	 	 	 	H,00CH,0D0H,022H,082H,0FAH,03AH,000H,0D0H,032H,
-	 	 	 	08EH,0FAH
-236	       D0 22 82 FA 3A 00     C	
-237	       D0 32 8E FA           C	
-238	 043C  2A 04 D0 22 78 FA     C	        DB      02AH,004H,0D0H,022H,078
-	 	 	 	H,0FAH,011H,000H,002H,019H,022H,07CH,0FAH,02AH,
-	 	 	 	078H,0FAH
-239	       11 00 02 19 22 7C     C	
-240	       FA 2A 78 FA           C	
+233	       7D FA 2A 0E D0 22     C	
+234	       91 FA 2A 02           C	
+235	 042C  D0 22 7F FA 2A 0C     C	        DB      0D0H,022H,07FH,0FAH,02A
+	 	 	 	H,00CH,0D0H,022H,081H,0FAH,03AH,000H,0D0H,032H,
+	 	 	 	08DH,0FAH
+236	       D0 22 81 FA 3A 00     C	
+237	       D0 32 8D FA           C	
+238	 043C  2A 04 D0 22 77 FA     C	        DB      02AH,004H,0D0H,022H,077
+	 	 	 	H,0FAH,011H,000H,002H,019H,022H,07BH,0FAH,02AH,
+	 	 	 	077H,0FAH
+239	       11 00 02 19 22 7B     C	
+240	       FA 2A 77 FA           C	
 241	 044C  06 04 CB 3C CB 1D     C	        DB      006H,004H,0CBH,03CH,0CB
-	 	 	 	H,01DH,010H,0FAH,022H,07AH,0FAH,02AH,078H,0FAH,
+	 	 	 	H,01DH,010H,0FAH,022H,079H,0FAH,02AH,077H,0FAH,
 	 	 	 	054H,05DH
-242	       10 FA 22 7A FA 2A     C	
-243	       78 FA 54 5D           C	
+242	       10 FA 22 79 FA 2A     C	
+243	       77 FA 54 5D           C	
 244	 045C  13 36 00 01 FF 01     C	        DB      013H,036H,000H,001H,0FF
-	 	 	 	H,001H,0EDH,0B0H,0DDH,02AH,078H,0FAH,0DDH,036H,
+	 	 	 	H,001H,0EDH,0B0H,0DDH,02AH,077H,0FAH,0DDH,036H,
 	 	 	 	006H,0C3H
-245	       ED B0 DD 2A 78 FA     C	
+245	       ED B0 DD 2A 77 FA     C	
 246	       DD 36 06 C3           C	
-247	 046C  21 FF F2 DD 75 07     C	        DB      021H,0FFH,0F2H,0DDH,075
+247	 046C  21 FE F2 DD 75 07     C	        DB      021H,0FEH,0F2H,0DDH,075
 	 	 	 	H,007H,0DDH,074H,008H,0DDH,036H,009H,0CDH,0DDH,
 	 	 	 	036H,00AH
 248	       DD 74 08 DD 36 09     C	
 249	       CD DD 36 0A           C	
 250	 047C  21 DD 36 0B 0F DD     C	        DB      021H,0DDH,036H,00BH,00F
-	 	 	 	H,0DDH,036H,00CH,01DH,02AH,078H,0FAH,011H,000H,
+	 	 	 	H,0DDH,036H,00CH,01DH,02AH,077H,0FAH,011H,000H,
 	 	 	 	001H,019H
-251	       36 0C 1D 2A 78 FA     C	
+251	       36 0C 1D 2A 77 FA     C	
 252	       11 00 01 19           C	
-253	 048C  EB 21 E6 F9 06 11     C	        DB      0EBH,021H,0E6H,0F9H,006
+253	 048C  EB 21 E5 F9 06 11     C	        DB      0EBH,021H,0E5H,0F9H,006
 	 	 	 	H,011H,03EH,0C3H,012H,013H,07EH,012H,023H,013H,
 	 	 	 	07EH,012H
 254	       3E C3 12 13 7E 12     C	
 255	       23 13 7E 12           C	
 256	 049C  23 13 10 F2 3E 1A     C	        DB      023H,013H,010H,0F2H,03E
-	 	 	 	H,01AH,011H,060H,000H,0CDH,098H,0F2H,0EDH,073H,
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-7
+	 	 	 	H,01AH,011H,060H,000H,0CDH,097H,0F2H,0EDH,073H,
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-7
 
 
 
-	 	 	 	088H,0FAH
-257	       11 60 00 CD 98 F2     C	
-258	       ED 73 88 FA           C	
-259	 04AC  CD 53 F2 2A 7E FA     C	        DB      0CDH,053H,0F2H,02AH,07E
-	 	 	 	H,0FAH,011H,000H,001H,0EDH,04BH,080H,0FAH,078H,
+	 	 	 	087H,0FAH
+257	       11 60 00 CD 97 F2     C	
+258	       ED 73 87 FA           C	
+259	 04AC  CD 52 F2 2A 7D FA     C	        DB      0CDH,052H,0F2H,02AH,07D
+	 	 	 	H,0FAH,011H,000H,001H,0EDH,04BH,07FH,0FAH,078H,
 	 	 	 	0B1H,028H
-260	       11 00 01 ED 4B 80     C	
+260	       11 00 01 ED 4B 7F     C	
 261	       FA 78 B1 28           C	
 262	 04BC  02 ED B0 21 00 00     C	        DB      002H,0EDH,0B0H,021H,000
 	 	 	 	H,000H,045H,036H,000H,02CH,010H,0FBH,03EH,0C3H,
 	 	 	 	032H,000H
 263	       45 36 00 2C 10 FB     C	
 264	       3E C3 32 00           C	
-265	 04CC  00 32 05 00 2A 78     C	        DB      000H,032H,005H,000H,02A
-	 	 	 	H,078H,0FAH,011H,003H,001H,019H,022H,001H,000H,
-	 	 	 	02AH,078H
+265	 04CC  00 32 05 00 2A 77     C	        DB      000H,032H,005H,000H,02A
+	 	 	 	H,077H,0FAH,011H,003H,001H,019H,022H,001H,000H,
+	 	 	 	02AH,077H
 266	       FA 11 03 01 19 22     C	
-267	       01 00 2A 78           C	
+267	       01 00 2A 77           C	
 268	 04DC  FA 11 06 00 19 22     C	        DB      0FAH,011H,006H,000H,019
-	 	 	 	H,022H,006H,000H,03AH,08EH,0FAH,032H,004H,000H,
-	 	 	 	02AH,07CH
-269	       06 00 3A 8E FA 32     C	
-270	       04 00 2A 7C           C	
-271	 04EC  FA ED 5B 82 FA 19     C	        DB      0FAH,0EDH,05BH,082H,0FA
+	 	 	 	H,022H,006H,000H,03AH,08DH,0FAH,032H,004H,000H,
+	 	 	 	02AH,07BH
+269	       06 00 3A 8D FA 32     C	
+270	       04 00 2A 7B           C	
+271	 04EC  FA ED 5B 81 FA 19     C	        DB      0FAH,0EDH,05BH,081H,0FA
 	 	 	 	H,019H,011H,05CH,000H,001H,020H,000H,0EDH,0B0H,
 	 	 	 	011H,080H
 272	       11 5C 00 01 20 00     C	
 273	       ED B0 11 80           C	
 274	 04FC  00 01 80 00 ED B0     C	        DB      000H,001H,080H,000H,0ED
-	 	 	 	H,0B0H,021H,080H,000H,022H,084H,0FAH,0AFH,032H,
-	 	 	 	08FH,0FAH
-275	       21 80 00 22 84 FA     C	
-276	       AF 32 8F FA           C	
-277	 050C  2A 78 FA F9 21 00     C	        DB      02AH,078H,0FAH,0F9H,021
-	 	 	 	H,000H,000H,0E5H,0C3H,000H,001H,0EDH,07BH,088H,
+	 	 	 	H,0B0H,021H,080H,000H,022H,083H,0FAH,0AFH,032H,
+	 	 	 	08EH,0FAH
+275	       21 80 00 22 83 FA     C	
+276	       AF 32 8E FA           C	
+277	 050C  2A 77 FA F9 21 00     C	        DB      02AH,077H,0FAH,0F9H,021
+	 	 	 	H,000H,000H,0E5H,0C3H,000H,001H,0EDH,07BH,087H,
 	 	 	 	0FAH,0CDH
 278	       00 E5 C3 00 01 ED     C	
-279	       7B 88 FA CD           C	
-280	 051C  A9 F7 CD 53 F2 21     C	        DB      0A9H,0F7H,0CDH,053H,0F2
-	 	 	 	H,021H,0A7H,0FAH,011H,000H,0D0H,001H,02AH,000H,
+279	       7B 87 FA CD           C	
+280	 051C  A8 F7 CD 52 F2 21     C	        DB      0A8H,0F7H,0CDH,052H,0F2
+	 	 	 	H,021H,0A6H,0FAH,011H,000H,0D0H,001H,02AH,000H,
 	 	 	 	0EDH,0B0H
-281	       A7 FA 11 00 D0 01     C	
+281	       A6 FA 11 00 D0 01     C	
 282	       2A 00 ED B0           C	
-283	 052C  2A 8A FA E5 F1 08     C	        DB      02AH,08AH,0FAH,0E5H,0F1
-	 	 	 	H,008H,0C9H,0EDH,04BH,07EH,0FAH,018H,004H,0EDH,
-	 	 	 	04BH,092H
-284	       C9 ED 4B 7E FA 18     C	
-285	       04 ED 4B 92           C	
+283	 052C  2A 89 FA E5 F1 08     C	        DB      02AH,089H,0FAH,0E5H,0F1
+	 	 	 	H,008H,0C9H,0EDH,04BH,07DH,0FAH,018H,004H,0EDH,
+	 	 	 	04BH,091H
+284	       C9 ED 4B 7D FA 18     C	
+285	       04 ED 4B 91           C	
 286	 053C  FA 21 00 00 ED 5B     C	        DB      0FAH,021H,000H,000H,0ED
-	 	 	 	H,05BH,07CH,0FAH,01AH,0EDH,0A0H,02BH,077H,023H,
+	 	 	 	H,05BH,07BH,0FAH,01AH,0EDH,0A0H,02BH,077H,023H,
 	 	 	 	01AH,0EDH
-287	       7C FA 1A ED A0 2B     C	
+287	       7B FA 1A ED A0 2B     C	
 288	       77 23 1A ED           C	
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-8
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-8
 
 
 
@@ -412,24 +412,24 @@
 293	       1A ED A0 2B 77 23     C	
 294	       1A ED A0 2B           C	
 295	 056C  77 23 1A ED A0 2B     C	        DB      077H,023H,01AH,0EDH,0A0
-	 	 	 	H,02BH,077H,023H,0EAH,064H,0F2H,0C9H,0EDH,073H,
-	 	 	 	02AH,0F1H
-296	       77 23 EA 64 F2 C9     C	
-297	       ED 73 2A F1           C	
-298	 057C  F5 D5 21 A7 FA 11     C	        DB      0F5H,0D5H,021H,0A7H,0FA
+	 	 	 	H,02BH,077H,023H,0EAH,063H,0F2H,0C9H,0EDH,073H,
+	 	 	 	029H,0F1H
+296	       77 23 EA 63 F2 C9     C	
+297	       ED 73 29 F1           C	
+298	 057C  F5 D5 21 A6 FA 11     C	        DB      0F5H,0D5H,021H,0A6H,0FA
 	 	 	 	H,011H,000H,0D0H,001H,02AH,000H,0EDH,0B0H,0D1H,
 	 	 	 	0F1H,032H
 299	       00 D0 01 2A 00 ED     C	
 300	       B0 D1 F1 32           C	
 301	 058C  01 D0 ED 53 04 D0     C	        DB      001H,0D0H,0EDH,053H,004
-	 	 	 	H,0D0H,02AH,07AH,0FAH,022H,010H,0D0H,022H,012H,
+	 	 	 	H,0D0H,02AH,079H,0FAH,022H,010H,0D0H,022H,012H,
 	 	 	 	0D0H,022H
-302	       2A 7A FA 22 10 D0     C	
+302	       2A 79 FA 22 10 D0     C	
 303	       22 12 D0 22           C	
 304	 059C  14 D0 22 16 D0 2A     C	        DB      014H,0D0H,022H,016H,0D0
-	 	 	 	H,02AH,078H,0FAH,022H,018H,0D0H,022H,01AH,0D0H,
+	 	 	 	H,02AH,077H,0FAH,022H,018H,0D0H,022H,01AH,0D0H,
 	 	 	 	022H,01CH
-305	       78 FA 22 18 D0 22     C	
+305	       77 FA 22 18 D0 22     C	
 306	       1A D0 22 1C           C	
 307	 05AC  D0 22 1E D0 22 20     C	        DB      0D0H,022H,01EH,0D0H,022
 	 	 	 	H,020H,0D0H,022H,022H,0D0H,011H,009H,000H,019H,
@@ -437,66 +437,66 @@
 308	       D0 22 22 D0 11 09     C	
 309	       00 19 44 4D           C	
 310	 05BC  21 00 02 22 08 D0     C	        DB      021H,000H,002H,022H,008
-	 	 	 	H,0D0H,02AH,08AH,0FAH,0E5H,0F1H,008H,0DDH,021H,
+	 	 	 	H,0D0H,02AH,089H,0FAH,0E5H,0F1H,008H,0DDH,021H,
 	 	 	 	03BH,0D8H
-311	       2A 8A FA E5 F1 08     C	
+311	       2A 89 FA E5 F1 08     C	
 312	       DD 21 3B D8           C	
-313	 05CC  DD E9 F5 D5 CD 59     C	        DB      0DDH,0E9H,0F5H,0D5H,0CD
-	 	 	 	H,059H,0F2H,0D1H,0F1H,0CDH,098H,0F2H,0CDH,059H,
+313	 05CC  DD E9 F5 D5 CD 58     C	        DB      0DDH,0E9H,0F5H,0D5H,0CD
+	 	 	 	H,058H,0F2H,0D1H,0F1H,0CDH,097H,0F2H,0CDH,058H,
 	 	 	 	0F2H,03AH
-314	       F2 D1 F1 CD 98 F2     C	
-315	       CD 59 F2 3A           C	
-316	 05DC  00 D0 C9 ED 73 86     C	        DB      000H,0D0H,0C9H,0EDH,073
-	 	 	 	H,086H,0FAH,0EDH,07BH,088H,0FAH,021H,000H,000H,
+314	       F2 D1 F1 CD 97 F2     C	
+315	       CD 58 F2 3A           C	
+316	 05DC  00 D0 C9 ED 73 85     C	        DB      000H,0D0H,0C9H,0EDH,073
+	 	 	 	H,085H,0FAH,0EDH,07BH,087H,0FAH,021H,000H,000H,
 	 	 	 	079H,0FEH
-317	       FA ED 7B 88 FA 21     C	
+317	       FA ED 7B 87 FA 21     C	
 318	       00 00 79 FE           C	
 319	 05EC  29 30 0F 6F 29 D5     C	        DB      029H,030H,00FH,06FH,029
-	 	 	 	H,0D5H,011H,025H,0F3H,019H,0D1H,07EH,023H,066H,
+	 	 	 	H,0D5H,011H,024H,0F3H,019H,0D1H,07EH,023H,066H,
 	 	 	 	06FH,0CDH
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-9
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-9
 
 
 
-320	       11 25 F3 19 D1 7E     C	
+320	       11 24 F3 19 D1 7E     C	
 321	       23 66 6F CD           C	
 322	 05FC  60 EB 7D 44 ED 7B     C	        DB      060H,0EBH,07DH,044H,0ED
-	 	 	 	H,07BH,086H,0FAH,0C9H,037H,0F2H,07CH,0F3H,08FH,
-	 	 	 	0F3H,095H
-323	       86 FA C9 37 F2 7C     C	
-324	       F3 8F F3 95           C	
-325	 060C  F3 9A F3 A0 F3 A6     C	        DB      0F3H,09AH,0F3H,0A0H,0F3
-	 	 	 	H,0A6H,0F3H,0BFH,0F3H,0C4H,0F3H,0CAH,0F3H,020H,
-	 	 	 	0F4H,0D5H
-326	       F3 BF F3 C4 F3 CA     C	
-327	       F3 20 F4 D5           C	
-328	 061C  F3 DF F3 E3 F3 F3     C	        DB      0F3H,0DFH,0F3H,0E3H,0F3
-	 	 	 	H,0F3H,0F3H,0CFH,0F4H,0CFH,0F4H,067H,0F9H,067H,
-	 	 	 	0F9H,0CFH
-329	       F3 CF F4 CF F4 67     C	
-330	       F9 67 F9 CF           C	
-331	 062C  F4 98 F5 F0 F6 CF     C	        DB      0F4H,098H,0F5H,0F0H,0F6
-	 	 	 	H,0CFH,0F4H,0CFH,0F4H,007H,0F4H,00BH,0F4H,011H,
-	 	 	 	0F4H,018H
-332	       F4 CF F4 07 F4 0B     C	
-333	       F4 11 F4 18           C	
-334	 063C  F4 77 F3 77 F3 77     C	        DB      0F4H,077H,0F3H,077H,0F3
-	 	 	 	H,077H,0F3H,01CH,0F4H,077H,0F3H,0A2H,0F5H,0FAH,
-	 	 	 	0F6H,0CFH
-335	       F3 1C F4 77 F3 A2     C	
-336	       F5 FA F6 CF           C	
-337	 064C  F4 CF F4 77 F3 77     C	        DB      0F4H,0CFH,0F4H,077H,0F3
-	 	 	 	H,077H,0F3H,077H,0F3H,0FAH,0F6H,0AFH,06FH,026H,
+	 	 	 	H,07BH,085H,0FAH,0C9H,036H,0F2H,07BH,0F3H,08EH,
+	 	 	 	0F3H,094H
+323	       85 FA C9 36 F2 7B     C	
+324	       F3 8E F3 94           C	
+325	 060C  F3 99 F3 9F F3 A5     C	        DB      0F3H,099H,0F3H,09FH,0F3
+	 	 	 	H,0A5H,0F3H,0BEH,0F3H,0C3H,0F3H,0C9H,0F3H,01FH,
+	 	 	 	0F4H,0D4H
+326	       F3 BE F3 C3 F3 C9     C	
+327	       F3 1F F4 D4           C	
+328	 061C  F3 DE F3 E2 F3 F2     C	        DB      0F3H,0DEH,0F3H,0E2H,0F3
+	 	 	 	H,0F2H,0F3H,0CEH,0F4H,0CEH,0F4H,066H,0F9H,066H,
+	 	 	 	0F9H,0CEH
+329	       F3 CE F4 CE F4 66     C	
+330	       F9 66 F9 CE           C	
+331	 062C  F4 97 F5 EF F6 CE     C	        DB      0F4H,097H,0F5H,0EFH,0F6
+	 	 	 	H,0CEH,0F4H,0CEH,0F4H,006H,0F4H,00AH,0F4H,010H,
+	 	 	 	0F4H,017H
+332	       F4 CE F4 06 F4 0A     C	
+333	       F4 10 F4 17           C	
+334	 063C  F4 76 F3 76 F3 76     C	        DB      0F4H,076H,0F3H,076H,0F3
+	 	 	 	H,076H,0F3H,01BH,0F4H,076H,0F3H,0A1H,0F5H,0F9H,
+	 	 	 	0F6H,0CEH
+335	       F3 1B F4 76 F3 A1     C	
+336	       F5 F9 F6 CE           C	
+337	 064C  F4 CE F4 76 F3 76     C	        DB      0F4H,0CEH,0F4H,076H,0F3
+	 	 	 	H,076H,0F3H,076H,0F3H,0F9H,0F6H,0AFH,06FH,026H,
 	 	 	 	000H,0C9H
-338	       F3 77 F3 FA F6 AF     C	
+338	       F3 76 F3 F9 F6 AF     C	
 339	       6F 26 00 C9           C	
 340	 065C  CD 13 EC F5 FE 20     C	        DB      0CDH,013H,0ECH,0F5H,0FE
-	 	 	 	H,020H,0D4H,093H,0F4H,0F1H,0F5H,0FEH,00DH,0CCH,
-	 	 	 	093H,0F4H
-341	       D4 93 F4 F1 F5 FE     C	
-342	       0D CC 93 F4           C	
-343	 066C  F1 18 E9 7B CD 93     C	        DB      0F1H,018H,0E9H,07BH,0CD
-	 	 	 	H,093H,0F4H,018H,0E2H,0CDH,062H,0D0H,018H,0DEH,
+	 	 	 	H,020H,0D4H,092H,0F4H,0F1H,0F5H,0FEH,00DH,0CCH,
+	 	 	 	092H,0F4H
+341	       D4 92 F4 F1 F5 FE     C	
+342	       0D CC 92 F4           C	
+343	 066C  F1 18 E9 7B CD 92     C	        DB      0F1H,018H,0E9H,07BH,0CD
+	 	 	 	H,092H,0F4H,018H,0E2H,0CDH,062H,0D0H,018H,0DEH,
 	 	 	 	07BH,0CDH
 344	       F4 18 E2 CD 62 D0     C	
 345	       18 DE 7B CD           C	
@@ -511,7 +511,7 @@
 350	       C4 CD F6 EB 3E 00     C	
 351	       30 BE CD 13           C	
 352	 069C  EC 18 B9 3A 03 00     C	        DB      0ECH,018H,0B9H,03AH,003
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-10
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-10
 
 
 
@@ -519,32 +519,32 @@
 	 	 	 	01AH,0FEH
 353	       18 B4 7B 32 03 00     C	
 354	       18 AD 1A FE           C	
-355	 06AC  24 28 A8 CD 93 F4     C	        DB      024H,028H,0A8H,0CDH,093
+355	 06AC  24 28 A8 CD 92 F4     C	        DB      024H,028H,0A8H,0CDH,092
 	 	 	 	H,0F4H,013H,018H,0F5H,0CDH,0F6H,0EBH,03EH,000H,
 	 	 	 	030H,09CH
 356	       13 18 F5 CD F6 EB     C	
 357	       3E 00 30 9C           C	
 358	 06BC  3D 18 99 21 22 00     C	        DB      03DH,018H,099H,021H,022
-	 	 	 	H,000H,0C9H,0CDH,0A9H,0F7H,021H,080H,000H,022H,
-	 	 	 	084H,0FAH
-359	       C9 CD A9 F7 21 80     C	
-360	       00 22 84 FA           C	
-361	 06CC  3E 0D CD EE F2 1E     C	        DB      03EH,00DH,0CDH,0EEH,0F2
-	 	 	 	H,01EH,000H,0D5H,0CDH,0A9H,0F7H,0D1H,07BH,032H,
-	 	 	 	08EH,0FAH
-362	       00 D5 CD A9 F7 D1     C	
-363	       7B 32 8E FA           C	
+	 	 	 	H,000H,0C9H,0CDH,0A8H,0F7H,021H,080H,000H,022H,
+	 	 	 	083H,0FAH
+359	       C9 CD A8 F7 21 80     C	
+360	       00 22 83 FA           C	
+361	 06CC  3E 0D CD ED F2 1E     C	        DB      03EH,00DH,0CDH,0EDH,0F2
+	 	 	 	H,01EH,000H,0D5H,0CDH,0A8H,0F7H,0D1H,07BH,032H,
+	 	 	 	08DH,0FAH
+362	       00 D5 CD A8 F7 D1     C	
+363	       7B 32 8D FA           C	
 364	 06DC  32 04 00 3E 0E CD     C	        DB      032H,004H,000H,03EH,00E
-	 	 	 	H,0CDH,0EEH,0F2H,0C3H,077H,0F3H,021H,003H,000H,
+	 	 	 	H,0CDH,0EDH,0F2H,0C3H,076H,0F3H,021H,003H,000H,
 	 	 	 	0C9H,03AH
-365	       EE F2 C3 77 F3 21     C	
+365	       ED F2 C3 76 F3 21     C	
 366	       03 00 C9 3A           C	
-367	 06EC  8E FA C3 78 F3 ED     C	        DB      08EH,0FAH,0C3H,078H,0F3
-	 	 	 	H,0EDH,053H,084H,0FAH,0C3H,077H,0F3H,021H,061H,
+367	 06EC  8D FA C3 77 F3 ED     C	        DB      08DH,0FAH,0C3H,077H,0F3
+	 	 	 	H,0EDH,053H,083H,0FAH,0C3H,076H,0F3H,021H,060H,
 	 	 	 	0FAH,0C9H
-368	       53 84 FA C3 77 F3     C	
-369	       21 61 FA C9           C	
-370	 06FC  21 52 FA C9 EB 4E     C	        DB      021H,052H,0FAH,0C9H,0EB
+368	       53 83 FA C3 76 F3     C	
+369	       21 60 FA C9           C	
+370	 06FC  21 51 FA C9 EB 4E     C	        DB      021H,051H,0FAH,0C9H,0EB
 	 	 	 	H,04EH,023H,0E5H,006H,000H,0C5H,0CDH,013H,0ECH,
 	 	 	 	0C1H,0E1H
 371	       23 E5 06 00 C5 CD     C	
@@ -559,42 +559,42 @@
 	 	 	 	005H,0CAH
 377	       18 28 2C FE 03 20     C	
 378	       07 04 05 CA           C	
-379	 072C  37 F2 18 D6 57 78     C	        DB      037H,0F2H,018H,0D6H,057
+379	 072C  36 F2 18 D6 57 78     C	        DB      036H,0F2H,018H,0D6H,057
 	 	 	 	H,078H,0B9H,030H,0D1H,004H,058H,0D5H,016H,000H,
 	 	 	 	019H,0D1H
 380	       B9 30 D1 04 58 D5     C	
 381	       16 00 19 D1           C	
-382	 073C  72 7A C5 CD 93 F4     C	        DB      072H,07AH,0C5H,0CDH,093
+382	 073C  72 7A C5 CD 92 F4     C	        DB      072H,07AH,0C5H,0CDH,092
 	 	 	 	H,0F4H,0C1H,018H,0C1H,004H,005H,028H,0BDH,005H,
 	 	 	 	0C5H,0CDH
 383	       C1 18 C1 04 05 28     C	
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-11
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-11
 
 
 
 384	       BD 05 C5 CD           C	
-385	 074C  87 F4 C1 18 B5 04     C	        DB      087H,0F4H,0C1H,018H,0B5
-	 	 	 	H,004H,005H,028H,0B1H,005H,0C5H,0CDH,087H,0F4H,
+385	 074C  86 F4 C1 18 B5 04     C	        DB      086H,0F4H,0C1H,018H,0B5
+	 	 	 	H,004H,005H,028H,0B1H,005H,0C5H,0CDH,086H,0F4H,
 	 	 	 	0C1H,018H
 386	       05 28 B1 05 C5 CD     C	
-387	       87 F4 C1 18           C	
+387	       86 F4 C1 18           C	
 388	 075C  F4 E1 70 3E 0D CD     C	        DB      0F4H,0E1H,070H,03EH,00D
-	 	 	 	H,0CDH,093H,0F4H,0C3H,077H,0F3H,03EH,008H,0CDH,
-	 	 	 	093H,0F4H
-389	       93 F4 C3 77 F3 3E     C	
-390	       08 CD 93 F4           C	
-391	 076C  3E 20 CD 93 F4 3E     C	        DB      03EH,020H,0CDH,093H,0F4
+	 	 	 	H,0CDH,092H,0F4H,0C3H,076H,0F3H,03EH,008H,0CDH,
+	 	 	 	092H,0F4H
+389	       92 F4 C3 76 F3 3E     C	
+390	       08 CD 92 F4           C	
+391	 076C  3E 20 CD 92 F4 3E     C	        DB      03EH,020H,0CDH,092H,0F4
 	 	 	 	H,03EH,008H,0C5H,0D5H,0E5H,0FEH,009H,020H,00EH,
 	 	 	 	03EH,020H
 392	       08 C5 D5 E5 FE 09     C	
 393	       20 0E 3E 20           C	
-394	 077C  CD AF F4 3A 8F FA     C	        DB      0CDH,0AFH,0F4H,03AH,08F
-	 	 	 	H,0FAH,0E6H,007H,020H,0F4H,018H,003H,0CDH,0AFH,
+394	 077C  CD AE F4 3A 8E FA     C	        DB      0CDH,0AEH,0F4H,03AH,08E
+	 	 	 	H,0FAH,0E6H,007H,020H,0F4H,018H,003H,0CDH,0AEH,
 	 	 	 	0F4H,0E1H
 395	       E6 07 20 F4 18 03     C	
-396	       CD AF F4 E1           C	
-397	 078C  D1 C1 C9 F5 21 8F     C	        DB      0D1H,0C1H,0C9H,0F5H,021
-	 	 	 	H,08FH,0FAH,0FEH,00DH,028H,00BH,0FEH,008H,028H,
+396	       CD AE F4 E1           C	
+397	 078C  D1 C1 C9 F5 21 8E     C	        DB      0D1H,0C1H,0C9H,0F5H,021
+	 	 	 	H,08EH,0FAH,0FEH,00DH,028H,00BH,0FEH,008H,028H,
 	 	 	 	00BH,0FEH
 398	       FA FE 0D 28 0B FE     C	
 399	       08 28 0B FE           C	
@@ -604,181 +604,181 @@
 401	       36 00 18 05 7E B7     C	
 402	       28 01 35 F1           C	
 403	 07AC  C3 21 EC C5 D5 CD     C	        DB      0C3H,021H,0ECH,0C5H,0D5
-	 	 	 	H,0CDH,0A9H,0F7H,0D1H,0C1H,0EDH,053H,08CH,0FAH,
+	 	 	 	H,0CDH,0A8H,0F7H,0D1H,0C1H,0EDH,053H,08BH,0FAH,
 	 	 	 	079H,032H
-404	       A9 F7 D1 C1 ED 53     C	
-405	       8C FA 79 32           C	
-406	 07BC  90 FA CD 4E F8 3A     C	        DB      090H,0FAH,0CDH,04EH,0F8
-	 	 	 	H,03AH,090H,0FAH,0FEH,00FH,028H,00DH,0FEH,013H,
+404	       A8 F7 D1 C1 ED 53     C	
+405	       8B FA 79 32           C	
+406	 07BC  8F FA CD 4D F8 3A     C	        DB      08FH,0FAH,0CDH,04DH,0F8
+	 	 	 	H,03AH,08FH,0FAH,0FEH,00FH,028H,00DH,0FEH,013H,
 	 	 	 	028H,009H
-407	       90 FA FE 0F 28 0D     C	
+407	       8F FA FE 0F 28 0D     C	
 408	       FE 13 28 09           C	
 409	 07CC  FE 16 28 05 FE 17     C	        DB      0FEH,016H,028H,005H,0FE
-	 	 	 	H,017H,0C4H,06CH,0F8H,03AH,090H,0FAH,0FEH,022H,
+	 	 	 	H,017H,0C4H,06BH,0F8H,03AH,08FH,0FAH,0FEH,022H,
 	 	 	 	028H,004H
-410	       C4 6C F8 3A 90 FA     C	
+410	       C4 6B F8 3A 8F FA     C	
 411	       FE 22 28 04           C	
-412	 07DC  FE 28 20 03 CD 79     C	        DB      0FEH,028H,020H,003H,0CD
-	 	 	 	H,079H,0F8H,03AH,090H,0FAH,0FEH,028H,020H,002H,
+412	 07DC  FE 28 20 03 CD 78     C	        DB      0FEH,028H,020H,003H,0CD
+	 	 	 	H,078H,0F8H,03AH,08FH,0FAH,0FEH,028H,020H,002H,
 	 	 	 	03EH,022H
-413	       F8 3A 90 FA FE 28     C	
+413	       F8 3A 8F FA FE 28     C	
 414	       20 02 3E 22           C	
-415	 07EC  11 10 00 CD EE F2     C	        DB      011H,010H,000H,0CDH,0EE
-	 	 	 	H,0F2H,032H,091H,0FAH,0CDH,064H,0F8H,0CDH,0BBH,
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-12
+415	 07EC  11 10 00 CD ED F2     C	        DB      011H,010H,000H,0CDH,0ED
+	 	 	 	H,0F2H,032H,090H,0FAH,0CDH,063H,0F8H,0CDH,0BAH,
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-12
 
 
 
 	 	 	 	0F8H,03AH
-416	       32 91 FA CD 64 F8     C	
-417	       CD BB F8 3A           C	
-418	 07FC  90 FA FE 0F 20 15     C	        DB      090H,0FAH,0FEH,00FH,020
-	 	 	 	H,015H,03AH,091H,0FAH,0B7H,020H,00FH,02AH,08CH,
+416	       32 90 FA CD 63 F8     C	
+417	       CD BA F8 3A           C	
+418	 07FC  8F FA FE 0F 20 15     C	        DB      08FH,0FAH,0FEH,00FH,020
+	 	 	 	H,015H,03AH,090H,0FAH,0B7H,020H,00FH,02AH,08BH,
 	 	 	 	0FAH,011H
-419	       3A 91 FA B7 20 0F     C	
-420	       2A 8C FA 11           C	
-421	 080C  0F 00 19 7E 2A 8C     C	        DB      00FH,000H,019H,07EH,02A
-	 	 	 	H,08CH,0FAH,023H,0CDH,0BAH,0F9H,03AH,090H,0FAH,
+419	       3A 90 FA B7 20 0F     C	
+420	       2A 8B FA 11           C	
+421	 080C  0F 00 19 7E 2A 8B     C	        DB      00FH,000H,019H,07EH,02A
+	 	 	 	H,08BH,0FAH,023H,0CDH,0B9H,0F9H,03AH,08FH,0FAH,
 	 	 	 	0FEH,021H
-422	       FA 23 CD BA F9 3A     C	
-423	       90 FA FE 21           C	
-424	 081C  20 15 3A 91 FA FE     C	        DB      020H,015H,03AH,091H,0FA
-	 	 	 	H,0FEH,003H,020H,007H,0CDH,09BH,0F8H,0AFH,032H,
-	 	 	 	091H,0FAH
-425	       03 20 07 CD 9B F8     C	
-426	       AF 32 91 FA           C	
-427	 082C  3A 91 FA B7 CC 8A     C	        DB      03AH,091H,0FAH,0B7H,0CC
-	 	 	 	H,08AH,0F8H,03AH,090H,0FAH,0FEH,010H,020H,00FH,
-	 	 	 	03AH,0A6H
-428	       F8 3A 90 FA FE 10     C	
-429	       20 0F 3A A6           C	
+422	       FA 23 CD B9 F9 3A     C	
+423	       8F FA FE 21           C	
+424	 081C  20 15 3A 90 FA FE     C	        DB      020H,015H,03AH,090H,0FA
+	 	 	 	H,0FEH,003H,020H,007H,0CDH,09AH,0F8H,0AFH,032H,
+	 	 	 	090H,0FAH
+425	       03 20 07 CD 9A F8     C	
+426	       AF 32 90 FA           C	
+427	 082C  3A 90 FA B7 CC 89     C	        DB      03AH,090H,0FAH,0B7H,0CC
+	 	 	 	H,089H,0F8H,03AH,08FH,0FAH,0FEH,010H,020H,00FH,
+	 	 	 	03AH,0A5H
+428	       F8 3A 8F FA FE 10     C	
+429	       20 0F 3A A5           C	
 430	 083C  FA B7 28 09 AF 32     C	        DB      0FAH,0B7H,028H,009H,0AF
-	 	 	 	H,032H,0A6H,0FAH,03EH,0FFH,0C3H,078H,0F3H,03AH,
-	 	 	 	091H,0FAH
-431	       A6 FA 3E FF C3 78     C	
-432	       F3 3A 91 FA           C	
-433	 084C  B7 CA 78 F3 FE FF     C	        DB      0B7H,0CAH,078H,0F3H,0FE
-	 	 	 	H,0FFH,0CAH,078H,0F3H,047H,03AH,090H,0FAH,0FEH,
+	 	 	 	H,032H,0A5H,0FAH,03EH,0FFH,0C3H,077H,0F3H,03AH,
+	 	 	 	090H,0FAH
+431	       A5 FA 3E FF C3 77     C	
+432	       F3 3A 90 FA           C	
+433	 084C  B7 CA 77 F3 FE FF     C	        DB      0B7H,0CAH,077H,0F3H,0FE
+	 	 	 	H,0FFH,0CAH,077H,0F3H,047H,03AH,08FH,0FAH,0FEH,
 	 	 	 	021H,028H
-434	       CA 78 F3 47 3A 90     C	
+434	       CA 77 F3 47 3A 8F     C	
 435	       FA FE 21 28           C	
 436	 085C  0C FE 22 28 0D FE     C	        DB      00CH,0FEH,022H,028H,00D
-	 	 	 	H,0FEH,028H,028H,009H,078H,0C3H,078H,0F3H,03EH,
+	 	 	 	H,0FEH,028H,028H,009H,078H,0C3H,077H,0F3H,03EH,
 	 	 	 	001H,0C3H
-437	       28 28 09 78 C3 78     C	
+437	       28 28 09 78 C3 77     C	
 438	       F3 3E 01 C3           C	
-439	 086C  78 F3 05 3E 02 CA     C	        DB      078H,0F3H,005H,03EH,002
-	 	 	 	H,0CAH,078H,0F3H,03DH,0C3H,078H,0F3H,0EDH,053H,
-	 	 	 	08CH,0FAH
-440	       78 F3 3D C3 78 F3     C	
-441	       ED 53 8C FA           C	
-442	 087C  CD 0A F9 AF 18 18     C	        DB      0CDH,00AH,0F9H,0AFH,018
-	 	 	 	H,018H,0EDH,053H,08CH,0FAH,021H,023H,000H,019H,
+439	 086C  77 F3 05 3E 02 CA     C	        DB      077H,0F3H,005H,03EH,002
+	 	 	 	H,0CAH,077H,0F3H,03DH,0C3H,077H,0F3H,0EDH,053H,
+	 	 	 	08BH,0FAH
+440	       77 F3 3D C3 77 F3     C	
+441	       ED 53 8B FA           C	
+442	 087C  CD 09 F9 AF 18 18     C	        DB      0CDH,009H,0F9H,0AFH,018
+	 	 	 	H,018H,0EDH,053H,08BH,0FAH,021H,023H,000H,019H,
 	 	 	 	07EH,0B7H
-443	       ED 53 8C FA 21 23     C	
+443	       ED 53 8B FA 21 23     C	
 444	       00 19 7E B7           C	
-445	 088C  28 05 0E 21 C3 CF     C	        DB      028H,005H,00EH,021H,0C3
-	 	 	 	H,0CFH,0F4H,02BH,056H,02BH,05EH,0EBH,03EH,001H,
-	 	 	 	032H,09EH
+445	 088C  28 05 0E 21 C3 CE     C	        DB      028H,005H,00EH,021H,0C3
+	 	 	 	H,0CEH,0F4H,02BH,056H,02BH,05EH,0EBH,03EH,001H,
+	 	 	 	032H,09DH
 446	       F4 2B 56 2B 5E EB     C	
-447	       3E 01 32 9E           C	
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-13
+447	       3E 01 32 9D           C	
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-13
 
 
 
-448	 089C  FA 22 9C FA 3A 94     C	        DB      0FAH,022H,09CH,0FAH,03A
-	 	 	 	H,094H,0FAH,03DH,020H,041H,0EDH,05BH,095H,0FAH,
-	 	 	 	02AH,08CH
+448	 089C  FA 22 9B FA 3A 93     C	        DB      0FAH,022H,09BH,0FAH,03A
+	 	 	 	H,093H,0FAH,03DH,020H,041H,0EDH,05BH,094H,0FAH,
+	 	 	 	02AH,08BH
 449	       FA 3D 20 41 ED 5B     C	
-450	       95 FA 2A 8C           C	
+450	       94 FA 2A 8B           C	
 451	 08AC  FA B7 ED 52 20 35     C	        DB      0FAH,0B7H,0EDH,052H,020
-	 	 	 	H,035H,02AH,09CH,0FAH,0EDH,05BH,097H,0FAH,0EDH,
+	 	 	 	H,035H,02AH,09BH,0FAH,0EDH,05BH,096H,0FAH,0EDH,
 	 	 	 	052H,038H
-452	       2A 9C FA ED 5B 97     C	
+452	       2A 9B FA ED 5B 96     C	
 453	       FA ED 52 38           C	
 454	 08BC  2A 7C B7 20 26 3A     C	        DB      02AH,07CH,0B7H,020H,026
-	 	 	 	H,03AH,099H,0FAH,0BDH,028H,015H,038H,01EH,07DH,
-	 	 	 	0CDH,040H
-455	       99 FA BD 28 15 38     C	
-456	       1E 7D CD 40           C	
-457	 08CC  F9 ED 5B 84 FA 01     C	        DB      0F9H,0EDH,05BH,084H,0FA
-	 	 	 	H,001H,080H,000H,0EDH,0B0H,0CDH,0C7H,0F6H,0C3H,
-	 	 	 	077H,0F3H
-458	       80 00 ED B0 CD C7     C	
-459	       F6 C3 77 F3           C	
-460	 08DC  3A 9A FA B7 28 05     C	        DB      03AH,09AH,0FAH,0B7H,028
-	 	 	 	H,005H,03EH,001H,0C3H,078H,0F3H,0CDH,0A9H,0F7H,
-	 	 	 	0CDH,04EH
-461	       3E 01 C3 78 F3 CD     C	
-462	       A9 F7 CD 4E           C	
-463	 08EC  F8 CD 6C F8 3A 9E     C	        DB      0F8H,0CDH,06CH,0F8H,03A
-	 	 	 	H,09EH,0FAH,0B7H,028H,00AH,0CDH,064H,0F8H,0EBH,
-	 	 	 	02AH,09CH
-464	       FA B7 28 0A CD 64     C	
-465	       F8 EB 2A 9C           C	
-466	 08FC  FA CD D5 F6 AF 32     C	        DB      0FAH,0CDH,0D5H,0F6H,0AF
-	 	 	 	H,032H,099H,0FAH,032H,09AH,0FAH,0CDH,059H,0F2H,
+	 	 	 	H,03AH,098H,0FAH,0BDH,028H,015H,038H,01EH,07DH,
+	 	 	 	0CDH,03FH
+455	       98 FA BD 28 15 38     C	
+456	       1E 7D CD 3F           C	
+457	 08CC  F9 ED 5B 83 FA 01     C	        DB      0F9H,0EDH,05BH,083H,0FA
+	 	 	 	H,001H,080H,000H,0EDH,0B0H,0CDH,0C6H,0F6H,0C3H,
+	 	 	 	076H,0F3H
+458	       80 00 ED B0 CD C6     C	
+459	       F6 C3 76 F3           C	
+460	 08DC  3A 99 FA B7 28 05     C	        DB      03AH,099H,0FAH,0B7H,028
+	 	 	 	H,005H,03EH,001H,0C3H,077H,0F3H,0CDH,0A8H,0F7H,
+	 	 	 	0CDH,04DH
+461	       3E 01 C3 77 F3 CD     C	
+462	       A8 F7 CD 4D           C	
+463	 08EC  F8 CD 6B F8 3A 9D     C	        DB      0F8H,0CDH,06BH,0F8H,03A
+	 	 	 	H,09DH,0FAH,0B7H,028H,00AH,0CDH,063H,0F8H,0EBH,
+	 	 	 	02AH,09BH
+464	       FA B7 28 0A CD 63     C	
+465	       F8 EB 2A 9B           C	
+466	 08FC  FA CD D4 F6 AF 32     C	        DB      0FAH,0CDH,0D4H,0F6H,0AF
+	 	 	 	H,032H,098H,0FAH,032H,099H,0FAH,0CDH,058H,0F2H,
 	 	 	 	03EH,014H
-467	       99 FA 32 9A FA CD     C	
-468	       59 F2 3E 14           C	
-469	 090C  11 10 00 CD 98 F2     C	        DB      011H,010H,000H,0CDH,098
+467	       98 FA 32 99 FA CD     C	
+468	       58 F2 3E 14           C	
+469	 090C  11 10 00 CD 97 F2     C	        DB      011H,010H,000H,0CDH,097
 	 	 	 	H,0F2H,03AH,000H,0D0H,0B7H,028H,00CH,0FEH,003H,
 	 	 	 	020H,03DH
 470	       3A 00 D0 B7 28 0C     C	
 471	       FE 03 20 3D           C	
-472	 091C  CD 9B F8 3E 01 32     C	        DB      0CDH,09BH,0F8H,03EH,001
-	 	 	 	H,032H,09AH,0FAH,03AH,099H,0FAH,0CDH,040H,0F9H,
+472	 091C  CD 9A F8 3E 01 32     C	        DB      0CDH,09AH,0F8H,03EH,001
+	 	 	 	H,032H,099H,0FAH,03AH,098H,0FAH,0CDH,03FH,0F9H,
 	 	 	 	0EBH,02AH
-473	       9A FA 3A 99 FA CD     C	
-474	       40 F9 EB 2A           C	
-475	 092C  78 FA 01 60 00 09     C	        DB      078H,0FAH,001H,060H,000
-	 	 	 	H,009H,001H,080H,000H,0EDH,0B0H,021H,099H,0FAH,
+473	       99 FA 3A 98 FA CD     C	
+474	       3F F9 EB 2A           C	
+475	 092C  77 FA 01 60 00 09     C	        DB      077H,0FAH,001H,060H,000
+	 	 	 	H,009H,001H,080H,000H,0EDH,0B0H,021H,098H,0FAH,
 	 	 	 	034H,07EH
 476	       01 80 00 ED B0 21     C	
-477	       99 FA 34 7E           C	
-478	 093C  3D 20 0B CD 64 F8     C	        DB      03DH,020H,00BH,0CDH,064
-	 	 	 	H,0F8H,011H,0D1H,0FAH,001H,025H,000H,0EDH,0B0H,
-	 	 	 	03AH,09AH
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-14
+477	       98 FA 34 7E           C	
+478	 093C  3D 20 0B CD 63 F8     C	        DB      03DH,020H,00BH,0CDH,063
+	 	 	 	H,0F8H,011H,0D0H,0FAH,001H,025H,000H,0EDH,0B0H,
+	 	 	 	03AH,099H
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-14
 
 
 
-479	       11 D1 FA 01 25 00     C	
-480	       ED B0 3A 9A           C	
-481	 094C  FA B7 20 0E 3A 99     C	        DB      0FAH,0B7H,020H,00EH,03A
-	 	 	 	H,099H,0FAH,0FEH,008H,038H,0B3H,018H,005H,03EH,
+479	       11 D0 FA 01 25 00     C	
+480	       ED B0 3A 99           C	
+481	 094C  FA B7 20 0E 3A 98     C	        DB      0FAH,0B7H,020H,00EH,03A
+	 	 	 	H,098H,0FAH,0FEH,008H,038H,0B3H,018H,005H,03EH,
 	 	 	 	001H,032H
 482	       FA FE 08 38 B3 18     C	
 483	       05 3E 01 32           C	
-484	 095C  9A FA CD 59 F2 3A     C	        DB      09AH,0FAH,0CDH,059H,0F2
-	 	 	 	H,03AH,099H,0FAH,0B7H,020H,012H,0CDH,064H,0F8H,
-	 	 	 	0CDH,0BBH
-485	       99 FA B7 20 12 CD     C	
-486	       64 F8 CD BB           C	
-487	 096C  F8 3A 9E FA B7 C4     C	        DB      0F8H,03AH,09EH,0FAH,0B7
-	 	 	 	H,0C4H,0CEH,0F6H,03EH,001H,0C3H,078H,0F3H,03EH,
+484	 095C  99 FA CD 58 F2 3A     C	        DB      099H,0FAH,0CDH,058H,0F2
+	 	 	 	H,03AH,098H,0FAH,0B7H,020H,012H,0CDH,063H,0F8H,
+	 	 	 	0CDH,0BAH
+485	       98 FA B7 20 12 CD     C	
+486	       63 F8 CD BA           C	
+487	 096C  F8 3A 9D FA B7 C4     C	        DB      0F8H,03AH,09DH,0FAH,0B7
+	 	 	 	H,0C4H,0CDH,0F6H,03EH,001H,0C3H,077H,0F3H,03EH,
 	 	 	 	001H,032H
-488	       CE F6 3E 01 C3 78     C	
+488	       CD F6 3E 01 C3 77     C	
 489	       F3 3E 01 32           C	
-490	 097C  94 FA 2A 8C FA 22     C	        DB      094H,0FAH,02AH,08CH,0FA
-	 	 	 	H,022H,095H,0FAH,02AH,09CH,0FAH,022H,097H,0FAH,
-	 	 	 	021H,0D1H
-491	       95 FA 2A 9C FA 22     C	
-492	       97 FA 21 D1           C	
-493	 098C  FA CD BB F8 3A 9E     C	        DB      0FAH,0CDH,0BBH,0F8H,03A
-	 	 	 	H,09EH,0FAH,0B7H,0C4H,0CEH,0F6H,0AFH,0CDH,040H,
+490	 097C  93 FA 2A 8B FA 22     C	        DB      093H,0FAH,02AH,08BH,0FA
+	 	 	 	H,022H,094H,0FAH,02AH,09BH,0FAH,022H,096H,0FAH,
+	 	 	 	021H,0D0H
+491	       94 FA 2A 9B FA 22     C	
+492	       96 FA 21 D0           C	
+493	 098C  FA CD BA F8 3A 9D     C	        DB      0FAH,0CDH,0BAH,0F8H,03A
+	 	 	 	H,09DH,0FAH,0B7H,0C4H,0CDH,0F6H,0AFH,0CDH,03FH,
 	 	 	 	0F9H,0EDH
-494	       FA B7 C4 CE F6 AF     C	
-495	       CD 40 F9 ED           C	
-496	 099C  5B 84 FA 01 80 00     C	        DB      05BH,084H,0FAH,001H,080
-	 	 	 	H,000H,0EDH,0B0H,0C3H,077H,0F3H,03AH,09EH,0FAH,
+494	       FA B7 C4 CD F6 AF     C	
+495	       CD 3F F9 ED           C	
+496	 099C  5B 83 FA 01 80 00     C	        DB      05BH,083H,0FAH,001H,080
+	 	 	 	H,000H,0EDH,0B0H,0C3H,076H,0F3H,03AH,09DH,0FAH,
 	 	 	 	0B7H,0CAH
-497	       ED B0 C3 77 F3 3A     C	
-498	       9E FA B7 CA           C	
-499	 09AC  26 F9 ED 5B 8C FA     C	        DB      026H,0F9H,0EDH,05BH,08C
-	 	 	 	H,0FAH,02AH,09CH,0FAH,07DH,0E6H,07FH,0E5H,021H,
+497	       ED B0 C3 76 F3 3A     C	
+498	       9D FA B7 CA           C	
+499	 09AC  25 F9 ED 5B 8B FA     C	        DB      025H,0F9H,0EDH,05BH,08B
+	 	 	 	H,0FAH,02AH,09BH,0FAH,07DH,0E6H,07FH,0E5H,021H,
 	 	 	 	020H,000H
-500	       2A 9C FA 7D E6 7F     C	
+500	       2A 9B FA 7D E6 7F     C	
 501	       E5 21 20 00           C	
 502	 09BC  19 77 E1 EB 01 0C     C	        DB      019H,077H,0E1H,0EBH,001
 	 	 	 	H,00CH,000H,009H,07BH,017H,07AH,017H,077H,023H,
@@ -786,163 +786,163 @@
 503	       00 09 7B 17 7A 17     C	
 504	       77 23 7A 07           C	
 505	 09CC  E6 01 77 C9 ED 53     C	        DB      0E6H,001H,077H,0C9H,0ED
-	 	 	 	H,053H,08CH,0FAH,0CDH,00AH,0F9H,0AFH,018H,014H,
+	 	 	 	H,053H,08BH,0FAH,0CDH,009H,0F9H,0AFH,018H,014H,
 	 	 	 	0EDH,053H
-506	       8C FA CD 0A F9 AF     C	
+506	       8B FA CD 09 F9 AF     C	
 507	       18 14 ED 53           C	
-508	 09DC  8C FA 21 23 00 19     C	        DB      08CH,0FAH,021H,023H,000
-	 	 	 	H,019H,07EH,0B7H,0C2H,0CFH,0F4H,02BH,056H,02BH,
+508	 09DC  8B FA 21 23 00 19     C	        DB      08BH,0FAH,021H,023H,000
+	 	 	 	H,019H,07EH,0B7H,0C2H,0CEH,0F4H,02BH,056H,02BH,
 	 	 	 	05EH,0EBH
-509	       7E B7 C2 CF F4 2B     C	
+509	       7E B7 C2 CE F4 2B     C	
 510	       56 2B 5E EB           C	
-511	 09EC  3E 01 32 9E FA 22     C	        DB      03EH,001H,032H,09EH,0FA
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-15
+511	 09EC  3E 01 32 9D FA 22     C	        DB      03EH,001H,032H,09DH,0FA
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-15
 
 
 
-	 	 	 	H,022H,09CH,0FAH,03AH,094H,0FAH,0FEH,002H,020H,
+	 	 	 	H,022H,09BH,0FAH,03AH,093H,0FAH,0FEH,002H,020H,
 	 	 	 	02CH,0EDH
-512	       9C FA 3A 94 FA FE     C	
+512	       9B FA 3A 93 FA FE     C	
 513	       02 20 2C ED           C	
-514	 09FC  5B 95 FA 2A 8C FA     C	        DB      05BH,095H,0FAH,02AH,08C
-	 	 	 	H,0FAH,0B7H,0EDH,052H,020H,020H,03AH,09FH,0FAH,
-	 	 	 	021H,09EH
+514	 09FC  5B 94 FA 2A 8B FA     C	        DB      05BH,094H,0FAH,02AH,08B
+	 	 	 	H,0FAH,0B7H,0EDH,052H,020H,020H,03AH,09EH,0FAH,
+	 	 	 	021H,09DH
 515	       B7 ED 52 20 20 3A     C	
-516	       9F FA 21 9E           C	
-517	 0A0C  FA BE 20 17 3A 99     C	        DB      0FAH,0BEH,020H,017H,03A
-	 	 	 	H,099H,0FAH,0FEH,008H,030H,010H,05FH,016H,000H,
-	 	 	 	02AH,097H
+516	       9E FA 21 9D           C	
+517	 0A0C  FA BE 20 17 3A 98     C	        DB      0FAH,0BEH,020H,017H,03A
+	 	 	 	H,098H,0FAH,0FEH,008H,030H,010H,05FH,016H,000H,
+	 	 	 	02AH,096H
 518	       FA FE 08 30 10 5F     C	
-519	       16 00 2A 97           C	
-520	 0A1C  FA 19 ED 5B 9C FA     C	        DB      0FAH,019H,0EDH,05BH,09C
-	 	 	 	H,0FAH,0B7H,0EDH,052H,028H,049H,0CDH,0A9H,0F7H,
-	 	 	 	03AH,0A6H
+519	       16 00 2A 96           C	
+520	 0A1C  FA 19 ED 5B 9B FA     C	        DB      0FAH,019H,0EDH,05BH,09B
+	 	 	 	H,0FAH,0B7H,0EDH,052H,028H,049H,0CDH,0A8H,0F7H,
+	 	 	 	03AH,0A5H
 521	       B7 ED 52 28 49 CD     C	
-522	       A9 F7 3A A6           C	
+522	       A8 F7 3A A5           C	
 523	 0A2C  FA B7 28 09 AF 32     C	        DB      0FAH,0B7H,028H,009H,0AF
-	 	 	 	H,032H,0A6H,0FAH,03EH,002H,0C3H,078H,0F3H,03EH,
+	 	 	 	H,032H,0A5H,0FAH,03EH,002H,0C3H,077H,0F3H,03EH,
 	 	 	 	002H,032H
-524	       A6 FA 3E 02 C3 78     C	
+524	       A5 FA 3E 02 C3 77     C	
 525	       F3 3E 02 32           C	
-526	 0A3C  94 FA AF 32 99 FA     C	        DB      094H,0FAH,0AFH,032H,099
-	 	 	 	H,0FAH,02AH,08CH,0FAH,022H,095H,0FAH,02AH,09CH,
+526	 0A3C  93 FA AF 32 98 FA     C	        DB      093H,0FAH,0AFH,032H,098
+	 	 	 	H,0FAH,02AH,08BH,0FAH,022H,094H,0FAH,02AH,09BH,
 	 	 	 	0FAH,022H
-527	       2A 8C FA 22 95 FA     C	
-528	       2A 9C FA 22           C	
-529	 0A4C  97 FA 2A 8C FA 11     C	        DB      097H,0FAH,02AH,08CH,0FA
-	 	 	 	H,011H,0D1H,0FAH,001H,024H,000H,0EDH,0B0H,0AFH,
+527	       2A 8B FA 22 94 FA     C	
+528	       2A 9B FA 22           C	
+529	 0A4C  96 FA 2A 8B FA 11     C	        DB      096H,0FAH,02AH,08BH,0FA
+	 	 	 	H,011H,0D0H,0FAH,001H,024H,000H,0EDH,0B0H,0AFH,
 	 	 	 	012H,032H
-530	       D1 FA 01 24 00 ED     C	
+530	       D0 FA 01 24 00 ED     C	
 531	       B0 AF 12 32           C	
-532	 0A5C  DE FA 3A 9E FA 32     C	        DB      0DEH,0FAH,03AH,09EH,0FA
-	 	 	 	H,032H,09FH,0FAH,0B7H,028H,009H,011H,0D1H,0FAH,
-	 	 	 	02AH,09CH
-533	       9F FA B7 28 09 11     C	
-534	       D1 FA 2A 9C           C	
-535	 0A6C  FA CD D5 F6 3A 99     C	        DB      0FAH,0CDH,0D5H,0F6H,03A
-	 	 	 	H,099H,0FAH,0CDH,040H,0F9H,0EBH,02AH,084H,0FAH,
+532	 0A5C  DD FA 3A 9D FA 32     C	        DB      0DDH,0FAH,03AH,09DH,0FA
+	 	 	 	H,032H,09EH,0FAH,0B7H,028H,009H,011H,0D0H,0FAH,
+	 	 	 	02AH,09BH
+533	       9E FA B7 28 09 11     C	
+534	       D0 FA 2A 9B           C	
+535	 0A6C  FA CD D4 F6 3A 98     C	        DB      0FAH,0CDH,0D4H,0F6H,03A
+	 	 	 	H,098H,0FAH,0CDH,03FH,0F9H,0EBH,02AH,083H,0FAH,
 	 	 	 	001H,080H
-536	       FA CD 40 F9 EB 2A     C	
-537	       84 FA 01 80           C	
-538	 0A7C  00 ED B0 21 99 FA     C	        DB      000H,0EDH,0B0H,021H,099
-	 	 	 	H,0FAH,034H,0CDH,0C7H,0F6H,0C3H,077H,0F3H,03AH,
-	 	 	 	094H,0FAH
-539	       34 CD C7 F6 C3 77     C	
-540	       F3 3A 94 FA           C	
-541	 0A8C  FE 02 3E 00 32 94     C	        DB      0FEH,002H,03EH,000H,032
-	 	 	 	H,094H,0FAH,0C0H,02AH,08CH,0FAH,0E5H,02AH,078H,
+536	       FA CD 3F F9 EB 2A     C	
+537	       83 FA 01 80           C	
+538	 0A7C  00 ED B0 21 98 FA     C	        DB      000H,0EDH,0B0H,021H,098
+	 	 	 	H,0FAH,034H,0CDH,0C6H,0F6H,0C3H,076H,0F3H,03AH,
+	 	 	 	093H,0FAH
+539	       34 CD C6 F6 C3 76     C	
+540	       F3 3A 93 FA           C	
+541	 0A8C  FE 02 3E 00 32 93     C	        DB      0FEH,002H,03EH,000H,032
+	 	 	 	H,093H,0FAH,0C0H,02AH,08BH,0FAH,0E5H,02AH,077H,
 	 	 	 	0FAH,011H
-542	       FA C0 2A 8C FA E5     C	
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-16
+542	       FA C0 2A 8B FA E5     C	
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-16
 
 
 
-543	       2A 78 FA 11           C	
-544	 0A9C  10 00 19 EB 21 D1     C	        DB      010H,000H,019H,0EBH,021
-	 	 	 	H,0D1H,0FAH,001H,025H,000H,0EDH,0B0H,0CDH,06CH,
+543	       2A 77 FA 11           C	
+544	 0A9C  10 00 19 EB 21 D0     C	        DB      010H,000H,019H,0EBH,021
+	 	 	 	H,0D0H,0FAH,001H,025H,000H,0EDH,0B0H,0CDH,06BH,
 	 	 	 	0F8H,0CDH
 545	       FA 01 25 00 ED B0     C	
-546	       CD 6C F8 CD           C	
-547	 0AAC  59 F2 AF 32 9B FA     C	        DB      059H,0F2H,0AFH,032H,09B
-	 	 	 	H,0FAH,03AH,09BH,0FAH,0CDH,040H,0F9H,0E5H,02AH,
-	 	 	 	078H,0FAH
-548	       3A 9B FA CD 40 F9     C	
-549	       E5 2A 78 FA           C	
+546	       CD 6B F8 CD           C	
+547	 0AAC  58 F2 AF 32 9A FA     C	        DB      058H,0F2H,0AFH,032H,09A
+	 	 	 	H,0FAH,03AH,09AH,0FAH,0CDH,03FH,0F9H,0E5H,02AH,
+	 	 	 	077H,0FAH
+548	       3A 9A FA CD 3F F9     C	
+549	       E5 2A 77 FA           C	
 550	 0ABC  11 60 00 19 EB E1     C	        DB      011H,060H,000H,019H,0EB
 	 	 	 	H,0E1H,001H,080H,000H,0EDH,0B0H,03EH,015H,011H,
 	 	 	 	010H,000H
 551	       01 80 00 ED B0 3E     C	
 552	       15 11 10 00           C	
-553	 0ACC  CD 98 F2 3A 00 D0     C	        DB      0CDH,098H,0F2H,03AH,000
-	 	 	 	H,0D0H,0B7H,020H,00BH,021H,09BH,0FAH,034H,03AH,
-	 	 	 	099H,0FAH
-554	       B7 20 0B 21 9B FA     C	
-555	       34 3A 99 FA           C	
-556	 0ADC  BE 20 D3 AF 32 A6     C	        DB      0BEH,020H,0D3H,0AFH,032
-	 	 	 	H,0A6H,0FAH,0CDH,059H,0F2H,02AH,095H,0FAH,022H,
-	 	 	 	08CH,0FAH
-557	       FA CD 59 F2 2A 95     C	
-558	       FA 22 8C FA           C	
-559	 0AEC  11 0C 00 19 11 A0     C	        DB      011H,00CH,000H,019H,011
-	 	 	 	H,0A0H,0FAH,001H,002H,000H,0EDH,0B0H,001H,012H,
+553	 0ACC  CD 97 F2 3A 00 D0     C	        DB      0CDH,097H,0F2H,03AH,000
+	 	 	 	H,0D0H,0B7H,020H,00BH,021H,09AH,0FAH,034H,03AH,
+	 	 	 	098H,0FAH
+554	       B7 20 0B 21 9A FA     C	
+555	       34 3A 98 FA           C	
+556	 0ADC  BE 20 D3 AF 32 A5     C	        DB      0BEH,020H,0D3H,0AFH,032
+	 	 	 	H,0A5H,0FAH,0CDH,058H,0F2H,02AH,094H,0FAH,022H,
+	 	 	 	08BH,0FAH
+557	       FA CD 58 F2 2A 94     C	
+558	       FA 22 8B FA           C	
+559	 0AEC  11 0C 00 19 11 9F     C	        DB      011H,00CH,000H,019H,011
+	 	 	 	H,09FH,0FAH,001H,002H,000H,0EDH,0B0H,001H,012H,
 	 	 	 	000H,009H
 560	       FA 01 02 00 ED B0     C	
 561	       01 12 00 09           C	
-562	 0AFC  0E 04 ED B0 CD 64     C	        DB      00EH,004H,0EDH,0B0H,0CD
-	 	 	 	H,064H,0F8H,0CDH,0BBH,0F8H,03AH,09FH,0FAH,0B7H,
+562	 0AFC  0E 04 ED B0 CD 63     C	        DB      00EH,004H,0EDH,0B0H,0CD
+	 	 	 	H,063H,0F8H,0CDH,0BAH,0F8H,03AH,09EH,0FAH,0B7H,
 	 	 	 	028H,01DH
-563	       F8 CD BB F8 3A 9F     C	
+563	       F8 CD BA F8 3A 9E     C	
 564	       FA B7 28 1D           C	
-565	 0B0C  2A 8C FA 11 0C 00     C	        DB      02AH,08CH,0FAH,011H,00C
-	 	 	 	H,000H,019H,0EBH,021H,0A0H,0FAH,001H,002H,000H,
+565	 0B0C  2A 8B FA 11 0C 00     C	        DB      02AH,08BH,0FAH,011H,00C
+	 	 	 	H,000H,019H,0EBH,021H,09FH,0FAH,001H,002H,000H,
 	 	 	 	0EDH,0B0H
-566	       19 EB 21 A0 FA 01     C	
+566	       19 EB 21 9F FA 01     C	
 567	       02 00 ED B0           C	
 568	 0B1C  21 12 00 19 EB 21     C	        DB      021H,012H,000H,019H,0EB
-	 	 	 	H,021H,0A2H,0FAH,001H,004H,000H,0EDH,0B0H,0E1H,
-	 	 	 	022H,08CH
-569	       A2 FA 01 04 00 ED     C	
-570	       B0 E1 22 8C           C	
-571	 0B2C  FA C9 CD 64 F8 EB     C	        DB      0FAH,0C9H,0CDH,064H,0F8
-	 	 	 	H,0EBH,02AH,08CH,0FAH,001H,024H,000H,0EDH,0B0H,
+	 	 	 	H,021H,0A1H,0FAH,001H,004H,000H,0EDH,0B0H,0E1H,
+	 	 	 	022H,08BH
+569	       A1 FA 01 04 00 ED     C	
+570	       B0 E1 22 8B           C	
+571	 0B2C  FA C9 CD 63 F8 EB     C	        DB      0FAH,0C9H,0CDH,063H,0F8
+	 	 	 	H,0EBH,02AH,08BH,0FAH,001H,024H,000H,0EDH,0B0H,
 	 	 	 	0AFH,012H
-572	       2A 8C FA 01 24 00     C	
+572	       2A 8B FA 01 24 00     C	
 573	       ED B0 AF 12           C	
-574	 0B3C  FD 2A 78 FA FD 77     C	        DB      0FDH,02AH,078H,0FAH,0FD
-	 	 	 	H,077H,01DH,0C9H,02AH,078H,0FAH,011H,010H,000H,
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-17
+574	 0B3C  FD 2A 77 FA FD 77     C	        DB      0FDH,02AH,077H,0FAH,0FD
+	 	 	 	H,077H,01DH,0C9H,02AH,077H,0FAH,011H,010H,000H,
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-17
 
 
 
 	 	 	 	019H,0C9H
-575	       1D C9 2A 78 FA 11     C	
+575	       1D C9 2A 77 FA 11     C	
 576	       10 00 19 C9           C	
-577	 0B4C  FD 2A 78 FA FD 36     C	        DB      0FDH,02AH,078H,0FAH,0FD
+577	 0B4C  FD 2A 77 FA FD 36     C	        DB      0FDH,02AH,077H,0FAH,0FD
 	 	 	 	H,036H,01EH,080H,0FDH,036H,01FH,000H,0C9H,02AH,
-	 	 	 	078H,0FAH
+	 	 	 	077H,0FAH
 578	       1E 80 FD 36 1F 00     C	
-579	       C9 2A 78 FA           C	
+579	       C9 2A 77 FA           C	
 580	 0B5C  11 60 00 19 EB 2A     C	        DB      011H,060H,000H,019H,0EB
-	 	 	 	H,02AH,084H,0FAH,001H,080H,000H,0EDH,0B0H,0C9H,
-	 	 	 	02AH,078H
-581	       84 FA 01 80 00 ED     C	
-582	       B0 C9 2A 78           C	
+	 	 	 	H,02AH,083H,0FAH,001H,080H,000H,0EDH,0B0H,0C9H,
+	 	 	 	02AH,077H
+581	       83 FA 01 80 00 ED     C	
+582	       B0 C9 2A 77           C	
 583	 0B6C  FA 11 60 00 19 ED     C	        DB      0FAH,011H,060H,000H,019
-	 	 	 	H,0EDH,05BH,084H,0FAH,001H,080H,000H,0EDH,0B0H,
+	 	 	 	H,0EDH,05BH,083H,0FAH,001H,080H,000H,0EDH,0B0H,
 	 	 	 	0C9H,0FDH
-584	       5B 84 FA 01 80 00     C	
+584	       5B 83 FA 01 80 00     C	
 585	       ED B0 C9 FD           C	
-586	 0B7C  2A 78 FA FD 7E 20     C	        DB      02AH,078H,0FAH,0FDH,07E
-	 	 	 	H,020H,0E6H,07FH,0C8H,05FH,016H,000H,02AH,078H,
+586	 0B7C  2A 77 FA FD 7E 20     C	        DB      02AH,077H,0FAH,0FDH,07E
+	 	 	 	H,020H,0E6H,07FH,0C8H,05FH,016H,000H,02AH,077H,
 	 	 	 	0FAH,019H
 587	       E6 7F C8 5F 16 00     C	
-588	       2A 78 FA 19           C	
+588	       2A 77 FA 19           C	
 589	 0B8C  11 60 00 19 ED 44     C	        DB      011H,060H,000H,019H,0ED
 	 	 	 	H,044H,0C6H,080H,047H,036H,01AH,023H,010H,0FBH,
 	 	 	 	0C9H,0E5H
 590	       C6 80 47 36 1A 23     C	
 591	       10 FB C9 E5           C	
-592	 0B9C  ED 5B 8C FA 01 0C     C	        DB      0EDH,05BH,08CH,0FAH,001
+592	 0B9C  ED 5B 8B FA 01 0C     C	        DB      0EDH,05BH,08BH,0FAH,001
 	 	 	 	H,00CH,000H,009H,0EBH,009H,0EBH,0EDH,0A0H,023H,
 	 	 	 	013H,001H
 593	       00 09 EB 09 EB ED     C	
@@ -952,7 +952,7 @@
 	 	 	 	012H,0CDH
 596	       FD 6E 10 FD 66 11     C	
 597	       FD 7E 12 CD           C	
-598	 0BBC  4C F9 E5 2A 8C FA     C	        DB      04CH,0F9H,0E5H,02AH,08C
+598	 0BBC  4B F9 E5 2A 8B FA     C	        DB      04BH,0F9H,0E5H,02AH,08B
 	 	 	 	H,0FAH,011H,00CH,000H,019H,05EH,023H,056H,0EBH,
 	 	 	 	029H,029H
 599	       11 0C 00 19 5E 23     C	
@@ -962,12 +962,12 @@
 	 	 	 	000H,0CDH
 602	       E1 B7 ED 52 30 03     C	
 603	       21 00 00 CD           C	
-604	 0BDC  5B F9 2A 8C FA 11     C	        DB      05BH,0F9H,02AH,08CH,0FA
+604	 0BDC  5A F9 2A 8B FA 11     C	        DB      05AH,0F9H,02AH,08BH,0FA
 	 	 	 	H,011H,00EH,000H,019H,036H,000H,023H,077H,0C9H,
-	 	 	 	02AH,08CH
+	 	 	 	02AH,08BH
 605	       0E 00 19 36 00 23     C	
-606	       77 C9 2A 8C           C	
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-18
+606	       77 C9 2A 8B           C	
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-18
 
 
 
@@ -977,20 +977,20 @@
 608	       23 56 01 13 00 09     C	
 609	       7E EB 29 29           C	
 610	 0BFC  29 29 29 29 29 5F     C	        DB      029H,029H,029H,029H,029
-	 	 	 	H,05FH,016H,000H,019H,0C9H,02AH,08CH,0FAH,011H,
+	 	 	 	H,05FH,016H,000H,019H,0C9H,02AH,08BH,0FAH,011H,
 	 	 	 	020H,000H
-611	       16 00 19 C9 2A 8C     C	
+611	       16 00 19 C9 2A 8B     C	
 612	       FA 11 20 00           C	
 613	 0C0C  19 34 7E FE 80 C0     C	        DB      019H,034H,07EH,0FEH,080
-	 	 	 	H,0C0H,036H,000H,02AH,08CH,0FAH,011H,00CH,000H,
+	 	 	 	H,0C0H,036H,000H,02AH,08BH,0FAH,011H,00CH,000H,
 	 	 	 	019H,034H
-614	       36 00 2A 8C FA 11     C	
+614	       36 00 2A 8B FA 11     C	
 615	       0C 00 19 34           C	
 616	 0C1C  C0 23 34 C9 67 2E     C	        DB      0C0H,023H,034H,0C9H,067
-	 	 	 	H,02EH,000H,0CBH,03CH,0CBH,01DH,011H,0F6H,0FAH,
+	 	 	 	H,02EH,000H,0CBH,03CH,0CBH,01DH,011H,0F5H,0FAH,
 	 	 	 	019H,0C9H
 617	       00 CB 3C CB 1D 11     C	
-618	       F6 FA 19 C9           C	
+618	       F5 FA 19 C9           C	
 619	 0C2C  11 7F 00 19 CE 00     C	        DB      011H,07FH,000H,019H,0CE
 	 	 	 	H,000H,0CBH,025H,0CBH,014H,0CBH,017H,06CH,067H,
 	 	 	 	0C9H,07CH
@@ -998,13 +998,13 @@
 621	       6C 67 C9 7C           C	
 622	 0C3C  B7 3E 80 C0 7D FE     C	        DB      0B7H,03EH,080H,0C0H,07D
 	 	 	 	H,0FEH,081H,0D8H,03EH,080H,0C9H,0C5H,0D5H,0CDH,
-	 	 	 	0A9H,0F7H
+	 	 	 	0A8H,0F7H
 623	       81 D8 3E 80 C9 C5     C	
-624	       D5 CD A9 F7           C	
+624	       D5 CD A8 F7           C	
 625	 0C4C  D1 C1 79 FE 12 3E     C	        DB      0D1H,0C1H,079H,0FEH,012
-	 	 	 	H,03EH,012H,028H,01AH,02AH,078H,0FAH,001H,038H,
+	 	 	 	H,03EH,012H,028H,01AH,02AH,077H,0FAH,001H,038H,
 	 	 	 	000H,009H
-626	       12 28 1A 2A 78 FA     C	
+626	       12 28 1A 2A 77 FA     C	
 627	       01 38 00 09           C	
 628	 0C5C  EB D5 01 24 00 ED     C	        DB      0EBH,0D5H,001H,024H,000
 	 	 	 	H,0EDH,0B0H,0AFH,012H,0E1H,07EH,0FEH,03FH,020H,
@@ -1012,48 +1012,48 @@
 629	       B0 AF 12 E1 7E FE     C	
 630	       3F 20 02 36           C	
 631	 0C6C  00 3E 11 11 38 00     C	        DB      000H,03EH,011H,011H,038
-	 	 	 	H,000H,0CDH,0EEH,0F2H,0FEH,0FFH,0CAH,078H,0F3H,
-	 	 	 	02AH,078H
-632	       CD EE F2 FE FF CA     C	
-633	       78 F3 2A 78           C	
+	 	 	 	H,000H,0CDH,0EDH,0F2H,0FEH,0FFH,0CAH,077H,0F3H,
+	 	 	 	02AH,077H
+632	       CD ED F2 FE FF CA     C	
+633	       77 F3 2A 77           C	
 634	 0C7C  FA 01 7D 00 09 5E     C	        DB      0FAH,001H,07DH,000H,009
-	 	 	 	H,05EH,023H,056H,023H,07EH,0EBH,0CDH,04CH,0F9H,
-	 	 	 	0CDH,05BH
+	 	 	 	H,05EH,023H,056H,023H,07EH,0EBH,0CDH,04BH,0F9H,
+	 	 	 	0CDH,05AH
 635	       23 56 23 7E EB CD     C	
-636	       4C F9 CD 5B           C	
-637	 0C8C  F9 2A 78 FA 01 61     C	        DB      0F9H,02AH,078H,0FAH,001
-	 	 	 	H,061H,000H,009H,0CDH,0BAH,0F9H,0C3H,077H,0F3H,
+636	       4B F9 CD 5A           C	
+637	 0C8C  F9 2A 77 FA 01 61     C	        DB      0F9H,02AH,077H,0FAH,001
+	 	 	 	H,061H,000H,009H,0CDH,0B9H,0F9H,0C3H,076H,0F3H,
 	 	 	 	0F5H,0E5H
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-19
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-19
 
 
 
-638	       00 09 CD BA F9 C3     C	
-639	       77 F3 F5 E5           C	
-640	 0C9C  2A 84 FA 54 5D 13     C	        DB      02AH,084H,0FAH,054H,05D
+638	       00 09 CD B9 F9 C3     C	
+639	       76 F3 F5 E5           C	
+640	 0C9C  2A 83 FA 54 5D 13     C	        DB      02AH,083H,0FAH,054H,05D
 	 	 	 	H,013H,036H,0E5H,001H,07FH,000H,0EDH,0B0H,0EDH,
-	 	 	 	05BH,084H
+	 	 	 	05BH,083H
 641	       36 E5 01 7F 00 ED     C	
-642	       B0 ED 5B 84           C	
+642	       B0 ED 5B 83           C	
 643	 0CAC  FA AF 12 13 E1 01     C	        DB      0FAH,0AFH,012H,013H,0E1
 	 	 	 	H,001H,00BH,000H,0EDH,0B0H,006H,014H,012H,013H,
 	 	 	 	010H,0FCH
 644	       0B 00 ED B0 06 14     C	
 645	       12 13 10 FC           C	
-646	 0CBC  F1 2A 84 FA 11 0F     C	        DB      0F1H,02AH,084H,0FAH,011
-	 	 	 	H,00FH,000H,019H,077H,0C9H,037H,0F2H,037H,0F2H,
-	 	 	 	008H,0FAH
-647	       00 19 77 C9 37 F2     C	
-648	       37 F2 08 FA           C	
-649	 0CCC  17 FA 1F FA 28 FA     C	        DB      017H,0FAH,01FH,0FAH,028
-	 	 	 	H,0FAH,02EH,0FAH,034H,0FAH,016H,0FAH,048H,0FAH,
-	 	 	 	016H,0FAH
-650	       2E FA 34 FA 16 FA     C	
-651	       48 FA 16 FA           C	
-652	 0CDC  16 FA 16 FA 4C FA     C	        DB      016H,0FAH,016H,0FAH,04C
-	 	 	 	H,0FAH,04CH,0FAH,03AH,0FAH,04FH,0FAH,0C5H,0D5H,
+646	 0CBC  F1 2A 83 FA 11 0F     C	        DB      0F1H,02AH,083H,0FAH,011
+	 	 	 	H,00FH,000H,019H,077H,0C9H,036H,0F2H,036H,0F2H,
+	 	 	 	007H,0FAH
+647	       00 19 77 C9 36 F2     C	
+648	       36 F2 07 FA           C	
+649	 0CCC  16 FA 1E FA 27 FA     C	        DB      016H,0FAH,01EH,0FAH,027
+	 	 	 	H,0FAH,02DH,0FAH,033H,0FAH,015H,0FAH,047H,0FAH,
+	 	 	 	015H,0FAH
+650	       2D FA 33 FA 15 FA     C	
+651	       47 FA 15 FA           C	
+652	 0CDC  15 FA 15 FA 4B FA     C	        DB      015H,0FAH,015H,0FAH,04B
+	 	 	 	H,0FAH,04BH,0FAH,039H,0FAH,04EH,0FAH,0C5H,0D5H,
 	 	 	 	0E5H,0CDH
-653	       4C FA 3A FA 4F FA     C	
+653	       4B FA 39 FA 4E FA     C	
 654	       C5 D5 E5 CD           C	
 655	 0CEC  F6 EB 3E 00 30 01     C	        DB      0F6H,0EBH,03EH,000H,030
 	 	 	 	H,001H,03DH,0E1H,0D1H,0C1H,0C9H,0C5H,0D5H,0E5H,
@@ -1081,7 +1081,7 @@
 668	       48 00 03 07 00 AF     C	
 669	       00 3F 00 C0           C	
 670	 0D3C  00 10 00 00 00 00     C	        DB      000H,010H,000H,000H,000
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-20
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-20
 
 
 
@@ -1136,7 +1136,7 @@
 700	 0DD6	 	 	 	CODE    ENDS
 701	 	 	 	 	        END     BEGIN
 
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	Symbols
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols
 	 	 	 	-1
 
 

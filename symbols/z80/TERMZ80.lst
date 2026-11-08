@@ -1,0 +1,1955 @@
+; TERMZ80.BIN: TERM.COM's Z80 part, loaded at F12Bh (over COLD)
+; address  bytes  source
+                                        ORG ENDBIOS
+F12B  3A 01 D0                  T_TERM: LD A,(R_AH)
+F12E  FE 0A                             CP 10
+F130  D0                                RET NC
+F131  87                                ADD A,A
+F132  6F                                LD L,A
+F133  26 00                             LD H,0
+F135  11 3E F1                          LD DE,FTAB
+F138  19                                ADD HL,DE
+F139  7E                                LD A,(HL)
+F13A  23                                INC HL
+F13B  66                                LD H,(HL)
+F13C  6F                                LD L,A
+F13D  E9                                JP (HL)
+F13E  52 F1 F1 F1 87 F2 A2 F2   FTAB:   DW F_INIT, F_SESS, F_DRAW, F_RECV, F_SEND, F_BRK, F_LOG, F_CRC
+F13E  28 F3 4B F3 65 F3 82 F3   
+F14E  C1 F3 72 F3                       DW F_FLSH, F_MODE
+                                
+                                ; ---------------------------------------------------------------- 0 INIT
+F152  2A 0C D0                  F_INIT: LD HL,(R_SI)
+F155  11 71 FE                          LD DE,PB
+F158  01 0D 00                          LD BC,PBLEN
+F15B  ED B0                             LDIR
+F15D  3A 73 FE                          LD A,(ROWS)
+F160  CD EC F6                          CALL ROWP
+F163  22 80 FE                          LD (SCREND),HL
+F166  2A 7C FE                          LD HL,(LOGSZ)
+F169  25                                DEC H
+F16A  22 7E FE                          LD (LOGLIM),HL          ; 256 bytes kept for the host's overrun
+F16D  AF                                XOR A
+F16E  32 A8 FE                          LD (LOGON),A
+F171  32 A6 FE                          LD (STOPF),A
+F174  32 A7 FE                          LD (HOLDF),A
+F177  32 A5 FE                          LD (TXQ),A
+F17A  32 B1 FE                          LD (DROPS),A
+F17D  67                                LD H,A
+F17E  6F                                LD L,A
+F17F  22 A9 FE                          LD (LOGN),HL
+F182  22 AF FE                          LD (LOST),HL
+F185  CD C1 F3                          CALL F_FLSH
+F188  3E 27                             LD A,27h                ; transmitter, CS, receiver, RTS on
+F18A  32 A4 FE                          LD (CMDV),A
+F18D  CD BB F4                          CALL CMDOUT
+                                ; RESET: the terminal's state as at power-on, the screen cleared
+F190  AF                        RESET:  XOR A
+F191  32 92 FE                          LD (PST),A
+F194  32 82 FE                          LD (CROW),A
+F197  32 83 FE                          LD (CCOL),A
+F19A  32 84 FE                          LD (WRAPF),A
+F19D  32 85 FE                          LD (ATTR),A
+F1A0  32 86 FE                          LD (TOP),A
+F1A3  32 89 FE                          LD (IRM),A
+F1A6  32 8A FE                          LD (CKM),A
+F1A9  32 8B FE                          LD (GL),A
+F1AC  32 8C FE                          LD (G0),A
+F1AF  32 8D FE                          LD (G1),A
+F1B2  32 8F FE                          LD (SAVR),A
+F1B5  32 90 FE                          LD (SAVC),A
+F1B8  32 91 FE                          LD (SAVA),A
+F1BB  3C                                INC A
+F1BC  32 88 FE                          LD (AWM),A
+F1BF  3A 73 FE                          LD A,(ROWS)
+F1C2  3D                                DEC A
+F1C3  32 87 FE                          LD (BOT),A
+F1C6  3E FF                             LD A,0FFh               ; the terminal's attribute: not known
+F1C8  32 9C FE                          LD (TATTR),A
+                                ; CLRALL: the whole screen blank, the terminal's cursor home
+F1CB  2A 80 FE                  CLRALL: LD HL,(SCREND)
+F1CE  ED 5B 76 FE                       LD DE,(SCR)
+F1D2  B7                                OR A
+F1D3  ED 52                             SBC HL,DE
+F1D5  44                                LD B,H
+F1D6  4D                                LD C,L
+F1D7  EB                                EX DE,HL
+F1D8  CD 61 F7                          CALL FILL
+F1DB  AF                                XOR A
+F1DC  CD 43 F6                          CALL TSETA
+F1DF  3E 48                             LD A,'H'
+F1E1  CD 0B F6                          CALL TESC
+F1E4  3E 4A                             LD A,'J'
+F1E6  CD 0B F6                          CALL TESC
+F1E9  AF                                XOR A
+F1EA  32 9A FE                          LD (TROW),A
+F1ED  32 9B FE                          LD (TCOL),A
+F1F0  C9                                RET
+                                
+                                ; ---------------------------------------------------------------- 1 SESS
+F1F1  AF                        F_SESS: XOR A
+F1F2  32 A7 FE                          LD (HOLDF),A
+F1F5  CD E8 F3                  SL1:    CALL RXPOLL
+F1F8  CD F6 EB                          CALL PEEKEY
+F1FB  30 0C                             JR NC,SL2
+F1FD  CD 13 EC                          CALL GETKEY
+F200  21 75 FE                          LD HL,MENUK
+F203  BE                                CP (HL)
+F204  28 53                             JR Z,SMENU
+F206  CD 29 F5                          CALL KEYOUT
+F209  CD 55 F4                  SL2:    CALL RGET
+F20C  38 0C                             JR C,SL3
+F20E  CD 39 F6                          CALL TSYNC              ; nothing to show: the cursor to its place
+F211  3A A6 FE                          LD A,(STOPF)
+F214  B7                                OR A
+F215  C4 A2 F4                          CALL NZ,RESUME
+F218  18 DB                             JR SL1
+F21A  4F                        SL3:    LD C,A
+F21B  3A A8 FE                          LD A,(LOGON)
+F21E  B7                                OR A
+F21F  28 23                             JR Z,SL4
+F221  2A A9 FE                          LD HL,(LOGN)
+F224  E5                                PUSH HL
+F225  ED 5B 7A FE                       LD DE,(LOGB)
+F229  19                                ADD HL,DE
+F22A  71                                LD (HL),C
+F22B  E1                                POP HL
+F22C  23                                INC HL
+F22D  22 A9 FE                          LD (LOGN),HL
+F230  ED 5B 7E FE                       LD DE,(LOGLIM)
+F234  B7                                OR A
+F235  ED 52                             SBC HL,DE
+F237  38 0B                             JR C,SL4
+F239  79                                LD A,C
+F23A  CD DA F9                          CALL EMUL
+F23D  CD 70 F2                          CALL HOLD
+F240  3E 02                             LD A,2
+F242  18 1A                             JR SRET
+F244  79                        SL4:    LD A,C
+F245  CD DA F9                          CALL EMUL
+F248  3A A6 FE                          LD A,(STOPF)
+F24B  B7                                OR A
+F24C  28 A7                             JR Z,SL1
+F24E  CD 74 F4                          CALL LEVEL
+F251  7C                                LD A,H
+F252  FE 01                             CP LOWAT
+F254  DC A2 F4                          CALL C,RESUME
+F257  18 9C                             JR SL1
+F259  CD 70 F2                  SMENU:  CALL HOLD
+F25C  3E 01                             LD A,1
+F25E  32 00 D0                  SRET:   LD (R_AL),A
+F261  2A A9 FE                          LD HL,(LOGN)
+F264  22 02 D0                          LD (R_CX),HL
+F267  2A AF FE                          LD HL,(LOST)
+F26A  22 04 D0                          LD (R_DX),HL
+F26D  C3 39 F6                          JP TSYNC
+                                
+                                ; HOLD: stop the host and take in what it still sends for 100 ms
+F270  3E 01                     HOLD:   LD A,1
+F272  32 A6 FE                          LD (STOPF),A
+F275  32 A7 FE                          LD (HOLDF),A
+F278  CD 8C F4                          CALL FLOWOFF
+F27B  21 B8 0B                          LD HL,3000
+F27E  CD E8 F3                  HO1:    CALL RXPOLL
+F281  2B                                DEC HL
+F282  7C                                LD A,H
+F283  B5                                OR L
+F284  20 F8                             JR NZ,HO1
+F286  C9                                RET
+                                
+                                ; ---------------------------------------------------------------- 2 DRAW
+F287  3E FF                     F_DRAW: LD A,0FFh               ; the terminal's cursor and attribute:
+F289  32 9A FE                          LD (TROW),A             ;   not known
+F28C  32 9C FE                          LD (TATTR),A
+F28F  3A 73 FE                          LD A,(ROWS)
+F292  3D                                DEC A
+F293  4F                                LD C,A
+F294  3A 02 D0                          LD A,(R_CL)
+F297  B9                                CP C
+F298  38 01                             JR C,FD1
+F29A  79                                LD A,C
+F29B  47                        FD1:    LD B,A
+F29C  CD DC F6                          CALL REDR
+F29F  C3 39 F6                          JP TSYNC
+                                
+                                ; ---------------------------------------------------------------- 3 RECV
+F2A2  CD CB F3                  F_RECV: CALL ENSURE
+F2A5  3A 07 D0                          LD A,(R_BH)
+F2A8  B7                                OR A
+F2A9  3A 06 D0                          LD A,(R_BL)
+F2AC  C4 C8 F4                          CALL NZ,SERPUT
+F2AF  21 00 00                          LD HL,0
+F2B2  22 B2 FE                          LD (RCNT),HL
+F2B5  2A 04 D0                          LD HL,(R_DX)
+F2B8  22 B4 FE                          LD (TMO),HL
+F2BB  2A 02 D0                  FR1:    LD HL,(R_CX)
+F2BE  ED 5B B2 FE                       LD DE,(RCNT)
+F2C2  B7                                OR A
+F2C3  ED 52                             SBC HL,DE
+F2C5  28 56                             JR Z,FR8
+F2C7  CD 55 F4                          CALL RGET               ; first what is in the ring
+F2CA  38 33                             JR C,FR6
+F2CC  3A 71 FE                          LD A,(CTL)
+F2CF  4F                                LD C,A
+F2D0  ED 5B B4 FE                       LD DE,(TMO)
+F2D4  21 D6 01                  FR2:    LD HL,470               ; about 10 ms
+F2D7  ED 78                     FR3:    IN A,(C)
+F2D9  CB 4F                             BIT 1,A
+F2DB  20 14                             JR NZ,FR5
+F2DD  DB 2F                             IN A,(2Fh)
+F2DF  E6 5F                             AND 5Fh
+F2E1  FE 04                             CP 04h                  ; a key
+F2E3  28 31                             JR Z,FR7
+F2E5  2B                                DEC HL
+F2E6  7C                                LD A,H
+F2E7  B5                                OR L
+F2E8  20 ED                             JR NZ,FR3
+F2EA  1B                                DEC DE
+F2EB  7A                                LD A,D
+F2EC  B3                                OR E
+F2ED  20 E5                             JR NZ,FR2
+F2EF  18 2C                             JR FR8                  ; timed out
+F2F1  E6 38                     FR5:    AND 38h
+F2F3  28 07                             JR Z,FR51
+F2F5  3A A4 FE                          LD A,(CMDV)
+F2F8  F6 10                             OR 10h
+F2FA  ED 79                             OUT (C),A
+F2FC  0D                        FR51:   DEC C
+F2FD  ED 78                             IN A,(C)
+F2FF  21 64 00                  FR6:    LD HL,100
+F302  22 B4 FE                          LD (TMO),HL
+F305  2A B2 FE                          LD HL,(RCNT)
+F308  E5                                PUSH HL
+F309  ED 5B 0E D0                       LD DE,(R_DI)
+F30D  19                                ADD HL,DE
+F30E  77                                LD (HL),A
+F30F  E1                                POP HL
+F310  23                                INC HL
+F311  22 B2 FE                          LD (RCNT),HL
+F314  18 A5                             JR FR1
+F316  CD 13 EC                  FR7:    CALL GETKEY
+F319  3E 01                             LD A,1
+F31B  18 01                             JR FR9
+F31D  AF                        FR8:    XOR A
+F31E  32 00 D0                  FR9:    LD (R_AL),A
+F321  2A B2 FE                          LD HL,(RCNT)
+F324  22 02 D0                          LD (R_CX),HL
+F327  C9                                RET
+                                
+                                ; ---------------------------------------------------------------- 4 SEND
+F328  CD CB F3                  F_SEND: CALL ENSURE
+F32B  2A 0C D0                          LD HL,(R_SI)
+F32E  ED 4B 02 D0                       LD BC,(R_CX)
+F332  78                        FS1:    LD A,B
+F333  B1                                OR C
+F334  28 10                             JR Z,FS2
+F336  7E                                LD A,(HL)
+F337  E5                                PUSH HL
+F338  C5                                PUSH BC
+F339  CD C8 F4                          CALL SERPUT
+F33C  C1                                POP BC
+F33D  E1                                POP HL
+F33E  3E 01                             LD A,1
+F340  38 05                             JR C,FS3
+F342  23                                INC HL
+F343  0B                                DEC BC
+F344  18 EC                             JR FS1
+F346  AF                        FS2:    XOR A
+F347  32 00 D0                  FS3:    LD (R_AL),A
+F34A  C9                                RET
+                                
+                                ; ---------------------------------------------------------------- 5 BRK
+F34B  CD CB F3                  F_BRK:  CALL ENSURE
+F34E  3A A4 FE                          LD A,(CMDV)
+F351  F6 08                             OR 08h                  ; send break
+F353  CD BE F4                          CALL CMDA
+F356  06 19                             LD B,25
+F358  21 02 06                  FB1:    LD HL,1538              ; 10 ms
+F35B  2B                        FB2:    DEC HL
+F35C  7C                                LD A,H
+F35D  B5                                OR L
+F35E  20 FB                             JR NZ,FB2
+F360  10 F6                             DJNZ FB1
+F362  C3 BB F4                          JP CMDOUT
+                                
+                                ; ---------------------------------------------------------------- 6 LOG
+F365  3A 04 D0                  F_LOG:  LD A,(R_DL)
+F368  32 A8 FE                          LD (LOGON),A
+F36B  2A 02 D0                          LD HL,(R_CX)
+F36E  22 A9 FE                          LD (LOGN),HL
+F371  C9                                RET
+                                
+                                ; ---------------------------------------------------------------- 9 MODE
+F372  3A 74 FE                  F_MODE: LD A,(FLAGS)
+F375  E6 E7                             AND 0E7h
+F377  47                                LD B,A
+F378  3A 04 D0                          LD A,(R_DL)
+F37B  E6 18                             AND 18h
+F37D  B0                                OR B
+F37E  32 74 FE                          LD (FLAGS),A
+F381  C9                                RET
+                                
+                                ; ---------------------------------------------------------------- 7 CRC
+F382  2A 0C D0                  F_CRC:  LD HL,(R_SI)
+F385  ED 4B 02 D0                       LD BC,(R_CX)
+F389  11 00 00                          LD DE,0
+F38C  AF                                XOR A
+F38D  32 B6 FE                          LD (SUM),A
+F390  78                        CR1:    LD A,B
+F391  B1                                OR C
+F392  28 22                             JR Z,CR4
+F394  C5                                PUSH BC
+F395  3A B6 FE                          LD A,(SUM)
+F398  86                                ADD A,(HL)
+F399  32 B6 FE                          LD (SUM),A
+F39C  7E                                LD A,(HL)
+F39D  AA                                XOR D
+F39E  57                                LD D,A
+F39F  06 08                             LD B,8
+F3A1  CB 23                     CR2:    SLA E
+F3A3  CB 12                             RL D
+F3A5  30 08                             JR NC,CR3
+F3A7  7A                                LD A,D
+F3A8  EE 10                             XOR 10h
+F3AA  57                                LD D,A
+F3AB  7B                                LD A,E
+F3AC  EE 21                             XOR 21h
+F3AE  5F                                LD E,A
+F3AF  10 F0                     CR3:    DJNZ CR2
+F3B1  C1                                POP BC
+F3B2  23                                INC HL
+F3B3  0B                                DEC BC
+F3B4  18 DA                             JR CR1
+F3B6  ED 53 04 D0               CR4:    LD (R_DX),DE
+F3BA  3A B6 FE                          LD A,(SUM)
+F3BD  32 00 D0                          LD (R_AL),A
+F3C0  C9                                RET
+                                
+                                ; ---------------------------------------------------------------- 8 FLUSH
+F3C1  21 00 00                  F_FLSH: LD HL,0
+F3C4  22 AB FE                          LD (RHEAD),HL
+F3C7  22 AD FE                          LD (RTAIL),HL
+F3CA  C9                                RET
+                                
+                                ; ENSURE: the host let go and the RTS line on, for a transfer
+F3CB  AF                        ENSURE: XOR A
+F3CC  32 A7 FE                          LD (HOLDF),A
+F3CF  3A A6 FE                          LD A,(STOPF)
+F3D2  B7                                OR A
+F3D3  C8                                RET Z
+F3D4  CD A2 F4                          CALL RESUME
+F3D7  21 00 00                          LD HL,0
+F3DA  CD E8 F3                  EN1:    CALL RXPOLL             ; until the XON has gone
+F3DD  3A A5 FE                          LD A,(TXQ)
+F3E0  B7                                OR A
+F3E1  C8                                RET Z
+F3E2  2B                                DEC HL
+F3E3  7C                                LD A,H
+F3E4  B5                                OR L
+F3E5  20 F3                             JR NZ,EN1
+F3E7  C9                                RET
+                                
+                                ; ---------------------------------------------------------------- the channel
+                                ; RXPOLL: a received byte, if there is one, to the ring; a queued XON /
+                                ; XOFF out when the transmitter is free. Changes nothing but the flags.
+F3E8  F5                        RXPOLL: PUSH AF
+F3E9  D9                                EXX
+F3EA  3A 71 FE                          LD A,(CTL)
+F3ED  4F                                LD C,A
+F3EE  ED 40                             IN B,(C)
+F3F0  3A A5 FE                          LD A,(TXQ)
+F3F3  B7                                OR A
+F3F4  28 10                             JR Z,RXP1
+F3F6  5F                                LD E,A
+F3F7  78                                LD A,B
+F3F8  E6 81                             AND 81h                 ; TxRDY, CTS
+F3FA  FE 81                             CP 81h
+F3FC  20 08                             JR NZ,RXP1
+F3FE  0D                                DEC C
+F3FF  ED 59                             OUT (C),E
+F401  0C                                INC C
+F402  AF                                XOR A
+F403  32 A5 FE                          LD (TXQ),A
+F406  CB 48                     RXP1:   BIT 1,B                 ; RxRDY
+F408  28 48                             JR Z,RXP9
+F40A  78                                LD A,B
+F40B  E6 38                             AND 38h                 ; framing, overrun, parity
+F40D  28 12                             JR Z,RXP3
+F40F  E6 10                             AND 10h
+F411  28 07                             JR Z,RXP2
+F413  2A AF FE                          LD HL,(LOST)            ; overrun: at least one byte lost
+F416  23                                INC HL
+F417  22 AF FE                          LD (LOST),HL
+F41A  3A A4 FE                  RXP2:   LD A,(CMDV)
+F41D  F6 10                             OR 10h                  ; error reset
+F41F  ED 79                             OUT (C),A
+F421  0D                        RXP3:   DEC C
+F422  ED 58                             IN E,(C)
+F424  2A AB FE                          LD HL,(RHEAD)
+F427  E5                                PUSH HL
+F428  ED 4B 78 FE                       LD BC,(RING)
+F42C  09                                ADD HL,BC
+F42D  73                                LD (HL),E
+F42E  E1                                POP HL
+F42F  23                                INC HL
+F430  7C                                LD A,H
+F431  E6 07                             AND RINGM
+F433  67                                LD H,A
+F434  ED 4B AD FE                       LD BC,(RTAIL)
+F438  B7                                OR A
+F439  ED 42                             SBC HL,BC
+F43B  28 0E                             JR Z,RXP4               ; full: the byte is lost
+F43D  7C                                LD A,H                  ; the level, less one
+F43E  09                                ADD HL,BC
+F43F  22 AB FE                          LD (RHEAD),HL
+F442  E6 07                             AND RINGM
+F444  FE 04                             CP HIWAT
+F446  D4 83 F4                          CALL NC,STOP
+F449  18 07                             JR RXP9
+F44B  2A AF FE                  RXP4:   LD HL,(LOST)
+F44E  23                                INC HL
+F44F  22 AF FE                          LD (LOST),HL
+F452  D9                        RXP9:   EXX
+F453  F1                                POP AF
+F454  C9                                RET
+                                
+                                ; RGET: CF=1 and A = the next byte in the ring; CF=0: none. Uses DE, HL.
+F455  2A AD FE                  RGET:   LD HL,(RTAIL)
+F458  ED 5B AB FE                       LD DE,(RHEAD)
+F45C  B7                                OR A
+F45D  ED 52                             SBC HL,DE
+F45F  C8                                RET Z
+F460  19                                ADD HL,DE
+F461  EB                                EX DE,HL
+F462  2A 78 FE                          LD HL,(RING)
+F465  19                                ADD HL,DE
+F466  7E                                LD A,(HL)
+F467  13                                INC DE
+F468  F5                                PUSH AF
+F469  7A                                LD A,D
+F46A  E6 07                             AND RINGM
+F46C  57                                LD D,A
+F46D  ED 53 AD FE                       LD (RTAIL),DE
+F471  F1                                POP AF
+F472  37                                SCF
+F473  C9                                RET
+                                
+                                ; LEVEL: HL = bytes in the ring. Uses DE.
+F474  2A AB FE                  LEVEL:  LD HL,(RHEAD)
+F477  ED 5B AD FE                       LD DE,(RTAIL)
+F47B  B7                                OR A
+F47C  ED 52                             SBC HL,DE
+F47E  7C                                LD A,H
+F47F  E6 07                             AND RINGM
+F481  67                                LD H,A
+F482  C9                                RET
+                                
+                                ; STOP / RESUME: ask the host to stop / go on (XOFF / XON, RTS)
+F483  3A A6 FE                  STOP:   LD A,(STOPF)
+F486  B7                                OR A
+F487  C0                                RET NZ
+F488  3C                                INC A
+F489  32 A6 FE                          LD (STOPF),A
+F48C                            FLOWOFF:
+F48C  3A 74 FE                          LD A,(FLAGS)
+F48F  CB 4F                             BIT 1,A
+F491  28 05                             JR Z,ST1
+F493  3E 13                             LD A,13h                ; XOFF
+F495  32 A5 FE                          LD (TXQ),A
+F498  3A 74 FE                  ST1:    LD A,(FLAGS)
+F49B  CB 57                             BIT 2,A
+F49D  C8                                RET Z
+F49E  3E 07                             LD A,07h                ; RTS off
+F4A0  18 16                             JR CMDSET
+F4A2  3A A7 FE                  RESUME: LD A,(HOLDF)
+F4A5  B7                                OR A
+F4A6  C0                                RET NZ
+F4A7  32 A6 FE                          LD (STOPF),A
+F4AA  3A 74 FE                          LD A,(FLAGS)
+F4AD  CB 4F                             BIT 1,A
+F4AF  28 05                             JR Z,RS1
+F4B1  3E 11                             LD A,11h                ; XON
+F4B3  32 A5 FE                          LD (TXQ),A
+F4B6  3E 27                     RS1:    LD A,27h
+F4B8  32 A4 FE                  CMDSET: LD (CMDV),A
+F4BB  3A A4 FE                  CMDOUT: LD A,(CMDV)
+F4BE  C5                        CMDA:   PUSH BC
+F4BF  47                                LD B,A
+F4C0  3A 71 FE                          LD A,(CTL)
+F4C3  4F                                LD C,A
+F4C4  ED 41                             OUT (C),B
+F4C6  C1                                POP BC
+F4C7  C9                                RET
+                                
+                                ; SERPUT: A to the channel, when it is free and CTS on (status bit 7: the
+                                ; WD2123 has no DSR), taking received bytes meanwhile. CF=1: CTS stayed
+                                ; off for about 2 s and the byte was dropped.
+F4C8  C5                        SERPUT: PUSH BC
+F4C9  D5                                PUSH DE
+F4CA  E5                                PUSH HL
+F4CB  5F                                LD E,A
+F4CC  21 00 00                          LD HL,0
+F4CF  CD E8 F3                  QSP1:   CALL RXPOLL
+F4D2  3A 71 FE                          LD A,(CTL)
+F4D5  4F                                LD C,A
+F4D6  ED 78                             IN A,(C)
+F4D8  E6 81                             AND 81h
+F4DA  FE 81                             CP 81h
+F4DC  28 11                             JR Z,QSP2
+F4DE  2B                                DEC HL
+F4DF  7C                                LD A,H
+F4E0  B5                                OR L
+F4E1  20 EC                             JR NZ,QSP1
+F4E3  3A B1 FE                          LD A,(DROPS)
+F4E6  3C                                INC A
+F4E7  28 03                             JR Z,SP0
+F4E9  32 B1 FE                          LD (DROPS),A
+F4EC  37                        SP0:    SCF
+F4ED  18 04                             JR SP3
+F4EF  0D                        QSP2:   DEC C
+F4F0  ED 59                             OUT (C),E
+F4F2  B7                                OR A
+F4F3  E1                        SP3:    POP HL
+F4F4  D1                                POP DE
+F4F5  C1                                POP BC
+F4F6  C9                                RET
+                                
+                                ; SENDS: the 0-terminated string at HL to the channel
+F4F7  7E                        SENDS:  LD A,(HL)
+F4F8  B7                                OR A
+F4F9  C8                                RET Z
+F4FA  CD C8 F4                          CALL SERPUT
+F4FD  23                                INC HL
+F4FE  18 F7                             JR SENDS
+                                
+                                ; SENDN: A (1-255) in decimal to the channel
+F500  0E 00                     SENDN:  LD C,0
+F502  06 64                             LD B,100
+F504  CD 10 F5                          CALL SN1
+F507  06 0A                             LD B,10
+F509  CD 10 F5                          CALL SN1
+F50C  C6 30                             ADD A,'0'
+F50E  18 B8                             JR SERPUT
+F510  16 2F                     SN1:    LD D,'0'-1
+F512  14                        SN2:    INC D
+F513  90                                SUB B
+F514  30 FC                             JR NC,SN2
+F516  80                                ADD A,B
+F517  5F                                LD E,A
+F518  7A                                LD A,D
+F519  FE 30                             CP '0'
+F51B  20 04                             JR NZ,SN3
+F51D  79                                LD A,C                  ; no leading zeros
+F51E  B7                                OR A
+F51F  7B                                LD A,E
+F520  C8                                RET Z
+F521  7A                        SN3:    LD A,D
+F522  CD C8 F4                          CALL SERPUT
+F525  0E 01                             LD C,1
+F527  7B                                LD A,E
+F528  C9                                RET
+                                
+                                ; ---------------------------------------------------------------- keys
+                                ; KEYOUT: a key to the channel. For a VT100 host the arrow keys (the
+                                ; terminal sends ESC A-D) become ESC [ A-D (ESC O A-D in cursor key mode);
+                                ; an ESC not followed at once by A-D goes alone. With local echo (flag 8)
+                                ; a key also goes to the screen, CR as CR LF; not ESC, the arrows, nor
+                                ; (VT52 host) the key after an ESC.
+F529  32 9E FE                  KEYOUT: LD (KCH),A
+F52C  3A 74 FE                          LD A,(FLAGS)
+F52F  0F                                RRCA
+F530  38 19                             JR C,KO2
+F532  3A 9E FE                          LD A,(KCH)
+F535  FE 1B                             CP 1Bh
+F537  20 12                             JR NZ,KO2
+F539  21 20 03                          LD HL,800               ; about 40 ms
+F53C  CD E8 F3                  KO1:    CALL RXPOLL
+F53F  E5                                PUSH HL
+F540  CD F6 EB                          CALL PEEKEY
+F543  E1                                POP HL
+F544  38 38                             JR C,KO3
+F546  2B                                DEC HL
+F547  7C                                LD A,H
+F548  B5                                OR L
+F549  20 F1                             JR NZ,KO1
+F54B  3A 9E FE                  KO2:    LD A,(KCH)
+F54E  CD C8 F4                          CALL SERPUT
+F551  21 9F FE                          LD HL,KLAST
+F554  46                                LD B,(HL)               ; the key before
+F555  3A 9E FE                          LD A,(KCH)
+F558  77                                LD (HL),A
+F559  3A 74 FE                          LD A,(FLAGS)
+F55C  CB 5F                             BIT 3,A
+F55E  C8                                RET Z
+F55F  0F                                RRCA
+F560  30 04                             JR NC,KO5
+F562  78                                LD A,B
+F563  FE 1B                             CP 1Bh
+F565  C8                                RET Z
+F566  3A 9E FE                  KO5:    LD A,(KCH)
+F569  FE 1B                             CP 1Bh
+F56B  C8                                RET Z
+F56C  FE 0D                             CP 0Dh
+F56E  20 0B                             JR NZ,KO6
+F570  CD DA F9                          CALL EMUL               ; (with flag 10h it has added the LF)
+F573  3A 74 FE                          LD A,(FLAGS)
+F576  E6 10                             AND 10h
+F578  C0                                RET NZ
+F579  3E 0A                             LD A,0Ah
+F57B  C3 DA F9                  KO6:    JP EMUL
+F57E  D6 41                     KO3:    SUB 'A'
+F580  FE 04                             CP 4
+F582  30 C7                             JR NC,KO2               ; not an arrow: it stays for SESS
+F584  CD 13 EC                          CALL GETKEY
+F587  32 9E FE                          LD (KCH),A
+F58A  3E 1B                             LD A,1Bh
+F58C  CD C8 F4                          CALL SERPUT
+F58F  3A 8A FE                          LD A,(CKM)
+F592  B7                                OR A
+F593  3E 5B                             LD A,'['
+F595  28 02                             JR Z,KO4
+F597  3E 4F                             LD A,'O'
+F599  CD C8 F4                  KO4:    CALL SERPUT
+F59C  3A 9E FE                          LD A,(KCH)
+F59F  C3 C8 F4                          JP SERPUT
+                                
+                                ; ---------------------------------------------------------------- the terminal
+                                ; TOUT: A to the terminal, as the BIOS's CONOUT, but taking received
+                                ; bytes while the terminal is busy. Keeps BC, DE, HL.
+F5A2  C5                        TOUT:   PUSH BC
+F5A3  D5                                PUSH DE
+F5A4  32 9D FE                          LD (TOCH),A
+F5A7  3A 9D FE                  TO1:    LD A,(TOCH)
+F5AA  47                                LD B,A
+F5AB  CD C0 F5                          CALL TSEND
+F5AE  28 0D                             JR Z,TO3
+F5B0  CD E8 F3                  TO2:    CALL RXPOLL             ; timed out: wait for the terminal's abort
+F5B3  DB 2F                             IN A,(2Fh)
+F5B5  E6 5F                             AND 5Fh
+F5B7  FE 07                             CP 07h
+F5B9  20 F5                             JR NZ,TO2
+F5BB  18 EA                             JR TO1
+F5BD  D1                        TO3:    POP DE
+F5BE  C1                                POP BC
+F5BF  C9                                RET
+                                
+                                ; TSEND: B in two nibbles, each echoed back (BIOS COSEND). Z = sent.
+F5C0  78                        TSEND:  LD A,B
+F5C1  E6 0F                             AND 0Fh
+F5C3  5F                                LD E,A
+F5C4  78                                LD A,B
+F5C5  0F                                RRCA
+F5C6  0F                                RRCA
+F5C7  0F                                RRCA
+F5C8  0F                                RRCA
+F5C9  E6 0F                             AND 0Fh
+F5CB  57                                LD D,A
+F5CC  CD E8 F3                  TS1:    CALL RXPOLL
+F5CF  3E 0A                             LD A,0Ah                ; ask to send
+F5D1  D3 2F                             OUT (2Fh),A
+F5D3  DB 2F                             IN A,(2Fh)
+F5D5  E6 5F                             AND 5Fh
+F5D7  FE 0F                             CP 0Fh                  ; terminal ready
+F5D9  20 F1                             JR NZ,TS1
+F5DB  7B                                LD A,E
+F5DC  F6 10                             OR 10h
+F5DE  D3 2F                             OUT (2Fh),A
+F5E0  47                                LD B,A
+F5E1  0E 00                             LD C,0
+F5E3  DB 2F                     TS2:    IN A,(2Fh)
+F5E5  0D                                DEC C
+F5E6  28 1D                             JR Z,TS4
+F5E8  E6 5F                             AND 5Fh
+F5EA  B8                                CP B
+F5EB  20 F6                             JR NZ,TS2
+F5ED  7A                                LD A,D
+F5EE  F6 40                             OR 40h
+F5F0  D3 2F                             OUT (2Fh),A
+F5F2  47                                LD B,A
+F5F3  0E 00                             LD C,0
+F5F5  DB 2F                     TS3:    IN A,(2Fh)
+F5F7  0D                                DEC C
+F5F8  28 0B                             JR Z,TS4
+F5FA  E6 5F                             AND 5Fh
+F5FC  B8                                CP B
+F5FD  20 F6                             JR NZ,TS3
+F5FF  3E 50                             LD A,50h                ; done
+F601  D3 2F                             OUT (2Fh),A
+F603  AF                                XOR A
+F604  C9                                RET
+F605  3E 07                     TS4:    LD A,07h                ; abort
+F607  D3 2F                             OUT (2Fh),A
+F609  A7                                AND A
+F60A  C9                                RET
+                                
+                                ; TESC: ESC, then A
+F60B  F5                        TESC:   PUSH AF
+F60C  3E 1B                             LD A,1Bh
+F60E  CD A2 F5                          CALL TOUT
+F611  F1                                POP AF
+F612  18 8E                             JR TOUT
+                                
+                                ; TGOTO: the terminal's cursor to row D, column E. Uses A.
+F614  3A 9A FE                  TGOTO:  LD A,(TROW)
+F617  BA                                CP D
+F618  20 05                             JR NZ,TG1
+F61A  3A 9B FE                          LD A,(TCOL)
+F61D  BB                                CP E
+F61E  C8                                RET Z
+F61F  3E 59                     TG1:    LD A,'Y'
+F621  CD 0B F6                          CALL TESC
+F624  7A                                LD A,D
+F625  C6 20                             ADD A,32
+F627  CD A2 F5                          CALL TOUT
+F62A  7B                                LD A,E
+F62B  C6 20                             ADD A,32
+F62D  CD A2 F5                          CALL TOUT
+F630  7A                                LD A,D
+F631  32 9A FE                          LD (TROW),A
+F634  7B                                LD A,E
+F635  32 9B FE                          LD (TCOL),A
+F638  C9                                RET
+                                
+                                ; TSYNC: the terminal's cursor to the screen's
+F639  3A 82 FE                  TSYNC:  LD A,(CROW)
+F63C  57                                LD D,A
+F63D  3A 83 FE                          LD A,(CCOL)
+F640  5F                                LD E,A
+F641  18 D1                             JR TGOTO
+                                
+                                ; TSETA: the terminal's attribute to A (0 normal, 80h inverse). Uses A.
+F643  E5                        TSETA:  PUSH HL
+F644  21 9C FE                          LD HL,TATTR
+F647  BE                                CP (HL)
+F648  28 0B                             JR Z,TSA2
+F64A  77                                LD (HL),A
+F64B  B7                                OR A
+F64C  3E 4D                             LD A,'M'
+F64E  28 02                             JR Z,TSA1
+F650  3E 4C                             LD A,'L'
+F652  CD 0B F6                  TSA1:   CALL TESC
+F655  E1                        TSA2:   POP HL
+F656  C9                                RET
+                                
+                                ; TPUT: cell A (character, bit 7 inverse) at row D, column E on the
+                                ; terminal; not the bottom right one. Uses A.
+F657  F5                        TPUT:   PUSH AF
+F658  3A 73 FE                          LD A,(ROWS)
+F65B  3D                                DEC A
+F65C  BA                                CP D
+F65D  20 09                             JR NZ,TP1
+F65F  3A 72 FE                          LD A,(COLS)
+F662  3D                                DEC A
+F663  BB                                CP E
+F664  20 02                             JR NZ,TP1
+F666  F1                                POP AF
+F667  C9                                RET
+F668  CD 14 F6                  TP1:    CALL TGOTO
+F66B  F1                                POP AF
+F66C  F5                                PUSH AF
+F66D  E6 80                             AND 80h
+F66F  CD 43 F6                          CALL TSETA
+F672  F1                                POP AF
+F673  E6 7F                             AND 7Fh
+F675  CD A2 F5                          CALL TOUT
+F678  3A 9B FE                          LD A,(TCOL)
+F67B  3C                                INC A
+F67C  32 9B FE                          LD (TCOL),A
+F67F  E5                                PUSH HL
+F680  21 72 FE                          LD HL,COLS
+F683  BE                                CP (HL)
+F684  E1                                POP HL
+F685  C0                                RET NZ
+F686  AF                                XOR A                   ; the terminal wrapped
+F687  32 9B FE                          LD (TCOL),A
+F68A  3A 9A FE                          LD A,(TROW)
+F68D  3C                                INC A
+F68E  32 9A FE                          LD (TROW),A
+F691  C9                                RET
+                                
+                                ; CLRK: from row D, column E to the end of the line on the terminal
+F692  CD 14 F6                  CLRK:   CALL TGOTO
+F695  AF                                XOR A
+F696  CD 43 F6                          CALL TSETA
+F699  3E 4B                             LD A,'K'
+F69B  C3 0B F6                          JR TESC
+                                
+                                ; DRAWR: row D from column E on the terminal, from the shadow. Uses all.
+F69E  3A 72 FE                  DRAWR:  LD A,(COLS)
+F6A1  3D                                DEC A
+F6A2  4F                                LD C,A                  ; C = the last column to draw
+F6A3  3A 73 FE                          LD A,(ROWS)
+F6A6  3D                                DEC A
+F6A7  BA                                CP D
+F6A8  20 01                             JR NZ,DR1
+F6AA  0D                                DEC C
+F6AB  79                        DR1:    LD A,C
+F6AC  BB                                CP E
+F6AD  38 E3                             JR C,CLRK
+F6AF  D5                                PUSH DE
+F6B0  59                                LD E,C
+F6B1  CD 07 F7                          CALL CELLP
+F6B4  D1                                POP DE
+F6B5  41                                LD B,C
+F6B6  7E                        DR2:    LD A,(HL)               ; the last cell that is not blank
+F6B7  FE 20                             CP ' '
+F6B9  20 0D                             JR NZ,DR3
+F6BB  78                                LD A,B
+F6BC  BB                                CP E
+F6BD  28 D3                             JR Z,CLRK               ; all blank
+F6BF  E6 0F                             AND 15
+F6C1  CC E8 F3                          CALL Z,RXPOLL
+F6C4  2B                                DEC HL
+F6C5  05                                DEC B
+F6C6  18 EE                             JR DR2
+F6C8  C5                        DR3:    PUSH BC
+F6C9  CD 07 F7                          CALL CELLP
+F6CC  C1                                POP BC
+F6CD  7E                        DR4:    LD A,(HL)
+F6CE  CD 57 F6                          CALL TPUT
+F6D1  23                                INC HL
+F6D2  7B                                LD A,E
+F6D3  1C                                INC E
+F6D4  B8                                CP B
+F6D5  20 F6                             JR NZ,DR4
+F6D7  79                                LD A,C
+F6D8  BB                                CP E
+F6D9  D8                                RET C
+F6DA  18 B6                             JR CLRK
+                                
+                                ; REDR: rows B to C on the terminal, from the shadow. Uses all.
+F6DC  50                        REDR:   LD D,B
+F6DD  C5                        QRD1:   PUSH BC
+F6DE  D5                                PUSH DE
+F6DF  1E 00                             LD E,0
+F6E1  CD 9E F6                          CALL DRAWR
+F6E4  D1                                POP DE
+F6E5  C1                                POP BC
+F6E6  7A                                LD A,D
+F6E7  B9                                CP C
+F6E8  C8                                RET Z
+F6E9  14                                INC D
+F6EA  18 F1                             JR QRD1
+                                
+                                ; ---------------------------------------------------------------- the shadow
+                                ; ROWP: HL = row A. CELLP: HL = row D, column E. Use A.
+F6EC  D5                        ROWP:   PUSH DE                 ; COLS is 64 or 80: A x 64 (+ A x 16)
+F6ED  6F                                LD L,A
+F6EE  26 00                             LD H,0
+F6F0  29                                ADD HL,HL
+F6F1  29                                ADD HL,HL
+F6F2  29                                ADD HL,HL
+F6F3  29                                ADD HL,HL
+F6F4  54                                LD D,H
+F6F5  5D                                LD E,L
+F6F6  29                                ADD HL,HL
+F6F7  29                                ADD HL,HL
+F6F8  3A 72 FE                          LD A,(COLS)
+F6FB  FE 40                             CP 64
+F6FD  28 01                             JR Z,RP1
+F6FF  19                                ADD HL,DE
+F700  ED 5B 76 FE               RP1:    LD DE,(SCR)
+F704  19                                ADD HL,DE
+F705  D1                                POP DE
+F706  C9                                RET
+F707  7A                        CELLP:  LD A,D
+F708  CD EC F6                          CALL ROWP
+F70B  7B                                LD A,E
+F70C  85                        ADDHLA: ADD A,L
+F70D  6F                                LD L,A
+F70E  D0                                RET NC
+F70F  24                                INC H
+F710  C9                                RET
+F711  D5                        SUBHLA: PUSH DE
+F712  5F                                LD E,A
+F713  16 00                             LD D,0
+F715  B7                                OR A
+F716  ED 52                             SBC HL,DE
+F718  D1                                POP DE
+F719  C9                                RET
+                                
+                                ; NROWS: BC = A rows' bytes. Uses A, HL.
+F71A  CD EC F6                  NROWS:  CALL ROWP
+F71D  ED 4B 76 FE                       LD BC,(SCR)
+F721  B7                                OR A
+F722  ED 42                             SBC HL,BC
+F724  44                                LD B,H
+F725  4D                                LD C,L
+F726  C9                                RET
+                                
+                                ; MVF / MVB: LDIR / LDDR (BC > 0) in pieces of 32 bytes, with RXPOLL
+                                ; between them: at 19200 baud a byte comes every 2100 T-states.
+F727  78                        MVF:    LD A,B
+F728  B7                                OR A
+F729  20 05                             JR NZ,MVF1
+F72B  79                                LD A,C
+F72C  FE 21                             CP 33
+F72E  38 0C                             JR C,MVF2
+F730  C5                        MVF1:   PUSH BC
+F731  01 20 00                          LD BC,32
+F734  ED B0                             LDIR
+F736  C1                                POP BC
+F737  CD 57 F7                          CALL MVSUB
+F73A  18 EB                             JR MVF
+F73C  ED B0                     MVF2:   LDIR
+F73E  C9                                RET
+F73F  78                        MVB:    LD A,B
+F740  B7                                OR A
+F741  20 05                             JR NZ,MVB1
+F743  79                                LD A,C
+F744  FE 21                             CP 33
+F746  38 0C                             JR C,MVB2
+F748  C5                        MVB1:   PUSH BC
+F749  01 20 00                          LD BC,32
+F74C  ED B8                             LDDR
+F74E  C1                                POP BC
+F74F  CD 57 F7                          CALL MVSUB
+F752  18 EB                             JR MVB
+F754  ED B8                     MVB2:   LDDR
+F756  C9                                RET
+F757  79                        MVSUB:  LD A,C
+F758  D6 20                             SUB 32
+F75A  4F                                LD C,A
+F75B  30 01                             JR NC,MVS1
+F75D  05                                DEC B
+F75E  C3 E8 F3                  MVS1:   JP RXPOLL
+                                
+                                ; FILL: BC cells at HL blank. Uses A, BC, DE, HL.
+F761  78                        FILL:   LD A,B
+F762  B1                                OR C
+F763  C8                                RET Z
+F764  36 20                             LD (HL),' '
+F766  0B                                DEC BC
+F767  78                                LD A,B
+F768  B1                                OR C
+F769  C8                                RET Z
+F76A  54                                LD D,H
+F76B  5D                                LD E,L
+F76C  13                                INC DE
+F76D  CD 27 F7                          CALL MVF
+F770  C9                                RET
+                                
+                                ; SHUP / SHDN: rows RT to RB of the shadow one up / down; the row that
+                                ; comes in is blank. Use all.
+F771  CD E8 F3                  SHUP:   CALL RXPOLL             ; a byte may have come since the last
+F774  3A A0 FE                          LD A,(RT)
+F777  CD EC F6                          CALL ROWP
+F77A  EB                                EX DE,HL
+F77B  CD BF F7                          CALL RCOUNT
+F77E  3A 72 FE                          LD A,(COLS)
+F781  6F                                LD L,A
+F782  26 00                             LD H,0
+F784  19                                ADD HL,DE
+F785  78                                LD A,B
+F786  B1                                OR C
+F787  28 03                             JR Z,SHU1
+F789  CD 27 F7                          CALL MVF
+F78C  EB                        SHU1:   EX DE,HL
+F78D  18 28                             JR FILLRW
+F78F  CD E8 F3                  SHDN:   CALL RXPOLL
+F792  CD BF F7                          CALL RCOUNT
+F795  3A A1 FE                          LD A,(RB)
+F798  CD EC F6                          CALL ROWP
+F79B  3A 72 FE                          LD A,(COLS)
+F79E  3D                                DEC A
+F79F  CD 0C F7                          CALL ADDHLA
+F7A2  54                                LD D,H
+F7A3  5D                                LD E,L
+F7A4  3A 72 FE                          LD A,(COLS)
+F7A7  CD 11 F7                          CALL SUBHLA
+F7AA  78                                LD A,B
+F7AB  B1                                OR C
+F7AC  28 03                             JR Z,SHD1
+F7AE  CD 3F F7                          CALL MVB
+F7B1  3A A0 FE                  SHD1:   LD A,(RT)
+F7B4  CD EC F6                          CALL ROWP
+F7B7  3A 72 FE                  FILLRW: LD A,(COLS)
+F7BA  4F                                LD C,A
+F7BB  06 00                             LD B,0
+F7BD  18 A2                             JR FILL
+F7BF  3A A1 FE                  RCOUNT: LD A,(RB)
+F7C2  21 A0 FE                          LD HL,RT
+F7C5  96                                SUB (HL)
+F7C6  C3 1A F7                          JR NROWS
+                                
+                                ; SETRG: RT, RB = the scrolling region
+F7C9  3A 86 FE                  SETRG:  LD A,(TOP)
+F7CC  32 A0 FE                          LD (RT),A
+F7CF  3A 87 FE                          LD A,(BOT)
+F7D2  32 A1 FE                          LD (RB),A
+F7D5  C9                                RET
+                                
+                                ; FULLSC: Z if the region is the whole screen. Uses A, HL.
+F7D6  3A 86 FE                  FULLSC: LD A,(TOP)
+F7D9  B7                                OR A
+F7DA  C0                                RET NZ
+F7DB  3A 73 FE                          LD A,(ROWS)
+F7DE  3D                                DEC A
+F7DF  21 87 FE                          LD HL,BOT
+F7E2  BE                                CP (HL)
+F7E3  C9                                RET
+                                
+                                ; SCRUP: the region up one line. On the whole screen the terminal
+                                ; scrolls itself (LF on its bottom row); otherwise it is drawn again.
+F7E4  CD C9 F7                  SCRUP:  CALL SETRG
+F7E7  CD 71 F7                          CALL SHUP
+F7EA  CD D6 F7                          CALL FULLSC
+F7ED  20 2E                             JR NZ,SCRR
+F7EF  3A 73 FE                          LD A,(ROWS)
+F7F2  3D                                DEC A
+F7F3  57                                LD D,A
+F7F4  3A 9A FE                          LD A,(TROW)
+F7F7  BA                                CP D
+F7F8  28 05                             JR Z,SU1
+F7FA  1E 00                             LD E,0
+F7FC  CD 14 F6                          CALL TGOTO
+F7FF  AF                        SU1:    XOR A
+F800  CD 43 F6                          CALL TSETA
+F803  3E 0A                             LD A,0Ah
+F805  CD A2 F5                          CALL TOUT
+F808  3A 73 FE                          LD A,(ROWS)             ; the bottom right cell, which could not
+F80B  D6 02                             SUB 2                   ;   be drawn, is now a row up
+F80D  57                                LD D,A
+F80E  3A 72 FE                          LD A,(COLS)
+F811  3D                                DEC A
+F812  5F                                LD E,A
+F813  CD 07 F7                          CALL CELLP
+F816  7E                                LD A,(HL)
+F817  FE 20                             CP ' '
+F819  C8                                RET Z
+F81A  C3 57 F6                          JP TPUT
+F81D  3A 86 FE                  SCRR:   LD A,(TOP)
+F820  47                                LD B,A
+F821  3A 87 FE                          LD A,(BOT)
+F824  4F                                LD C,A
+F825  C3 DC F6                          JR REDR
+                                
+                                ; SCRDN: the region down one line (ESC I on the terminal's top row)
+F828  CD C9 F7                  SCRDN:  CALL SETRG
+F82B  CD 8F F7                          CALL SHDN
+F82E  CD D6 F7                          CALL FULLSC
+F831  20 EA                             JR NZ,SCRR
+F833  3A 9A FE                          LD A,(TROW)
+F836  B7                                OR A
+F837  28 06                             JR Z,SD1
+F839  11 00 00                          LD DE,0
+F83C  CD 14 F6                          CALL TGOTO
+F83F  AF                        SD1:    XOR A
+F840  CD 43 F6                          CALL TSETA
+F843  3E 49                             LD A,'I'
+F845  C3 0B F6                          JP TESC
+                                
+                                ; ---------------------------------------------------------------- the screen
+                                ; INDEX: down a line, scrolling at the region's bottom. RINDEX: up.
+F848  AF                        INDEX:  XOR A
+F849  32 84 FE                          LD (WRAPF),A
+F84C  3A 87 FE                          LD A,(BOT)
+F84F  21 82 FE                          LD HL,CROW
+F852  BE                                CP (HL)
+F853  28 8F                             JR Z,SCRUP
+F855  3A 73 FE                          LD A,(ROWS)
+F858  3D                                DEC A
+F859  BE                                CP (HL)
+F85A  C8                                RET Z
+F85B  34                                INC (HL)
+F85C  C9                                RET
+F85D  AF                        RINDEX: XOR A
+F85E  32 84 FE                          LD (WRAPF),A
+F861  3A 86 FE                          LD A,(TOP)
+F864  21 82 FE                          LD HL,CROW
+F867  BE                                CP (HL)
+F868  28 BE                             JR Z,SCRDN
+F86A  7E                                LD A,(HL)
+F86B  B7                                OR A
+F86C  C8                                RET Z
+F86D  35                                DEC (HL)
+F86E  C9                                RET
+                                
+                                ; PUTCH: the character A at the cursor
+F86F  CD E8 F3                  PUTCH:  CALL RXPOLL             ; (halfway from the last one to TOUT's)
+F872  4F                                LD C,A
+F873  3A 84 FE                          LD A,(WRAPF)            ; the last column was written: wrap now
+F876  B7                                OR A
+F877  28 09                             JR Z,PC1
+F879  AF                                XOR A
+F87A  32 83 FE                          LD (CCOL),A
+F87D  C5                                PUSH BC
+F87E  CD 48 F8                          CALL INDEX
+F881  C1                                POP BC
+F882  3A 82 FE                  PC1:    LD A,(CROW)
+F885  57                                LD D,A
+F886  3A 83 FE                          LD A,(CCOL)
+F889  5F                                LD E,A
+F88A  3A 89 FE                          LD A,(IRM)
+F88D  B7                                OR A
+F88E  28 14                             JR Z,PC2
+F890  C5                                PUSH BC                 ; insert mode
+F891  3E 01                             LD A,1
+F893  CD DA F8                          CALL ICHS
+F896  C1                                POP BC
+F897  CD 34 F9                          CALL CURP
+F89A  3A 85 FE                          LD A,(ATTR)
+F89D  B1                                OR C
+F89E  77                                LD (HL),A
+F89F  CD 9E F6                          CALL DRAWR
+F8A2  18 0B                             JR PC3
+F8A4  CD 07 F7                  PC2:    CALL CELLP
+F8A7  3A 85 FE                          LD A,(ATTR)
+F8AA  B1                                OR C
+F8AB  77                                LD (HL),A
+F8AC  CD 57 F6                          CALL TPUT
+F8AF  3A 83 FE                  PC3:    LD A,(CCOL)
+F8B2  5F                                LD E,A
+F8B3  3A 72 FE                          LD A,(COLS)
+F8B6  3D                                DEC A
+F8B7  BB                                CP E
+F8B8  28 06                             JR Z,PC4
+F8BA  1C                                INC E
+F8BB  7B                                LD A,E
+F8BC  32 83 FE                          LD (CCOL),A
+F8BF  C9                                RET
+F8C0  3A 88 FE                  PC4:    LD A,(AWM)
+F8C3  32 84 FE                          LD (WRAPF),A
+F8C6  C9                                RET
+                                
+                                ; ICHS / DCHS / ECHS: insert / delete / blank A cells at the cursor, in
+                                ; the shadow. Use all.
+F8C7  47                        CHCNT:  LD B,A                  ; B = n, at most the cells left;
+F8C8  B7                                OR A                    ;   A = cells left - n
+F8C9  20 01                             JR NZ,CHC1
+F8CB  04                                INC B
+F8CC  3A 83 FE                  CHC1:   LD A,(CCOL)
+F8CF  4F                                LD C,A
+F8D0  3A 72 FE                          LD A,(COLS)
+F8D3  91                                SUB C
+F8D4  B8                                CP B
+F8D5  30 01                             JR NC,CHC2
+F8D7  47                                LD B,A
+F8D8  90                        CHC2:   SUB B
+F8D9  C9                                RET
+F8DA  CD C7 F8                  ICHS:   CALL CHCNT
+F8DD  C5                                PUSH BC
+F8DE  F5                                PUSH AF
+F8DF  3A 82 FE                          LD A,(CROW)
+F8E2  57                                LD D,A
+F8E3  3A 72 FE                          LD A,(COLS)
+F8E6  3D                                DEC A
+F8E7  5F                                LD E,A
+F8E8  CD 07 F7                          CALL CELLP              ; the row's last cell
+F8EB  54                                LD D,H
+F8EC  5D                                LD E,L
+F8ED  F1                                POP AF
+F8EE  C1                                POP BC
+F8EF  C5                                PUSH BC
+F8F0  F5                                PUSH AF
+F8F1  78                                LD A,B
+F8F2  CD 11 F7                          CALL SUBHLA
+F8F5  F1                                POP AF
+F8F6  4F                                LD C,A
+F8F7  06 00                             LD B,0
+F8F9  B7                                OR A
+F8FA  28 03                             JR Z,IC1
+F8FC  CD 3F F7                          CALL MVB
+F8FF  C1                        IC1:    POP BC
+F900  18 27                             JR ECHS1
+F902  CD C7 F8                  DCHS:   CALL CHCNT
+F905  C5                                PUSH BC
+F906  F5                                PUSH AF
+F907  CD 34 F9                          CALL CURP
+F90A  54                                LD D,H
+F90B  5D                                LD E,L
+F90C  F1                                POP AF
+F90D  C1                                POP BC
+F90E  C5                                PUSH BC
+F90F  F5                                PUSH AF
+F910  78                                LD A,B
+F911  CD 0C F7                          CALL ADDHLA
+F914  F1                                POP AF
+F915  4F                                LD C,A
+F916  06 00                             LD B,0
+F918  B7                                OR A
+F919  28 03                             JR Z,DC1
+F91B  CD 27 F7                          CALL MVF
+F91E  C1                        DC1:    POP BC
+F91F  EB                                EX DE,HL
+F920  48                                LD C,B
+F921  06 00                             LD B,0
+F923  C3 61 F7                          JP FILL
+F926  CD C7 F8                  ECHS:   CALL CHCNT
+F929  C5                        ECHS1:  PUSH BC
+F92A  CD 34 F9                          CALL CURP
+F92D  C1                                POP BC
+F92E  48                                LD C,B
+F92F  06 00                             LD B,0
+F931  C3 61 F7                          JP FILL
+F934  3A 82 FE                  CURP:   LD A,(CROW)
+F937  57                                LD D,A
+F938  3A 83 FE                          LD A,(CCOL)
+F93B  5F                                LD E,A
+F93C  C3 07 F7                          JP CELLP
+                                
+                                ; SETCUR: the cursor to row D, column E, kept on the screen
+F93F  3A 73 FE                  SETCUR: LD A,(ROWS)
+F942  3D                                DEC A
+F943  BA                                CP D
+F944  30 01                             JR NC,SC1
+F946  57                                LD D,A
+F947  3A 72 FE                  SC1:    LD A,(COLS)
+F94A  3D                                DEC A
+F94B  BB                                CP E
+F94C  30 01                             JR NC,SC2
+F94E  5F                                LD E,A
+F94F  7A                        SC2:    LD A,D
+F950  32 82 FE                          LD (CROW),A
+F953  7B                                LD A,E
+F954  32 83 FE                          LD (CCOL),A
+F957  AF                        CLRW:   XOR A
+F958  32 84 FE                          LD (WRAPF),A
+F95B  C9                                RET
+                                
+                                ; EDN: erase in display, A = 0 cursor to end, 1 start to cursor, 2 all
+F95C  FE 01                     EDN:    CP 1
+F95E  28 21                             JR Z,ED1
+F960  D2 CB F1                          JP NC,CLRALL
+F963  CD 34 F9                          CALL CURP
+F966  D5                                PUSH DE
+F967  EB                                EX DE,HL
+F968  2A 80 FE                          LD HL,(SCREND)
+F96B  B7                                OR A
+F96C  ED 52                             SBC HL,DE
+F96E  44                                LD B,H
+F96F  4D                                LD C,L
+F970  EB                                EX DE,HL
+F971  CD 61 F7                          CALL FILL
+F974  D1                                POP DE
+F975  CD 14 F6                          CALL TGOTO
+F978  AF                                XOR A
+F979  CD 43 F6                          CALL TSETA
+F97C  3E 4A                             LD A,'J'
+F97E  C3 0B F6                          JP TESC
+F981  CD 34 F9                  ED1:    CALL CURP
+F984  D5                                PUSH DE
+F985  23                                INC HL
+F986  ED 5B 76 FE                       LD DE,(SCR)
+F98A  B7                                OR A
+F98B  ED 52                             SBC HL,DE
+F98D  44                                LD B,H
+F98E  4D                                LD C,L
+F98F  EB                                EX DE,HL
+F990  CD 61 F7                          CALL FILL
+F993  D1                                POP DE
+F994  06 00                             LD B,0
+F996  4A                                LD C,D
+F997  C3 DC F6                          JP REDR
+                                
+                                ; ELN: erase in line, A = 0 cursor to end, 1 start to cursor, 2 all
+F99A  47                        ELN:    LD B,A
+F99B  3A 82 FE                          LD A,(CROW)
+F99E  57                                LD D,A
+F99F  78                                LD A,B
+F9A0  FE 01                             CP 1
+F9A2  28 18                             JR Z,EL1
+F9A4  30 2A                             JR NC,EL2
+F9A6  3A 83 FE                          LD A,(CCOL)
+F9A9  5F                                LD E,A
+F9AA  CD 07 F7                          CALL CELLP
+F9AD  3A 72 FE                          LD A,(COLS)
+F9B0  93                                SUB E
+F9B1  4F                        EL0:    LD C,A
+F9B2  06 00                             LD B,0
+F9B4  D5                                PUSH DE
+F9B5  CD 61 F7                          CALL FILL
+F9B8  D1                                POP DE
+F9B9  C3 92 F6                          JP CLRK
+F9BC  1E 00                     EL1:    LD E,0
+F9BE  CD 07 F7                          CALL CELLP
+F9C1  3A 83 FE                          LD A,(CCOL)
+F9C4  3C                                INC A
+F9C5  4F                                LD C,A
+F9C6  06 00                             LD B,0
+F9C8  D5                                PUSH DE
+F9C9  CD 61 F7                          CALL FILL
+F9CC  D1                                POP DE
+F9CD  C3 9E F6                          JP DRAWR
+F9D0  1E 00                     EL2:    LD E,0
+F9D2  CD 07 F7                          CALL CELLP
+F9D5  3A 72 FE                          LD A,(COLS)
+F9D8  18 D7                             JR EL0
+                                
+                                ; ---------------------------------------------------------------- the host's codes
+                                ; EMUL: a byte from the host
+F9DA  4F                        EMUL:   LD C,A
+F9DB  FE 80                             CP 80h
+F9DD  30 2E                             JR NC,EM8
+F9DF  FE 20                             CP 20h
+F9E1  38 38                             JR C,ECTRL
+F9E3  FE 7F                             CP 7Fh
+F9E5  C8                                RET Z
+F9E6  3A 92 FE                          LD A,(PST)
+F9E9  B7                                OR A
+F9EA  C2 8D FA                          JR NZ,ESTATE
+F9ED  21 8C FE                  GPUT:   LD HL,G0                ; the character set in use
+F9F0  3A 8B FE                          LD A,(GL)
+F9F3  CD 0C F7                          CALL ADDHLA
+F9F6  7E                                LD A,(HL)
+F9F7  B7                                OR A
+F9F8  79                                LD A,C
+F9F9  CA 6F F8                          JP Z,PUTCH
+F9FC  FE 5F                             CP 5Fh                  ; DEC special graphics: 5Fh-7Eh
+F9FE  DA 6F F8                          JP C,PUTCH
+FA01  D6 5F                             SUB 5Fh
+FA03  21 51 FE                          LD HL,GRTAB
+FA06  CD 0C F7                          CALL ADDHLA
+FA09  7E                                LD A,(HL)
+FA0A  C3 6F F8                          JP PUTCH
+FA0D  3A 92 FE                  EM8:    LD A,(PST)              ; 8-bit and UTF-8: one ? per character
+FA10  B7                                OR A
+FA11  C0                                RET NZ
+FA12  79                                LD A,C
+FA13  FE C0                             CP 0C0h
+FA15  D8                                RET C
+FA16  3E 3F                             LD A,'?'
+FA18  C3 6F F8                          JP PUTCH
+FA1B  FE 1B                     ECTRL:  CP 1Bh
+FA1D  28 33                             JR Z,EESC
+FA1F  FE 18                             CP 18h
+FA21  28 33                             JR Z,ECAN
+FA23  FE 1A                             CP 1Ah
+FA25  28 2F                             JR Z,ECAN
+FA27  FE 0D                             CP 0Dh
+FA29  28 30                             JR Z,ECR
+FA2B  FE 0A                             CP 0Ah
+FA2D  CA 48 F8                          JP Z,INDEX
+FA30  FE 0B                             CP 0Bh
+FA32  CA 48 F8                          JP Z,INDEX
+FA35  FE 0C                             CP 0Ch
+FA37  CA 48 F8                          JP Z,INDEX
+FA3A  FE 08                             CP 08h
+FA3C  28 2D                             JR Z,EBS
+FA3E  FE 09                             CP 09h
+FA40  28 37                             JR Z,ETAB
+FA42  FE 0E                             CP 0Eh
+FA44  28 06                             JR Z,ESO
+FA46  FE 0F                             CP 0Fh
+FA48  C0                                RET NZ
+FA49  AF                                XOR A                   ; SI: G0
+FA4A  18 02                             JR ESO1
+FA4C  3E 01                     ESO:    LD A,1                  ; SO: G1
+FA4E  32 8B FE                  ESO1:   LD (GL),A
+FA51  C9                                RET
+FA52  3E 01                     EESC:   LD A,1
+FA54  18 01                             JR ECAN1
+FA56  AF                        ECAN:   XOR A
+FA57  32 92 FE                  ECAN1:  LD (PST),A
+FA5A  C9                                RET
+FA5B  AF                        ECR:    XOR A
+FA5C  32 83 FE                          LD (CCOL),A
+FA5F  32 84 FE                          LD (WRAPF),A
+FA62  3A 74 FE                          LD A,(FLAGS)            ; flag 10h: a LF after each CR
+FA65  E6 10                             AND 10h
+FA67  C8                                RET Z
+FA68  C3 48 F8                          JP INDEX
+FA6B  AF                        EBS:    XOR A
+FA6C  32 84 FE                          LD (WRAPF),A
+FA6F  3A 83 FE                          LD A,(CCOL)
+FA72  B7                                OR A
+FA73  C8                                RET Z
+FA74  3D                                DEC A
+FA75  32 83 FE                          LD (CCOL),A
+FA78  C9                                RET
+FA79  3A 83 FE                  ETAB:   LD A,(CCOL)
+FA7C  F6 07                             OR 7
+FA7E  3C                                INC A
+FA7F  21 72 FE                          LD HL,COLS
+FA82  BE                                CP (HL)
+FA83  38 02                             JR C,ET1
+FA85  7E                                LD A,(HL)
+FA86  3D                                DEC A
+FA87  32 83 FE                  ET1:    LD (CCOL),A
+FA8A  C3 57 F9                          JP CLRW
+                                
+FA8D  3D                        ESTATE: DEC A
+FA8E  28 3F                             JR Z,SESC
+FA90  3D                                DEC A
+FA91  CA 7D FB                          JP Z,SCSI
+FA94  3D                                DEC A
+FA95  28 21                             JR Z,SSCS
+FA97  3D                                DEC A
+FA98  28 BC                             JR Z,ECAN               ; ESC # x: x ignored
+FA9A  3D                                DEC A
+FA9B  28 0F                             JR Z,SY1
+FA9D  AF                                XOR A                   ; VT52 ESC Y row col: the column
+FA9E  32 92 FE                          LD (PST),A
+FAA1  79                                LD A,C
+FAA2  D6 20                             SUB 32
+FAA4  5F                                LD E,A
+FAA5  3A 99 FE                          LD A,(YROW)
+FAA8  57                                LD D,A
+FAA9  C3 3F F9                          JP SETCUR
+FAAC  79                        SY1:    LD A,C
+FAAD  D6 20                             SUB 32
+FAAF  32 99 FE                          LD (YROW),A
+FAB2  3E 06                             LD A,6
+FAB4  32 92 FE                          LD (PST),A
+FAB7  C9                                RET
+FAB8  AF                        SSCS:   XOR A                   ; ESC ( x / ESC ) x: '0' graphics
+FAB9  32 92 FE                          LD (PST),A
+FABC  21 8C FE                          LD HL,G0
+FABF  3A 8E FE                          LD A,(PG)
+FAC2  CD 0C F7                          CALL ADDHLA
+FAC5  79                                LD A,C
+FAC6  D6 30                             SUB '0'
+FAC8  28 02                             JR Z,QSS1
+FACA  3E FF                             LD A,0FFh
+FACC  3C                        QSS1:   INC A
+FACD  77                                LD (HL),A
+FACE  C9                                RET
+                                
+FACF  32 92 FE                  SESC:   LD (PST),A              ; (A = 0)
+FAD2  3A 74 FE                          LD A,(FLAGS)
+FAD5  0F                                RRCA
+FAD6  38 60                             JR C,V52ESC
+FAD8  79                                LD A,C
+FAD9  FE 5B                             CP '['
+FADB  28 44                             JR Z,ECSI
+FADD  FE 37                             CP '7'
+FADF  CA 2D FE                          JP Z,SAVEC
+FAE2  FE 38                             CP '8'
+FAE4  CA 40 FE                          JP Z,RESTC
+FAE7  FE 44                             CP 'D'
+FAE9  CA 48 F8                          JP Z,INDEX
+FAEC  FE 45                             CP 'E'
+FAEE  28 2A                             JR Z,ENEL
+FAF0  FE 4D                             CP 'M'
+FAF2  CA 5D F8                          JP Z,RINDEX
+FAF5  FE 63                             CP 'c'
+FAF7  CA 90 F1                          JP Z,RESET
+FAFA  FE 5A                             CP 'Z'
+FAFC  CA 63 FD                          JP Z,DAREP
+FAFF  FE 23                             CP '#'
+FB01  06 04                             LD B,4
+FB03  28 10                             JR Z,ESTS
+FB05  FE 28                             CP '('
+FB07  06 00                             LD B,0
+FB09  28 04                             JR Z,EG
+FB0B  FE 29                             CP ')'
+FB0D  C0                                RET NZ
+FB0E  04                                INC B
+FB0F  78                        EG:     LD A,B
+FB10  32 8E FE                          LD (PG),A
+FB13  06 03                             LD B,3
+FB15  78                        ESTS:   LD A,B
+FB16  32 92 FE                          LD (PST),A
+FB19  C9                                RET
+FB1A  AF                        ENEL:   XOR A
+FB1B  32 83 FE                          LD (CCOL),A
+FB1E  C3 48 F8                          JP INDEX
+FB21  3E 02                     ECSI:   LD A,2
+FB23  32 92 FE                          LD (PST),A
+FB26  AF                                XOR A
+FB27  32 93 FE                          LD (NPAR),A
+FB2A  32 94 FE                          LD (PRIV),A
+FB2D  21 95 FE                          LD HL,PARS
+FB30  77                                LD (HL),A
+FB31  23                                INC HL
+FB32  77                                LD (HL),A
+FB33  23                                INC HL
+FB34  77                                LD (HL),A
+FB35  23                                INC HL
+FB36  77                                LD (HL),A
+FB37  C9                                RET
+                                
+                                ; VT52: ESC A B C D cursor, H home, I up (scrolling), J K erase, Y r c
+FB38  3E 01                     V52ESC: LD A,1
+FB3A  32 95 FE                          LD (PARS),A
+FB3D  79                                LD A,C
+FB3E  FE 41                             CP 'A'
+FB40  CA 42 FC                          JP Z,CUU
+FB43  FE 42                             CP 'B'
+FB45  CA 5F FC                          JP Z,CUD
+FB48  FE 43                             CP 'C'
+FB4A  CA 84 FC                          JP Z,CUF
+FB4D  FE 44                             CP 'D'
+FB4F  CA 9D FC                          JP Z,CUB
+FB52  FE 49                             CP 'I'
+FB54  CA 5D F8                          JP Z,RINDEX
+FB57  FE 48                             CP 'H'
+FB59  11 00 00                          LD DE,0
+FB5C  CA 3F F9                          JP Z,SETCUR
+FB5F  FE 4A                             CP 'J'
+FB61  3E 00                             LD A,0
+FB63  CA 5C F9                          JP Z,EDN
+FB66  79                                LD A,C
+FB67  FE 4B                             CP 'K'
+FB69  3E 00                             LD A,0
+FB6B  CA 9A F9                          JP Z,ELN
+FB6E  79                                LD A,C
+FB6F  FE 5A                             CP 'Z'
+FB71  CA 63 FD                          JP Z,DAREP
+FB74  FE 59                             CP 'Y'
+FB76  C0                                RET NZ
+FB77  3E 05                             LD A,5
+FB79  32 92 FE                          LD (PST),A
+FB7C  C9                                RET
+                                
+                                ; CSI: parameters, then the final byte
+FB7D  79                        SCSI:   LD A,C
+FB7E  FE 3C                             CP '<'
+FB80  30 34                             JR NC,CS2
+FB82  FE 30                             CP '0'
+FB84  D8                                RET C                   ; intermediate bytes: ignored
+FB85  FE 3B                             CP ';'
+FB87  28 24                             JR Z,CSEMI
+FB89  FE 3A                             CP ':'
+FB8B  D0                                RET NC
+FB8C  3A 93 FE                          LD A,(NPAR)             ; a digit
+FB8F  FE 04                             CP 4
+FB91  D0                                RET NC
+FB92  21 95 FE                          LD HL,PARS
+FB95  CD 0C F7                          CALL ADDHLA
+FB98  7E                                LD A,(HL)
+FB99  FE 1A                             CP 26
+FB9B  30 0C                             JR NC,CS1
+FB9D  47                                LD B,A
+FB9E  87                                ADD A,A
+FB9F  87                                ADD A,A
+FBA0  80                                ADD A,B
+FBA1  87                                ADD A,A
+FBA2  47                                LD B,A
+FBA3  79                                LD A,C
+FBA4  D6 30                             SUB '0'
+FBA6  80                                ADD A,B
+FBA7  30 02                             JR NC,CS0
+FBA9  3E FF                     CS1:    LD A,255
+FBAB  77                        CS0:    LD (HL),A
+FBAC  C9                                RET
+FBAD  21 93 FE                  CSEMI:  LD HL,NPAR
+FBB0  7E                                LD A,(HL)
+FBB1  FE 04                             CP 4
+FBB3  D0                                RET NC
+FBB4  34                                INC (HL)
+FBB5  C9                                RET
+FBB6  FE 40                     CS2:    CP 40h
+FBB8  30 06                             JR NC,CFIN
+FBBA  3E 01                             LD A,1                  ; < = > ?: private
+FBBC  32 94 FE                          LD (PRIV),A
+FBBF  C9                                RET
+FBC0  AF                        CFIN:   XOR A
+FBC1  32 92 FE                          LD (PST),A
+FBC4  21 E0 FB                          LD HL,CTAB
+FBC7  3A 94 FE                          LD A,(PRIV)
+FBCA  B7                                OR A
+FBCB  28 03                             JR Z,QCF1
+FBCD  21 2F FC                          LD HL,PTAB
+FBD0  7E                        QCF1:   LD A,(HL)
+FBD1  B7                                OR A
+FBD2  C8                                RET Z
+FBD3  23                                INC HL
+FBD4  B9                                CP C
+FBD5  28 04                             JR Z,CF2
+FBD7  23                                INC HL
+FBD8  23                                INC HL
+FBD9  18 F5                             JR QCF1
+FBDB  7E                        CF2:    LD A,(HL)
+FBDC  23                                INC HL
+FBDD  66                                LD H,(HL)
+FBDE  6F                                LD L,A
+FBDF  E9                                JP (HL)
+                                
+FBE0  41                        CTAB:   DB 'A'
+FBE1  42 FC                             DW CUU
+FBE3  42                                DB 'B'
+FBE4  5F FC                             DW CUD
+FBE6  65                                DB 'e'
+FBE7  5F FC                             DW CUD
+FBE9  43                                DB 'C'
+FBEA  84 FC                             DW CUF
+FBEC  61                                DB 'a'
+FBED  84 FC                             DW CUF
+FBEF  44                                DB 'D'
+FBF0  9D FC                             DW CUB
+FBF2  48                                DB 'H'
+FBF3  AE FC                             DW CUP
+FBF5  66                                DB 'f'
+FBF6  AE FC                             DW CUP
+FBF8  47                                DB 'G'
+FBF9  BB FC                             DW CHA
+FBFB  60                                DB 60h
+FBFC  BB FC                             DW CHA
+FBFE  64                                DB 'd'
+FBFF  C7 FC                             DW VPA
+FC01  4A                                DB 'J'
+FC02  D3 FC                             DW CED
+FC04  4B                                DB 'K'
+FC05  D9 FC                             DW CEL
+FC07  6D                                DB 'm'
+FC08  DF FC                             DW SGR
+FC0A  72                                DB 'r'
+FC0B  09 FD                             DW STBM
+FC0D  6E                                DB 'n'
+FC0E  2C FD                             DW DSR
+FC10  63                                DB 'c'
+FC11  5E FD                             DW CDA
+FC13  68                                DB 'h'
+FC14  83 FD                             DW SM
+FC16  6C                                DB 'l'
+FC17  87 FD                             DW RM
+FC19  4C                                DB 'L'
+FC1A  C1 FD                             DW IL
+FC1C  4D                                DB 'M'
+FC1D  C6 FD                             DW DL
+FC1F  40                                DB '@'
+FC20  08 FE                             DW ICH
+FC22  50                                DB 'P'
+FC23  0D FE                             DW DCH
+FC25  58                                DB 'X'
+FC26  12 FE                             DW ECH
+FC28  73                                DB 's'
+FC29  2D FE                             DW SAVEC
+FC2B  75                                DB 'u'
+FC2C  40 FE                             DW RESTC
+FC2E  00                                DB 0
+FC2F  68                        PTAB:   DB 'h'
+FC30  9C FD                             DW PSM
+FC32  6C                                DB 'l'
+FC33  A0 FD                             DW PRM
+FC35  00                                DB 0
+                                
+                                ; PAR1 / PAR2: A = the first / second parameter, 1 if 0 or none
+FC36  3A 96 FE                  PAR2:   LD A,(PARS+1)
+FC39  18 03                             JR PAR0
+FC3B  3A 95 FE                  PAR1:   LD A,(PARS)
+FC3E  B7                        PAR0:   OR A
+FC3F  C0                                RET NZ
+FC40  3C                                INC A
+FC41  C9                                RET
+                                
+FC42  CD 3B FC                  CUU:    CALL PAR1
+FC45  47                                LD B,A
+FC46  3A 86 FE                          LD A,(TOP)              ; the region's top, if the cursor is in it
+FC49  4F                                LD C,A
+FC4A  3A 82 FE                          LD A,(CROW)
+FC4D  B9                                CP C
+FC4E  30 02                             JR NC,CU1
+FC50  0E 00                             LD C,0
+FC52  90                        CU1:    SUB B
+FC53  38 03                             JR C,CU2
+FC55  B9                                CP C
+FC56  30 01                             JR NC,CU3
+FC58  79                        CU2:    LD A,C
+FC59  32 82 FE                  CU3:    LD (CROW),A
+FC5C  C3 57 F9                          JP CLRW
+FC5F  CD 3B FC                  CUD:    CALL PAR1
+FC62  47                                LD B,A
+FC63  3A 87 FE                          LD A,(BOT)
+FC66  4F                                LD C,A
+FC67  3A 82 FE                          LD A,(CROW)
+FC6A  B9                                CP C
+FC6B  38 0A                             JR C,CD1
+FC6D  28 08                             JR Z,CD1
+FC6F  3A 73 FE                          LD A,(ROWS)
+FC72  3D                                DEC A
+FC73  4F                                LD C,A
+FC74  3A 82 FE                          LD A,(CROW)
+FC77  80                        CD1:    ADD A,B
+FC78  38 03                             JR C,CD2
+FC7A  B9                                CP C
+FC7B  38 01                             JR C,CD3
+FC7D  79                        CD2:    LD A,C
+FC7E  32 82 FE                  CD3:    LD (CROW),A
+FC81  C3 57 F9                          JP CLRW
+FC84  CD 3B FC                  CUF:    CALL PAR1
+FC87  47                                LD B,A
+FC88  3A 72 FE                          LD A,(COLS)
+FC8B  3D                                DEC A
+FC8C  4F                                LD C,A
+FC8D  3A 83 FE                          LD A,(CCOL)
+FC90  80                                ADD A,B
+FC91  38 03                             JR C,CF3
+FC93  B9                                CP C
+FC94  38 01                             JR C,CF4
+FC96  79                        CF3:    LD A,C
+FC97  32 83 FE                  CF4:    LD (CCOL),A
+FC9A  C3 57 F9                          JP CLRW
+FC9D  CD 3B FC                  CUB:    CALL PAR1
+FCA0  47                                LD B,A
+FCA1  3A 83 FE                          LD A,(CCOL)
+FCA4  90                                SUB B
+FCA5  30 01                             JR NC,QCB1
+FCA7  AF                                XOR A
+FCA8  32 83 FE                  QCB1:   LD (CCOL),A
+FCAB  C3 57 F9                          JP CLRW
+FCAE  CD 3B FC                  CUP:    CALL PAR1
+FCB1  3D                                DEC A
+FCB2  57                                LD D,A
+FCB3  CD 36 FC                          CALL PAR2
+FCB6  3D                                DEC A
+FCB7  5F                                LD E,A
+FCB8  C3 3F F9                          JP SETCUR
+FCBB  CD 3B FC                  CHA:    CALL PAR1
+FCBE  3D                                DEC A
+FCBF  5F                                LD E,A
+FCC0  3A 82 FE                          LD A,(CROW)
+FCC3  57                                LD D,A
+FCC4  C3 3F F9                          JP SETCUR
+FCC7  CD 3B FC                  VPA:    CALL PAR1
+FCCA  3D                                DEC A
+FCCB  57                                LD D,A
+FCCC  3A 83 FE                          LD A,(CCOL)
+FCCF  5F                                LD E,A
+FCD0  C3 3F F9                          JP SETCUR
+FCD3  3A 95 FE                  CED:    LD A,(PARS)
+FCD6  C3 5C F9                          JP EDN
+FCD9  3A 95 FE                  CEL:    LD A,(PARS)
+FCDC  C3 9A F9                          JP ELN
+                                
+FCDF  21 95 FE                  SGR:    LD HL,PARS
+FCE2  CD FD FC                          CALL NPARS
+FCE5  7E                        QSG1:   LD A,(HL)
+FCE6  23                                INC HL
+FCE7  B7                                OR A
+FCE8  28 0D                             JR Z,QSG2
+FCEA  FE 1B                             CP 27
+FCEC  20 03                             JR NZ,SG4
+FCEE  AF                                XOR A
+FCEF  18 06                             JR QSG2
+FCF1  FE 07                     SG4:    CP 7
+FCF3  20 05                             JR NZ,SG3
+FCF5  3E 80                             LD A,80h
+FCF7  32 85 FE                  QSG2:   LD (ATTR),A
+FCFA  10 E9                     SG3:    DJNZ QSG1
+FCFC  C9                                RET
+                                ; NPARS: B = parameters given (1-4). Uses A.
+FCFD  3A 93 FE                  NPARS:  LD A,(NPAR)
+FD00  FE 04                             CP 4
+FD02  38 02                             JR C,NPS1
+FD04  3E 03                             LD A,3
+FD06  3C                        NPS1:   INC A
+FD07  47                                LD B,A
+FD08  C9                                RET
+                                
+FD09  CD 3B FC                  STBM:   CALL PAR1
+FD0C  3D                                DEC A
+FD0D  57                                LD D,A
+FD0E  3A 96 FE                          LD A,(PARS+1)
+FD11  21 73 FE                          LD HL,ROWS
+FD14  B7                                OR A
+FD15  28 03                             JR Z,ST2
+FD17  BE                                CP (HL)
+FD18  38 01                             JR C,ST3
+FD1A  7E                        ST2:    LD A,(HL)
+FD1B  3D                        ST3:    DEC A
+FD1C  BA                                CP D
+FD1D  D8                                RET C
+FD1E  C8                                RET Z
+FD1F  32 87 FE                          LD (BOT),A
+FD22  7A                                LD A,D
+FD23  32 86 FE                          LD (TOP),A
+FD26  11 00 00                          LD DE,0
+FD29  C3 3F F9                          JP SETCUR
+                                
+FD2C  3A 95 FE                  DSR:    LD A,(PARS)
+FD2F  FE 05                             CP 5
+FD31  28 25                             JR Z,DSR5
+FD33  FE 06                             CP 6
+FD35  C0                                RET NZ
+FD36  3E 1B                             LD A,1Bh
+FD38  CD C8 F4                          CALL SERPUT
+FD3B  3E 5B                             LD A,'['
+FD3D  CD C8 F4                          CALL SERPUT
+FD40  3A 82 FE                          LD A,(CROW)
+FD43  3C                                INC A
+FD44  CD 00 F5                          CALL SENDN
+FD47  3E 3B                             LD A,';'
+FD49  CD C8 F4                          CALL SERPUT
+FD4C  3A 83 FE                          LD A,(CCOL)
+FD4F  3C                                INC A
+FD50  CD 00 F5                          CALL SENDN
+FD53  3E 52                             LD A,'R'
+FD55  C3 C8 F4                          JP SERPUT
+FD58  21 7E FD                  DSR5:   LD HL,DSROK
+FD5B  C3 F7 F4                          JP SENDS
+FD5E  3A 95 FE                  CDA:    LD A,(PARS)
+FD61  B7                                OR A
+FD62  C0                                RET NZ
+FD63  21 72 FD                  DAREP:  LD HL,DA100
+FD66  3A 74 FE                          LD A,(FLAGS)
+FD69  0F                                RRCA
+FD6A  30 03                             JR NC,DA1
+FD6C  21 7A FD                          LD HL,DA52
+FD6F  C3 F7 F4                  DA1:    JP SENDS
+FD72  1B 5B 3F 31 3B 30 63 00   DA100:  DB 1Bh,'[?1;0c',0       ; a VT100 without options
+FD7A  1B 2F 5A 00               DA52:   DB 1Bh,'/Z',0
+FD7E  1B 5B 30 6E 00            DSROK:  DB 1Bh,'[0n',0
+                                
+                                ; SM / RM: 4 insert mode. Private: ?1 cursor keys, ?7 autowrap.
+FD83  0E 01                     SM:     LD C,1
+FD85  18 02                             JR SM0
+FD87  0E 00                     RM:     LD C,0
+FD89  21 95 FE                  SM0:    LD HL,PARS
+FD8C  CD FD FC                          CALL NPARS
+FD8F  7E                        SM1:    LD A,(HL)
+FD90  23                                INC HL
+FD91  FE 04                             CP 4
+FD93  20 04                             JR NZ,SM2
+FD95  79                                LD A,C
+FD96  32 89 FE                          LD (IRM),A
+FD99  10 F4                     SM2:    DJNZ SM1
+FD9B  C9                                RET
+FD9C  0E 01                     PSM:    LD C,1
+FD9E  18 02                             JR PSM0
+FDA0  0E 00                     PRM:    LD C,0
+FDA2  21 95 FE                  PSM0:   LD HL,PARS
+FDA5  CD FD FC                          CALL NPARS
+FDA8  7E                        PS1:    LD A,(HL)
+FDA9  23                                INC HL
+FDAA  FE 01                             CP 1
+FDAC  20 04                             JR NZ,PS2
+FDAE  79                                LD A,C
+FDAF  32 8A FE                          LD (CKM),A
+FDB2  FE 07                     PS2:    CP 7
+FDB4  20 08                             JR NZ,PS3
+FDB6  79                                LD A,C
+FDB7  32 88 FE                          LD (AWM),A
+FDBA  AF                                XOR A
+FDBB  32 84 FE                          LD (WRAPF),A
+FDBE  10 E8                     PS3:    DJNZ PS1
+FDC0  C9                                RET
+                                
+                                ; IL / DL: insert / delete lines at the cursor, in the region
+FDC1  21 8F F7                  IL:     LD HL,SHDN
+FDC4  18 03                             JR IL0
+FDC6  21 71 F7                  DL:     LD HL,SHUP
+FDC9  22 A2 FE                  IL0:    LD (ILOP),HL
+FDCC  3A 86 FE                          LD A,(TOP)
+FDCF  47                                LD B,A
+FDD0  3A 82 FE                          LD A,(CROW)
+FDD3  B8                                CP B
+FDD4  D8                                RET C
+FDD5  32 A0 FE                          LD (RT),A
+FDD8  47                                LD B,A
+FDD9  3A 87 FE                          LD A,(BOT)
+FDDC  32 A1 FE                          LD (RB),A
+FDDF  B8                                CP B
+FDE0  D8                                RET C
+FDE1  90                                SUB B
+FDE2  3C                                INC A
+FDE3  4F                                LD C,A                  ; lines from the cursor to the bottom
+FDE4  CD 3B FC                          CALL PAR1
+FDE7  B9                                CP C
+FDE8  38 01                             JR C,IL1
+FDEA  79                                LD A,C
+FDEB  47                        IL1:    LD B,A
+FDEC  C5                        IL2:    PUSH BC
+FDED  2A A2 FE                          LD HL,(ILOP)
+FDF0  CD 60 EB                          CALL JPHL
+FDF3  C1                                POP BC
+FDF4  10 F6                             DJNZ IL2
+FDF6  AF                                XOR A
+FDF7  32 83 FE                          LD (CCOL),A
+FDFA  32 84 FE                          LD (WRAPF),A
+FDFD  3A 82 FE                          LD A,(CROW)
+FE00  47                                LD B,A
+FE01  3A 87 FE                          LD A,(BOT)
+FE04  4F                                LD C,A
+FE05  C3 DC F6                          JP REDR
+                                
+                                ; ICH / DCH / ECH: insert / delete / erase characters at the cursor
+FE08  21 DA F8                  ICH:    LD HL,ICHS
+FE0B  18 08                             JR CH0
+FE0D  21 02 F9                  DCH:    LD HL,DCHS
+FE10  18 03                             JR CH0
+FE12  21 26 F9                  ECH:    LD HL,ECHS
+FE15  11 1E FE                  CH0:    LD DE,CH1
+FE18  D5                                PUSH DE
+FE19  E5                                PUSH HL
+FE1A  3A 95 FE                          LD A,(PARS)
+FE1D  C9                                RET                     ; to ICHS / DCHS / ECHS, then CH1
+FE1E  AF                        CH1:    XOR A
+FE1F  32 84 FE                          LD (WRAPF),A
+FE22  3A 82 FE                          LD A,(CROW)
+FE25  57                                LD D,A
+FE26  3A 83 FE                          LD A,(CCOL)
+FE29  5F                                LD E,A
+FE2A  C3 9E F6                          JP DRAWR
+                                
+FE2D  3A 82 FE                  SAVEC:  LD A,(CROW)
+FE30  32 8F FE                          LD (SAVR),A
+FE33  3A 83 FE                          LD A,(CCOL)
+FE36  32 90 FE                          LD (SAVC),A
+FE39  3A 85 FE                          LD A,(ATTR)
+FE3C  32 91 FE                          LD (SAVA),A
+FE3F  C9                                RET
+FE40  3A 91 FE                  RESTC:  LD A,(SAVA)
+FE43  32 85 FE                          LD (ATTR),A
+FE46  3A 8F FE                          LD A,(SAVR)
+FE49  57                                LD D,A
+FE4A  3A 90 FE                          LD A,(SAVC)
+FE4D  5F                                LD E,A
+FE4E  C3 3F F9                          JP SETCUR
+                                
+                                ; DEC special graphics 5Fh-7Eh, as near as ASCII gets
+FE51  20 2A 23 48 46 43 4C 6F   GRTAB:  DB ' *#HFCLo#NV+++++~--__++++|<>p#f.'
+FE51  23 4E 56 2B 2B 2B 2B 2B   
+FE51  7E 2D 2D 5F 5F 2B 2B 2B   
+FE51  2B 7C 3C 3E 70 23 66 2E   
+                                
+                                ; ---------------------------------------------------------------- variables
+FE71                            PB:
+FE71  00                        CTL:    DB 0
+FE72  00                        COLS:   DB 0
+FE73  00                        ROWS:   DB 0
+FE74  00                        FLAGS:  DB 0
+FE75  00                        MENUK:  DB 0
+FE76  00 00                     SCR:    DW 0
+FE78  00 00                     RING:   DW 0
+FE7A  00 00                     LOGB:   DW 0
+FE7C  00 00                     LOGSZ:  DW 0
+FE7E  00 00                     LOGLIM: DW 0
+FE80  00 00                     SCREND: DW 0
+FE82  00                        CROW:   DB 0                    ; the host's cursor
+FE83  00                        CCOL:   DB 0
+FE84  00                        WRAPF:  DB 0                    ; 1: the last column was written
+FE85  00                        ATTR:   DB 0                    ; 80h: inverse
+FE86  00                        TOP:    DB 0                    ; the scrolling region
+FE87  00                        BOT:    DB 0
+FE88  00                        AWM:    DB 0                    ; modes: autowrap, insert, cursor keys
+FE89  00                        IRM:    DB 0
+FE8A  00                        CKM:    DB 0
+FE8B  00                        GL:     DB 0                    ; character sets: G0 or G1 in use;
+FE8C  00                        G0:     DB 0                    ;   1 = DEC special graphics
+FE8D  00                        G1:     DB 0
+FE8E  00                        PG:     DB 0
+FE8F  00                        SAVR:   DB 0                    ; ESC 7
+FE90  00                        SAVC:   DB 0
+FE91  00                        SAVA:   DB 0
+FE92  00                        PST:    DB 0                    ; parser: 0 text, 1 ESC, 2 CSI, 3 ESC ( ),
+FE93  00                        NPAR:   DB 0                    ;   4 ESC #, 5 6 VT52 ESC Y
+FE94  00                        PRIV:   DB 0
+FE95  00 00 00 00               PARS:   DB 0,0,0,0
+FE99  00                        YROW:   DB 0
+FE9A  00                        TROW:   DB 0                    ; the terminal's cursor and attribute
+FE9B  00                        TCOL:   DB 0
+FE9C  00                        TATTR:  DB 0
+FE9D  00                        TOCH:   DB 0
+FE9E  00                        KCH:    DB 0
+FE9F  00                        KLAST:  DB 0                    ; the key sent before
+FEA0  00                        RT:     DB 0
+FEA1  00                        RB:     DB 0
+FEA2  00 00                     ILOP:   DW 0
+FEA4  00                        CMDV:   DB 0                    ; the WD2123 command in force
+FEA5  00                        TXQ:    DB 0                    ; XON / XOFF to send, 0 none
+FEA6  00                        STOPF:  DB 0                    ; 1: the host was asked to stop
+FEA7  00                        HOLDF:  DB 0                    ; 1: and must stay stopped
+FEA8  00                        LOGON:  DB 0
+FEA9  00 00                     LOGN:   DW 0
+FEAB  00 00                     RHEAD:  DW 0
+FEAD  00 00                     RTAIL:  DW 0
+FEAF  00 00                     LOST:   DW 0
+FEB1  00                        DROPS:  DB 0
+FEB2  00 00                     RCNT:   DW 0
+FEB4  00 00                     TMO:    DW 0                    ; RECV: the wait for the next byte
+FEB6  00                        SUM:    DB 0
+FEB7                            TERMEND:
+                                        END
+                                
