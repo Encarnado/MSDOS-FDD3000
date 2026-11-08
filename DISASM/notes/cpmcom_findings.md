@@ -99,3 +99,8 @@ paths (usage, not found, too big, mismatch) were exercised only in the emulator
     SLSTS (D03Eh-D085h). None of these is in the header. A Z86.SYS that moved only those
     would pass the check and fail at run time. The REGS layout is fixed by I86.ASM and has
     no reason to move. *verified (code); the risk is theoretical.*
+
+## Fixed 2026-11-08
+- 9 (the random block read's result not checked): FIXED - "Program read
+  error". CPM.COM grew by 30 bytes: its CPMZ80 header is now at 041Ah (file
+  offset 31Ah); the image is unchanged. test_cpm_smoke.py runs CPM HI.

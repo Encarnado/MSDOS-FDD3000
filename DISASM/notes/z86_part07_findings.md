@@ -81,3 +81,10 @@ RD256/WR256 640-715), fdd86.py `Link`, fddos.py `trap`, IOFDD.ASM, z86.py.
 WSTA 06h (CBIOS name), KEYRDY 04h, LINKERR 07h, RDSCMD 80h, WRSCMD A0h (CBIOS names).
 Checked against Z86.SYS.sym, CPMZ80.sym, BOOT.sym and parts/ (base and current).
 Join note: if another part also defines any of them, keep one.
+
+## Fixed 2026-11-08
+- Finding 1 (PEEKEY phantom key): FIXED, `xor KEYRDY` (same 2 bytes).
+  test_peekey.py: phantom keys for link 02h/03h (and 00h/01h) on the old
+  build, none now.
+- Finding 2 (retries never move the head): FIXED in the floppy-timeout
+  commit (SECTIO restores half-way). No FDC timeout: FIXED there too.

@@ -94,6 +94,7 @@ MEMMSG  DB      "Insufficient memory",13,10,"$"
 NOSMSG  DB      "No system on default drive",13,10,"$"
 NOBMSG  DB      "Cannot read the boot sector of the default drive",13,10,"$"
 SWEMSG  DB      13,10,"Disk error writing system",13,10,"$"
+SBDMSG  DB      13,10,"Bad track in the system area: system not transferred",13,10,"$"
 
 START:
         CMP     AL,0FFH         ; DOS: invalid drive in the first argument
@@ -462,7 +463,27 @@ GSNO:   STC
 ;
 PUTSYS: MOV     [SYSCL],0
         CMP     [SYSFLG],0
-        JZ      PSX
+        JNZ     PSC0
+        JMP     PSX                     ; no /S
+PSC0:   MOV     BX,OFFSET SYSTAB        ; the boot sector and COLD read Z86.SYS,
+        XOR     DX,DX                   ; IO.SYS and MSDOS.SYS from cluster 2
+PSC1:   MOV     AX,[BX+12]              ; on, without the FAT: their clusters
+        ADD     AX,1023                 ; (DX of them) must all be free here,
+        MOV     CL,10                   ; or DOS would skip a bad one and the
+        SHR     AX,CL                   ; disk would not boot
+        ADD     DX,AX
+        ADD     BX,SYSENT
+        CMP     BX,OFFSET SYSTAB+3*SYSENT
+        JB      PSC1
+        MOV     BX,2
+PSC2:   PUSH    DX
+        CALL    GETFAT
+        POP     DX
+        OR      AX,AX
+        JNZ     PSBAD
+        INC     BX
+        DEC     DX
+        JNZ     PSC2
         MOV     AH,13           ; disk reset: DOS reads the new FAT
         INT     33
         MOV     BX,OFFSET SYSTAB
@@ -509,8 +530,11 @@ PS1:    PUSH    BX
         INT     33
 PSX:    CLC
         RET
+PSBAD:  MOV     DX,OFFSET SBDMSG
+        JMP     SHORT PSERR1
 PSERRP: POP     BX
 PSERR:  MOV     DX,OFFSET SWEMSG
+PSERR1:
         MOV     AH,9
         INT     33
         STC

@@ -193,6 +193,7 @@ SS1:    LD A,D
 LSMAP:  DB 04h,01h,40h,20h,08h,10h,02h  ; the 8251A's bits for AH bits 6-0
 ; INT 14h's baud rates (0-8) as WD2123 codes
 BAUDT:  DB 2,4,6,7,8,10,12,14,15        ; 110 150 300 600 1200 2400 4800 9600 19200
+;@SLACKAT REGS                  ; ;@SLACK REGS blocks land here (z86.py)
         DS REGS+253-$
 BOOTJP: JP COLD                 ; D0FDh: the boot sector jumps here
 
@@ -2029,7 +2030,7 @@ RMW1:   PUSH BC
         CALL SRCPTR
         POP DE
         POP BC
-        LD A,(STEP1+1)
+        CALL MWCHK              ; A = (STEP1+1); one-byte overlap: word loop
         RLA
         JR C,RMW2
         LDIR
@@ -2042,6 +2043,48 @@ RMW3:   POP BC
         ADD HL,HL
         EX DE,HL
         JR RADVSD
+
+; A word copy is not a byte copy when the destination starts one byte
+; into the source word not yet read: DI = SI + 1 going up (DF = 0), or
+; DI = SI - 1 going down.  Then each MOVSW must read its word before it
+; writes, as the 8086 does: MWCHK sends those cases to MWSLOW, which runs
+; O_MOVSW CX times (IX pointed back at its loop).  Both live in free page
+; ends (;@SLACK), so nothing else moves.
+;@SLACK EAHI
+; MWCHK: HL = source, DE = destination (host), BC = bytes. Returns A =
+; (STEP1+1) as R_MOVSW expects, or goes to MWSLOW instead.
+MWCHK:  PUSH HL
+        OR A
+        SBC HL,DE               ; source - destination
+        LD A,(STEP1+1)          ; 00h: DF = 0, FFh: DF = 1
+        OR A
+        JR Z,MWC1
+        DEC HL                  ; DF = 1: overlap if source - dest = +1
+        DEC HL
+MWC1:   INC HL                  ; DF = 0: overlap if source - dest = -1
+        LD A,H
+        OR L
+        POP HL
+        LD A,(STEP1+1)
+        RET NZ                  ; no overlap: R_MOVSW's LDIR / LDDR
+        POP DE                  ; overlap: drop the return address
+        JP MWSLOW
+;@END
+;@SLACK EALO
+; MWSLOW: REP MOVSW one word at a time.  Stack: R_MOVSW's saved BC.
+MWSLOW: PUSH IX                 ; NEXT, or RESTORE after a segment override
+        LD IX,MWS1
+MWS0:   JP O_MOVSW              ; one exact MOVSW; its JP (IX) comes back
+MWS1:   LD HL,(R_CX)
+        DEC HL
+        LD (R_CX),HL
+        LD A,H
+        OR L
+        JR NZ,MWS0
+        POP IX
+        POP BC                  ; the 8086 code pointer
+        JP (IX)
+;@END
 
 R_STOSB:
         CALL CXNZ

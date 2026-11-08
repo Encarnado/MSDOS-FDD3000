@@ -9,6 +9,8 @@ match (AF only for 8-bit and logic ops: see af_loose). Cases that touch memory a
 
 --scan: only REP SCASB / SCASW with CX up to 2000 (the interpreter passes
 over REPNE SCASB with CPIR / CPDR).
+--overlap: only REP MOVSW with DI = SI +- 1, either direction, ES = DS (a
+word copy is not a byte copy there: MWCHK / MWSLOW, 2026-11-08).
 """
 import random
 import sys
@@ -52,7 +54,24 @@ class CheckCPU(cpu86.CPU):
         super().ww(seg, off, v)
 
 
-def case(rng, only=None, scan=False):
+def overlap_case(rng):
+    pre = [0xF3]
+    if rng.random() < 0.3:
+        pre.insert(0, rng.choice([0x26, 0x2E, 0x36, 0x3E]))
+    regs = [rng.randrange(0x10000) for _ in range(8)]
+    regs[4] = rng.randrange(0x100, 0x3000) & 0xFFFE         # SP
+    regs[6] = rng.randrange(0x40, 0x2000)                   # SI
+    regs[7] = (regs[6] + rng.choice([1, -1, 1, -1, 2, -2, 0])) & 0xFFFF   # DI
+    regs[1] = rng.randrange(0, 40)                          # CX
+    seg = rng.randrange(0x0400)
+    segs = [seg, CODE_SEG, seg, seg]                        # ES = SS = DS
+    flags = (rng.randrange(0x10000) & 0x0BD5 | 0xF002) | rng.choice([0, 0x400])
+    return bytes(pre + [0xA5] + [0] * 6), regs, segs, flags
+
+
+def case(rng, only=None, scan=False, overlap=False):
+    if overlap:
+        return overlap_case(rng)
     if scan:
         code, regs, segs, flags = case(rng, rng.choice([0xAE, 0xAE, 0xAE, 0xAF]))
         i = code.index(0xAE if 0xAE in code[:3] else 0xAF)
@@ -123,7 +142,7 @@ def main():
     done = skipped = fails = 0
     seen = set()
     for k in range(n):
-        code, regs, segs, flags = case(rng, only, '--scan' in args)
+        code, regs, segs, flags = case(rng, only, '--scan' in args, '--overlap' in args)
         setup(ref, mem, code, regs, segs, flags)
         try:
             ref.step()

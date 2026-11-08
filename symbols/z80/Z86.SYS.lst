@@ -201,8 +201,16 @@ D0E1  04 01 40 20 08 10 02      LSMAP:  DB 04h,01h,40h,20h,08h,10h,02h  ; the 82
                                 ; INT 14h's baud rates (0-8) as WD2123 codes
 D0E8  02 04 06 07 08 0A 0C 0E   BAUDT:  DB 2,4,6,7,8,10,12,14,15        ; 110 150 300 600 1200 2400 4800 9600 19200
 D0E8  0F                        
-D0F1  00 00 00 00 00 00 00 00           DS REGS+253-$
-D0F1  00 00 00 00               
+                                ; FDTOUT: a floppy wait timed out.  Stop the command (Force Interrupt with
+                                ; no condition raises no INTRQ) and return NZ, A = 20h ("not ready").
+                                ; Reached by JP from the waits, so its RET goes to their caller.
+D0F1  F3                        FDTOUT: DI
+D0F2  3E D0                             LD A,0D0h
+D0F4  D3 C0                             OUT (0C0h),A
+D0F6  3E 20                             LD A,20h
+D0F8  B7                                OR A
+D0F9  C9                                RET
+D0FA  00 00 00                          DS REGS+253-$
 D0FD  C3 2C F1                  BOOTJP: JP COLD                 ; D0FDh: the boot sector jumps here
                                 
                                 ; ----------------------------------------------- opcode and ModR/M tables
@@ -299,37 +307,47 @@ D3A0  BF D1 DB ED F7 FC 01 06           DB EA20&0FFh, EA21&0FFh, EA22&0FFh, EA23
 D3A8  BF D1 DB ED F7 FC 01 06           DB EA20&0FFh, EA21&0FFh, EA22&0FFh, EA23&0FFh, EA24&0FFh, EA25&0FFh, EA26&0FFh, EA27&0FFh
 D3B0  BF D1 DB ED F7 FC 01 06           DB EA20&0FFh, EA21&0FFh, EA22&0FFh, EA23&0FFh, EA24&0FFh, EA25&0FFh, EA26&0FFh, EA27&0FFh
 D3B8  BF D1 DB ED F7 FC 01 06           DB EA20&0FFh, EA21&0FFh, EA22&0FFh, EA23&0FFh, EA24&0FFh, EA25&0FFh, EA26&0FFh, EA27&0FFh
+                                ; MWSLOW: REP MOVSW one word at a time.  Stack: R_MOVSW's saved BC.
+D3C0  DD E5                     MWSLOW: PUSH IX                 ; NEXT, or RESTORE after a segment override
+D3C2  DD 21 C9 D3                       LD IX,MWS1
+D3C6  C3 2B E1                  MWS0:   JP O_MOVSW              ; one exact MOVSW; its JP (IX) comes back
+D3C9  2A 02 D0                  MWS1:   LD HL,(R_CX)
+D3CC  2B                                DEC HL
+D3CD  22 02 D0                          LD (R_CX),HL
+D3D0  7C                                LD A,H
+D3D1  B5                                OR L
+D3D2  20 F2                             JR NZ,MWS0
+D3D4  DD E1                             POP IX
+D3D6  C1                                POP BC                  ; the 8086 code pointer
+D3D7  DD E9                             JP (IX)
                                 ; XFER: one sector at HL, command A (80h read / A0h write), the transfer
                                 ; instruction at XFI patched by SECTIO (INI / OUTI).  CBIOS A1.1's loop
                                 ; (F8ECh / F934h): it ends when INTRQ goes through 0038h to FDCINT, A =
                                 ; status AND 5Ch.  Only the wait for the first byte is timed (4 x 65536
                                 ; turns of 48 T: ~3.1 s): once data flows, the sector ends by itself.
                                 ; Lives in the free end of the EALO page (BIOS code, z86.py ;@SLACK).
-D3C0  0E C3                     XFER:   LD C,0C3h
-D3C2  ED 56                             IM 1
-D3C4  FB                                EI
-D3C5  D3 C0                             OUT (0C0h),A
-D3C7  06 04                             LD B,4
-D3C9  11 00 00                          LD DE,0
-D3CC  DB 2F                     XFW:    IN A,(2Fh)              ; bit 7 = DRQ: the first byte is there
-D3CE  17                                RLA
-D3CF  38 0F                             JR C,XFI
-D3D1  1B                                DEC DE
-D3D2  7A                                LD A,D
-D3D3  B3                                OR E
-D3D4  20 F6                             JR NZ,XFW
-D3D6  10 F4                             DJNZ XFW
-D3D8  C3 E4 D4                          JP FDTOUT
-D3DB  DB 2F                     XF1:    IN A,(2Fh)              ; bit 7 = DRQ
-D3DD  17                                RLA
-D3DE  30 FB                             JR NC,XF1
-D3E0  ED A2                     XFI:    INI                     ; patched: INI (read) or OUTI (write)
-D3E2  18 F7                             JR XF1
-D3E4                            EALOEND:
-D3E4  00 00 00 00 00 00 00 00           DS EALO+256-$
-D3E4  00 00 00 00 00 00 00 00   
-D3E4  00 00 00 00 00 00 00 00   
-D3E4  00 00 00 00               
+D3D9  0E C3                     XFER:   LD C,0C3h
+D3DB  ED 56                             IM 1
+D3DD  FB                                EI
+D3DE  D3 C0                             OUT (0C0h),A
+D3E0  06 04                             LD B,4
+D3E2  11 00 00                          LD DE,0
+D3E5  DB 2F                     XFW:    IN A,(2Fh)              ; bit 7 = DRQ: the first byte is there
+D3E7  17                                RLA
+D3E8  38 0F                             JR C,XFI
+D3EA  1B                                DEC DE
+D3EB  7A                                LD A,D
+D3EC  B3                                OR E
+D3ED  20 F6                             JR NZ,XFW
+D3EF  10 F4                             DJNZ XFW
+D3F1  C3 F1 D0                          JP FDTOUT
+D3F4  DB 2F                     XF1:    IN A,(2Fh)              ; bit 7 = DRQ
+D3F6  17                                RLA
+D3F7  30 FB                             JR NC,XF1
+D3F9  ED A2                     XFI:    INI                     ; patched: INI (read) or OUTI (write)
+D3FB  18 F7                             JR XF1
+D3FD                            EALOEND:
+D3FD  00 00 00                          DS EALO+256-$
 D400                            EAHI:
 D400  D9 D9 D9 D9 D9 D9 D9 D9           DB EA00>>8, EA01>>8, EA02>>8, EA03>>8, EA04>>8, EA05>>8, EA06>>8, EA07>>8
 D408  D9 D9 D9 D9 D9 D9 D9 D9           DB EA00>>8, EA01>>8, EA02>>8, EA03>>8, EA04>>8, EA05>>8, EA06>>8, EA07>>8
@@ -355,44 +373,51 @@ D4A0  D9 D9 D9 D9 D9 D9 DA DA           DB EA20>>8, EA21>>8, EA22>>8, EA23>>8, E
 D4A8  D9 D9 D9 D9 D9 D9 DA DA           DB EA20>>8, EA21>>8, EA22>>8, EA23>>8, EA24>>8, EA25>>8, EA26>>8, EA27>>8
 D4B0  D9 D9 D9 D9 D9 D9 DA DA           DB EA20>>8, EA21>>8, EA22>>8, EA23>>8, EA24>>8, EA25>>8, EA26>>8, EA27>>8
 D4B8  D9 D9 D9 D9 D9 D9 DA DA           DB EA20>>8, EA21>>8, EA22>>8, EA23>>8, EA24>>8, EA25>>8, EA26>>8, EA27>>8
+                                ; MWCHK: HL = source, DE = destination (host), BC = bytes. Returns A =
+                                ; (STEP1+1) as R_MOVSW expects, or goes to MWSLOW instead.
+D4C0  E5                        MWCHK:  PUSH HL
+D4C1  B7                                OR A
+D4C2  ED 52                             SBC HL,DE               ; source - destination
+D4C4  3A 27 D0                          LD A,(STEP1+1)          ; 00h: DF = 0, FFh: DF = 1
+D4C7  B7                                OR A
+D4C8  28 02                             JR Z,MWC1
+D4CA  2B                                DEC HL                  ; DF = 1: overlap if source - dest = +1
+D4CB  2B                                DEC HL
+D4CC  23                        MWC1:   INC HL                  ; DF = 0: overlap if source - dest = -1
+D4CD  7C                                LD A,H
+D4CE  B5                                OR L
+D4CF  E1                                POP HL
+D4D0  3A 27 D0                          LD A,(STEP1+1)
+D4D3  C0                                RET NZ                  ; no overlap: R_MOVSW's LDIR / LDDR
+D4D4  D1                                POP DE                  ; overlap: drop the return address
+D4D5  C3 C0 D3                          JP MWSLOW
                                 ; FHOME: restore to track 0, polled (CBIOS F7B5h). NZ: seek error, the
                                 ; drive never showed track 0 (A = 10h), or the restore timed out (A =
                                 ; 20h, ~3.1 s).  Keeps BC; corrupts DE.  In the EAHI page's free end.
-D4C0  3A 0A F1                  FHOME:  LD A,(RESCMD)
-D4C3  D3 C0                             OUT (0C0h),A
-D4C5  C5                                PUSH BC
-D4C6  06 12                             LD B,12h                ; let the FDC raise BUSY
-D4C8  10 FE                     FH0:    DJNZ FH0
-D4CA  06 04                             LD B,4
-D4CC  11 00 00                          LD DE,0
-D4CF  DB C0                     FH1:    IN A,(0C0h)
-D4D1  1F                                RRA
-D4D2  30 0B                             JR NC,FH2
-D4D4  1B                                DEC DE
-D4D5  7A                                LD A,D
-D4D6  B3                                OR E
-D4D7  20 F6                             JR NZ,FH1
-D4D9  10 F4                             DJNZ FH1
-D4DB  C1                                POP BC
-D4DC  C3 E4 D4                          JP FDTOUT
-D4DF  C1                        FH2:    POP BC
-D4E0  17                                RLA
-D4E1  E6 10                             AND 10h
-D4E3  C9                                RET
+D4D8  3A 0A F1                  FHOME:  LD A,(RESCMD)
+D4DB  D3 C0                             OUT (0C0h),A
+D4DD  C5                                PUSH BC
+D4DE  06 12                             LD B,12h                ; let the FDC raise BUSY
+D4E0  10 FE                     FH0:    DJNZ FH0
+D4E2  06 04                             LD B,4
+D4E4  11 00 00                          LD DE,0
+D4E7  DB C0                     FH1:    IN A,(0C0h)
+D4E9  1F                                RRA
+D4EA  30 0B                             JR NC,FH2
+D4EC  1B                                DEC DE
+D4ED  7A                                LD A,D
+D4EE  B3                                OR E
+D4EF  20 F6                             JR NZ,FH1
+D4F1  10 F4                             DJNZ FH1
+D4F3  C1                                POP BC
+D4F4  C3 F1 D0                          JP FDTOUT
+D4F7  C1                        FH2:    POP BC
+D4F8  17                                RLA
+D4F9  E6 10                             AND 10h
+D4FB  C9                                RET
                                 
-                                ; FDTOUT: a floppy wait timed out.  Stop the command (Force Interrupt with
-                                ; no condition raises no INTRQ) and return NZ, A = 20h ("not ready").
-                                ; Reached by JP from the waits, so its RET goes to their caller.
-D4E4  F3                        FDTOUT: DI
-D4E5  3E D0                             LD A,0D0h
-D4E7  D3 C0                             OUT (0C0h),A
-D4E9  3E 20                             LD A,20h
-D4EB  B7                                OR A
-D4EC  C9                                RET
-D4ED                            EAHIEND:
-D4ED  00 00 00 00 00 00 00 00           DS EAHI+256-$
-D4ED  00 00 00 00 00 00 00 00   
-D4ED  00 00 00                  
+D4FC                            EAHIEND:
+D4FC  00 00 00 00                       DS EAHI+256-$
                                 
                                 ; ------------------------------------------------- ALU cores, 16-byte slots
                                 ; In: HL = destination operand, E = source. Index: (op >> 3) & 7.
@@ -2473,7 +2498,7 @@ E2AD  E5                                PUSH HL
 E2AE  CD D7 E0                          CALL SRCPTR
 E2B1  D1                                POP DE
 E2B2  C1                                POP BC
-E2B3  3A 27 D0                          LD A,(STEP1+1)
+E2B3  CD C0 D4                          CALL MWCHK              ; A = (STEP1+1); one-byte overlap: word loop
 E2B6  17                                RLA
 E2B7  38 04                             JR C,RMW2
 E2B9  ED B0                             LDIR
@@ -2486,6 +2511,13 @@ E2C2  2A 02 D0                          LD HL,(R_CX)
 E2C5  29                                ADD HL,HL
 E2C6  EB                                EX DE,HL
 E2C7  C3 3F E2                          JR RADVSD
+                                
+                                ; A word copy is not a byte copy when the destination starts one byte
+                                ; into the source word not yet read: DI = SI + 1 going up (DF = 0), or
+                                ; DI = SI - 1 going down.  Then each MOVSW must read its word before it
+                                ; writes, as the 8086 does: MWCHK sends those cases to MWSLOW, which runs
+                                ; O_MOVSW CX times (IX pointed back at its loop).  Both live in free page
+                                ; ends (;@SLACK), so nothing else moves.
                                 
 E2CA                            R_STOSB:
 E2CA  CD 39 E2                          CALL CXNZ
@@ -4035,8 +4067,8 @@ EBF9  B7                                OR A
 EBFA  20 12                             JR NZ,PK1
 EBFC  DB 2F                             IN A,(2Fh)
 EBFE  E6 5F                             AND 5Fh
-EC00  FE 04                             CP 04h                  ; the terminal has a key
-EC02  C0                                RET NZ                  ; (NC)
+EC00  EE 04                             XOR 04h                 ; the terminal has a key? (XOR, not CP: CP
+EC02  C0                                RET NZ                  ; left carry set below 04h - a phantom key)
 EC03  CD 7E EC                          CALL CONIN
 EC06  32 0C F1                          LD (KBUF),A
 EC09  3E 01                             LD A,1
@@ -4270,13 +4302,13 @@ ED92  D3 C2                             OUT (0C2h),A
 ED94  2A 1B F1                          LD HL,(DADDR)
 ED97  3A 14 F1                          LD A,(DWRITE)           ; XFER's transfer instruction: INI (ED A2)
 ED9A  C6 A2                             ADD A,0A2h              ; to read, OUTI (ED A3) to write
-ED9C  32 E1 D3                          LD (XFI+1),A
+ED9C  32 FA D3                          LD (XFI+1),A
 ED9F  3A 14 F1                          LD A,(DWRITE)           ; and the command: 80h read sector,
 EDA2  0F                                RRCA                    ; A0h write sector
 EDA3  0F                                RRCA
 EDA4  0F                                RRCA
 EDA5  C6 80                             ADD A,80h
-EDA7  CD C0 D3                          CALL XFER
+EDA7  CD D9 D3                          CALL XFER
 EDAA  B7                                OR A
 EDAB  C8                                RET Z
 EDAC  CB 77                             BIT 6,A                 ; write protected: no point retrying
@@ -4289,7 +4321,7 @@ EDB8  35                                DEC (HL)
 EDB9  28 08                             JR Z,SIO4
 EDBB  7E                                LD A,(HL)               ; half the tries gone: back to track 0, so
 EDBC  FE 05                             CP RETRIES/2            ; that SEEK really moves the head again
-EDBE  CC C0 D4                          CALL Z,FHOME            ; (it skips a seek to the track it is on)
+EDBE  CC D8 D4                          CALL Z,FHOME            ; (it skips a seek to the track it is on)
 EDC1  18 C8                             JR SIO1
 EDC3  3A 1A F1                  SIO4:   LD A,(DSTAT)
 EDC6  B7                                OR A
@@ -4316,7 +4348,7 @@ EDD3  7A                                LD A,D
 EDD4  B3                                OR E
 EDD5  20 FB                             JR NZ,FDCW
 EDD7  10 F9                             DJNZ FDCW
-EDD9  C3 E4 D4                          JP FDTOUT
+EDD9  C3 F1 D0                          JP FDTOUT
                                 
 EDDC  F1                        FDCINT: POP AF                  ; drop the waiting loop's address
 EDDD  DB C0                             IN A,(0C0h)             ; status; clears INTRQ
@@ -4339,7 +4371,7 @@ EDFA  CB 6F                             BIT 5,A                 ; timed out: giv
 EDFC  C0                                RET NZ
 EDFD  E6 18                             AND 18h                 ; seek error, CRC
 EDFF  C8                                RET Z
-EE00  CD C0 D4                          CALL FHOME
+EE00  CD D8 D4                          CALL FHOME
 EE03  CB 6F                             BIT 5,A                 ; the restore timed out too
 EE05  C0                                RET NZ
 EE06  21 19 F1                          LD HL,STRY
@@ -4350,6 +4382,7 @@ EE0E  B7                                OR A
 EE0F  C9                                RET
 EE10  AF                        SKOK:   XOR A
 EE11  C9                                RET
+                                
                                 
                                 
                                 
@@ -4379,7 +4412,7 @@ EE36  28 04                             JR Z,SEL2
 EE38  D3 C1                             OUT (0C1h),A
 EE3A  AF                                XOR A
 EE3B  C9                                RET
-EE3C  CD C0 D4                  SEL2:   CALL FHOME
+EE3C  CD D8 D4                  SEL2:   CALL FHOME
 EE3F  C8                                RET Z
 EE40  3E FF                             LD A,0FFh               ; restore it again next time
 EE42  32 0E F1                          LD (CURDRV),A

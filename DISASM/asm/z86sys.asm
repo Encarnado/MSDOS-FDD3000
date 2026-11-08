@@ -30,20 +30,20 @@
 ;
 ;  KEY FINDINGS OF THIS DISASSEMBLY (notes/z86sys_findings.md indexes the
 ;  per-region notes notes/z86_part01..08_findings.md)
-;   - BUG: REP MOVSW with source and destination one byte apart (DI = SI+1,
-;     DF=0, or DI = SI-1, DF=1) copies byte by byte through LDIR/LDDR, so
-;     memory differs from an 8086, which moves whole words.  SI/DI/CX are
-;     right.  Verified by running against cpu86.py; the fuzzer draws SI and
-;     DI independently and almost never hits it.            (part 04)
+;   - FIXED (this build): REP MOVSW with source and destination one byte
+;     apart (DI = SI+1, DF=0, or DI = SI-1, DF=1) copied byte by byte
+;     through LDIR/LDDR, so memory differed from an 8086, which moves whole
+;     words.  MWCHK / MWSLOW now run those cases a word at a time
+;     (fuzz_z86.py --overlap: 814 mismatches before, 0 now).  (part 04)
 ;   - The overview's "AF from bit 11 after 16-bit inc/dec" is wrong for
 ;     INC/DEC: INC16/DEC16 end in RRA, which clears H, so AF is always 0
 ;     (INC AX, AX=000Fh: F002h here, F012h in cpu86).  Bit 11 holds for
 ;     16-bit ADD/ADC/SUB/SBB/CMP.  And not only DAA/DAS/AAA/AAS read AF:
 ;     PUSHF, LAHF and INT copy it out.  Verified by running.  (parts 01, 03)
-;   - Latent PEEKEY bug: `cp 04h / ret nz` leaves carry set if the link
-;     reads 00h-03h, so STATUS reports a phantom key and the next INPUT
-;     blocks.  Code verified; whether the link ever reads 00h-03h is
-;     untested.  Same 2 bytes fixed: `xor 04h`.             (part 07)
+;   - FIXED (this build): PEEKEY's `cp 04h / ret nz` left carry set if the
+;     link read 00h-03h - a phantom key, then a blocked INPUT.  Now `xor
+;     04h`, same 2 bytes (test_peekey.py: phantom keys before, none now).
+;                                                            (part 07)
 ;   - Divergences from cpu86.py, all outside DOS's code paths: FE /2-/7 stops
 ;     at BADSTOP where cpu86 runs the FF word forms; FF F4 pushes the old SP
 ;     while 54h pushes the new; LES/LDS with a register operand read two
@@ -72,7 +72,8 @@
 ;     Five sites are written `0FFh&B_ES` (dict/CONVENTIONS.md rule 3).
 ;
 ;  VERSION.  This volume is the 2026-11-08 build: the 2026-11-07 Z86.SYS
-;  plus the floppy timeouts and the re-seek above.  Same size (8 737 bytes);
+;  plus the floppy timeouts and the re-seek, the REP MOVSW and the PEEKEY
+;  fixes above.  Same size (8 737 bytes);
 ;  everything from SECTIO to the BIOS data moved, SKEW / variables /
 ;  ENDBIOS did not (padding before SKEW), so CPMZ80 and CPM.COM are
 ;  unchanged.  The new code is in the free ends of the EALO and EAHI pages
@@ -101,8 +102,8 @@
 ;  `; (src: OLD)`, and dict/z86_part01..08.md hold the alias entries.
 ;
 ;  FILE:    Z86.SYS, 8 737 bytes
-;  MD5:     df195b7170363dc6913d740fe2512296
-;  SHA256:  0ebfdf104d29ad19a95ba4dc6e0ff8802f4087665110f4997814e4652a41f291
+;  MD5:     fd255e1e97d8ecd64257638776b6317b
+;  SHA256:  66c8ae07a51a46b702c5fc63dd564ea921548a2ca14d11334b0527f0e2c27117
 ;  SOURCE:  project/MSDOS/poc/I86.ASM + BIOS.ASM (z86.py build(bios=True))
 ;
 ;  CREDITS.  Original code: the FDD3000-MSDOS project (2026).  Console link,

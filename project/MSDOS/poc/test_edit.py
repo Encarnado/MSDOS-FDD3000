@@ -16,6 +16,8 @@ editing keys (MODEL) checks the text and the cursor too.
    a disk too full (the old file stays), a write-protected disk (DOS's
    question, Retry, then the whole screen again).
 6. EDIT without a name, with a wildcard, a file too big, /80.
+7. The 2026-11-08 fixes: an arrow key (ESC A..D) at ^K / ^Q or at "Find:"
+   inserts nothing; ^Y at "Abandon changes (Y/N)?" does not abandon.
 
 Prints the time of some steps at 4 MHz.
 
@@ -489,6 +491,26 @@ def find_help_quit():
     check(e.files()['T.TXT'] == dos(text), '^KQ Y: the file changed')
 
 
+def prompt_fixes():
+    print('7. arrow keys at prompts, ^Y at the abandon question')
+    text = sample()
+    e = Ed([('T.TXT', dos(text))])
+    e.type('EDIT T.TXT\r')
+    m = Model(text)
+    m.key('x')
+    e.type('x')                                 # modified, so ^KQ asks
+    e.type('\x0b' + ESC + 'A')
+    e.verify('^K then ESC A: nothing inserted', model=m)
+    e.type('\x11' + ESC + 'C')
+    e.verify('^Q then ESC C: nothing inserted', model=m)
+    e.type('\x11F' + ESC + 'D')
+    e.verify('Find: then ESC D: nothing inserted', model=m)
+    e.type('\x0bQ\x19')
+    e.verify('^KQ ^Y: still editing, nothing lost', model=m)
+    out = e.type('\x0bQy')
+    check(e.term.text().strip() == 'A:' and out.endswith('A:'), '^KQ y: %r' % e.term.text())
+
+
 def saving():
     print('5. saving')
     text = sample()
@@ -601,6 +623,7 @@ def main():
     find_help_quit()
     saving()
     errors()
+    prompt_fixes()
     print('FAILED: %d' % len(FAILS) if FAILS else 'all ok')
     sys.exit(1 if FAILS else 0)
 

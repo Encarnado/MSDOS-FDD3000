@@ -117,6 +117,7 @@ MSAVED  DB      "Saved",0
 MNOTF   DB      "Not found",0
 MMEM    DB      "Memory full",0
 MDFULL  DB      "Disk full: not saved",0
+MREN    DB      "Not renamed: text in .$$$",0
 MDIR    DB      "Directory full",0
 MABAN   DB      "Abandon changes (Y/N)? ",0
 MFIND   DB      "Find: ",0
@@ -262,7 +263,9 @@ QUIT:   CMP     [MODIF],0
         JZ      EXIT
         MOV     SI,OFFSET MABAN
         CALL    PREFIX
-        CMP     AL,"Y"
+        CMP     AH,"Y"          ; the key as typed: only Y or y abandons
+        JZ      EXIT            ; (PREFIX's AL folds ^Y to Y as well)
+        CMP     AH,"y"
         JZ      EXIT
         RET
 
@@ -293,11 +296,18 @@ QP5:    CMP     AL,"Y"
 QP6:    RET
 
 ; PREFIX: SI (a message) on the status line, then the next key as a
-; capital letter (^S, s and S are all S)
+; capital letter in AL (^S, s and S are all S), and as typed in AH. ESC
+; also takes the key after it, as ESCK does: an arrow key (ESC A..D) is
+; then dropped instead of its letter reaching the text.
 PREFIX: MOV     [MSG],SI
         CALL    STATUS
         CALL    FLUSH
         CALL    GETKEY
+        CMP     AL,KESC
+        JNZ     PFX1
+        CALL    GETKEY          ; the arrow's letter: dropped
+        MOV     AL,KESC
+PFX1:   MOV     AH,AL
         MOV     WORD PTR [MSG],0
         CMP     AL," "
         JNB     UPPER
@@ -461,7 +471,10 @@ SV1:    MOV     WORD PTR [TFCB+14],1
         MOV     DX,OFFSET TFCB
         MOV     AH,16           ; close
         INT     33
-        CMP     [DFULL],0
+        OR      AL,AL           ; a failed close: not saved either
+        JZ      SVCL
+        MOV     [DFULL],1
+SVCL:   CMP     [DFULL],0
         JZ      SV2
         MOV     DX,OFFSET TFCB
         MOV     AH,19
@@ -501,7 +514,11 @@ SV2:    MOV     SI,OFFSET FCB   ; name.BAK: delete, then name.ext -> name.BAK
         MOV     DX,OFFSET RFCB
         MOV     AH,23
         INT     33
-        MOV     [MODIF],0
+        OR      AL,AL           ; name.$$$ not renamed: the text is safe in
+        JZ      SVOK            ; it, but say so and keep MODIF
+        MOV     WORD PTR [MSG],OFFSET MREN
+        JMP     SHORT SVFAIL
+SVOK:   MOV     [MODIF],0
         MOV     WORD PTR [MSG],OFFSET MSAVED
         CALL    AFTDOS
         CLC
@@ -1083,7 +1100,7 @@ PR1:    CALL    FLUSH
         CMP     AL,CR
         JZ      PRX
         CMP     AL,KESC
-        JZ      PRQ
+        JZ      PRESC
         CMP     AL,"U"-40H
         JZ      PRQ
         MOV     BX,[TLEN]
@@ -1111,6 +1128,7 @@ PRDEL:  OR      BX,BX
         JMP     PR1
 PRX:    CLC
         RET
+PRESC:  CALL    GETKEY          ; ESC: take the arrow's letter too (ESCK)
 PRQ:    STC
         RET
 

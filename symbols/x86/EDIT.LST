@@ -1,4 +1,4 @@
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-1
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-1
 
 
 
@@ -55,7 +55,7 @@
 33	 = 0010	 	 	 	FMAX    EQU     16              ; longe
 	 	 	 	st search string
 34	 = 0400	 	 	 	OBSZ    EQU     1024            ; outpu
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-2
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-2
 
 
 
@@ -84,7 +84,7 @@
 	 	 	 	,SS:CODE
 49	 0100	 	 	 	        ORG     100H
 50	 	 	 	 	
-51	 0100  E9 0510 R	 	BEGIN:  JMP     START
+51	 0100  E9 052A R	 	BEGIN:  JMP     START
 52	 	 	 	 	
 53	 	 	 	 	; the test (test_fdd86.py) finds these 
 	 	 	 	by the signature
@@ -112,7 +112,7 @@
 65	 011D  0040	 	 	COLS    DW      64              ; termi
 	 	 	 	nal columns (/nn)
 66	 011F  0017	 	 	NR      DW      23              ; text 
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-3
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-3
 
 
 
@@ -147,7 +147,7 @@
 81	 0135  00	 	 	MODC    DB      0               ; colum
 	 	 	 	n of the changed mark
 82	 0136  41	 	 	DRVL    DB      "A"
-83	 0137  132D R	 	 	OPTR    DW      OFFSET BUFFERS+OBOFF
+83	 0137  1370 R	 	 	OPTR    DW      OFFSET BUFFERS+OBOFF
 84	 0139  0000	 	 	DRROW   DW      0               ; DRAW:
 	 	 	 	 row,
 85	 013B  0000	 	 	DRLAST  DW      0               ;   the
@@ -169,7 +169,7 @@
 	 	 	 	 first letter, upper case,
 95	 014D  00	 	 	FC2     DB      0               ;   low
 	 	 	 	er case
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-4
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-4
 
 
 
@@ -226,7 +226,7 @@
 137	       78 74 20 5B 2F 38	
 138	       30 5D 0D 0A 24	 	
 139	 0242  46 69 6C 65 20 74	BIGMSG  DB      "File too big for memor
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-5
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-5
 
 
 
@@ -249,2000 +249,2033 @@
 154	       75 6C 6C 3A 20 6E	
 155	       6F 74 20 73 61 76	
 156	       65 64 00	 	 	
-157	 029C  44 69 72 65 63 74	MDIR    DB      "Directory full",0
-158	       6F 72 79 20 66 75	
-159	       6C 6C 00	 	 	
-160	 02AB  41 62 61 6E 64 6F	MABAN   DB      "Abandon changes (Y/N)?
+157	 029C  4E 6F 74 20 72 65	MREN    DB      "Not renamed: text in .
+	 	 	 	$$$",0
+158	       6E 61 6D 65 64 3A	
+159	       20 74 65 78 74 20	
+160	       69 6E 20 2E 24 24	
+161	       24 00	 	 	
+162	 02B6  44 69 72 65 63 74	MDIR    DB      "Directory full",0
+163	       6F 72 79 20 66 75	
+164	       6C 6C 00	 	 	
+165	 02C5  41 62 61 6E 64 6F	MABAN   DB      "Abandon changes (Y/N)?
 	 	 	 	 ",0
-161	       6E 20 63 68 61 6E	
-162	       67 65 73 20 28 59	
-163	       2F 4E 29 3F 20 00	
-164	 02C3  46 69 6E 64 3A 20	MFIND   DB      "Find: ",0
-165	       00	 	 	
-166	 02CA  20 4C 69 6E 65 20	MLINE   DB      " Line ",0
-167	       00	 	 	
-168	 02D1  20 43 6F 6C 20 00	MCOL    DB      " Col ",0
-169	 02D7  45 44 49 54 20 31	MHELP   DB      "EDIT 1.0   (^ = CTRL)"
+166	       6E 20 63 68 61 6E	
+167	       67 65 73 20 28 59	
+168	       2F 4E 29 3F 20 00	
+169	 02DD  46 69 6E 64 3A 20	MFIND   DB      "Find: ",0
+170	       00	 	 	
+171	 02E4  20 4C 69 6E 65 20	MLINE   DB      " Line ",0
+172	       00	 	 	
+173	 02EB  20 43 6F 6C 20 00	MCOL    DB      " Col ",0
+174	 02F1  45 44 49 54 20 31	MHELP   DB      "EDIT 1.0   (^ = CTRL)"
 	 	 	 	,13,10,13,10
-170	       2E 30 20 20 20 28	
-171	       5E 20 3D 20 43 54	
-172	       52 4C 29 0D 0A 0D	
-173	       0A	 	 	
-174	 02F0  43 75 72 73 6F 72	        DB      "Cursor  ^E up   ^X dow
+175	       2E 30 20 20 20 28	
+176	       5E 20 3D 20 43 54	
+177	       52 4C 29 0D 0A 0D	
+178	       0A	 	 	
+179	 030A  43 75 72 73 6F 72	        DB      "Cursor  ^E up   ^X dow
 	 	 	 	n   ^S left   ^D right   (or arrows)",13,10
-175	       20 20 5E 45 20 75	
-176	       70 20 20 20 5E 58	
-177	       20 64 6F 77 6E 20	
-178	       20 20 5E 53 20 6C	
-179	       65 66 74 20 20 20	
-180	       5E 44 20 72 69 67	
-181	       68 74 20 20 20 28	
-182	       6F 72 20 61 72 72	
-183	       6F 77 73 29 0D 0A	
-184	 032C  20 20 20 20 20 20	        DB      "        ^A word left  
+180	       20 20 5E 45 20 75	
+181	       70 20 20 20 5E 58	
+182	       20 64 6F 77 6E 20	
+183	       20 20 5E 53 20 6C	
+184	       65 66 74 20 20 20	
+185	       5E 44 20 72 69 67	
+186	       68 74 20 20 20 28	
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-6
+
+
+
+187	       6F 72 20 61 72 72	
+188	       6F 77 73 29 0D 0A	
+189	 0346  20 20 20 20 20 20	        DB      "        ^A word left  
 	 	 	 	    ^F word right",13,10
-185	       20 20 5E 41 20 77	
-186	       6F 72 64 20 6C 65	
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-6
-
-
-
-187	       66 74 20 20 20 20	
-188	       20 20 5E 46 20 77	
-189	       6F 72 64 20 72 69	
-190	       67 68 74 0D 0A	 	
-191	 0355  20 20 20 20 20 20	        DB      "        ^R page up    
+190	       20 20 5E 41 20 77	
+191	       6F 72 64 20 6C 65	
+192	       66 74 20 20 20 20	
+193	       20 20 5E 46 20 77	
+194	       6F 72 64 20 72 69	
+195	       67 68 74 0D 0A	 	
+196	 036F  20 20 20 20 20 20	        DB      "        ^R page up    
 	 	 	 	    ^C page down",13,10
-192	       20 20 5E 52 20 70	
-193	       61 67 65 20 75 70	
-194	       20 20 20 20 20 20	
-195	       20 20 5E 43 20 70	
-196	       61 67 65 20 64 6F	
-197	       77 6E 0D 0A	 	
-198	 037D  20 20 20 20 20 20	        DB      "        ^QS line start
+197	       20 20 5E 52 20 70	
+198	       61 67 65 20 75 70	
+199	       20 20 20 20 20 20	
+200	       20 20 5E 43 20 70	
+201	       61 67 65 20 64 6F	
+202	       77 6E 0D 0A	 	
+203	 0397  20 20 20 20 20 20	        DB      "        ^QS line start
 	 	 	 	    ^QD line end",13,10
-199	       20 20 5E 51 53 20	
-200	       6C 69 6E 65 20 73	
-201	       74 61 72 74 20 20	
-202	       20 20 5E 51 44 20	
-203	       6C 69 6E 65 20 65	
-204	       6E 64 0D 0A	 	
-205	 03A5  20 20 20 20 20 20	        DB      "        ^QR file start
+204	       20 20 5E 51 53 20	
+205	       6C 69 6E 65 20 73	
+206	       74 61 72 74 20 20	
+207	       20 20 5E 51 44 20	
+208	       6C 69 6E 65 20 65	
+209	       6E 64 0D 0A	 	
+210	 03BF  20 20 20 20 20 20	        DB      "        ^QR file start
 	 	 	 	    ^QC file end",13,10
-206	       20 20 5E 51 52 20	
-207	       66 69 6C 65 20 73	
-208	       74 61 72 74 20 20	
-209	       20 20 5E 51 43 20	
-210	       66 69 6C 65 20 65	
-211	       6E 64 0D 0A	 	
-212	 03CD  44 65 6C 65 74 65	        DB      "Delete  DEL left   ^G 
+211	       20 20 5E 51 52 20	
+212	       66 69 6C 65 20 73	
+213	       74 61 72 74 20 20	
+214	       20 20 5E 51 43 20	
+215	       66 69 6C 65 20 65	
+216	       6E 64 0D 0A	 	
+217	 03E7  44 65 6C 65 74 65	        DB      "Delete  DEL left   ^G 
 	 	 	 	right   ^T word   ^Y line",13,10
-213	       20 20 44 45 4C 20	
-214	       6C 65 66 74 20 20	
-215	       20 5E 47 20 72 69	
-216	       67 68 74 20 20 20	
-217	       5E 54 20 77 6F 72	
-218	       64 20 20 20 5E 59	
-219	       20 6C 69 6E 65 0D	
-220	       0A	 	 	
-221	 03FE  20 20 20 20 20 20	        DB      "        ^QY to the end
+218	       20 20 44 45 4C 20	
+219	       6C 65 66 74 20 20	
+220	       20 5E 47 20 72 69	
+221	       67 68 74 20 20 20	
+222	       5E 54 20 77 6F 72	
+223	       64 20 20 20 5E 59	
+224	       20 6C 69 6E 65 0D	
+225	       0A	 	 	
+226	 0418  20 20 20 20 20 20	        DB      "        ^QY to the end
 	 	 	 	 of the line",13,10
-222	       20 20 5E 51 59 20	
-223	       74 6F 20 74 68 65	
-224	       20 65 6E 64 20 6F	
-225	       66 20 74 68 65 20	
-226	       6C 69 6E 65 0D 0A	
-227	 0422  49 6E 73 65 72 74	        DB      "Insert  RETURN new lin
+227	       20 20 5E 51 59 20	
+228	       74 6F 20 74 68 65	
+229	       20 65 6E 64 20 6F	
+230	       66 20 74 68 65 20	
+231	       6C 69 6E 65 0D 0A	
+232	 043C  49 6E 73 65 72 74	        DB      "Insert  RETURN new lin
 	 	 	 	e   ^N split line   TAB",13,10
-228	       20 20 52 45 54 55	
-229	       52 4E 20 6E 65 77	
-230	       20 6C 69 6E 65 20	
-231	       20 20 5E 4E 20 73	
-232	       70 6C 69 74 20 6C	
-233	       69 6E 65 20 20 20	
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-7
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-7
 
 
 
-234	       54 41 42 0D 0A	 	
-235	 0451  46 69 6E 64 20 20	        DB      "Find    ^QF find      
+233	       20 20 52 45 54 55	
+234	       52 4E 20 6E 65 77	
+235	       20 6C 69 6E 65 20	
+236	       20 20 5E 4E 20 73	
+237	       70 6C 69 74 20 6C	
+238	       69 6E 65 20 20 20	
+239	       54 41 42 0D 0A	 	
+240	 046B  46 69 6E 64 20 20	        DB      "Find    ^QF find      
 	 	 	 	    ^L find again",13,10
-236	       20 20 5E 51 46 20	
-237	       66 69 6E 64 20 20	
-238	       20 20 20 20 20 20	
-239	       20 20 5E 4C 20 66	
-240	       69 6E 64 20 61 67	
-241	       61 69 6E 0D 0A	 	
-242	 047A  46 69 6C 65 20 20	        DB      "File    ^KS save      
+241	       20 20 5E 51 46 20	
+242	       66 69 6E 64 20 20	
+243	       20 20 20 20 20 20	
+244	       20 20 5E 4C 20 66	
+245	       69 6E 64 20 61 67	
+246	       61 69 6E 0D 0A	 	
+247	 0494  46 69 6C 65 20 20	        DB      "File    ^KS save      
 	 	 	 	    ^KX save and exit",13,10
-243	       20 20 5E 4B 53 20	
-244	       73 61 76 65 20 20	
-245	       20 20 20 20 20 20	
-246	       20 20 5E 4B 58 20	
-247	       73 61 76 65 20 61	
-248	       6E 64 20 65 78 69	
-249	       74 0D 0A	 	 	
-250	 04A7  20 20 20 20 20 20	        DB      "        ^KQ quit",13,1
+248	       20 20 5E 4B 53 20	
+249	       73 61 76 65 20 20	
+250	       20 20 20 20 20 20	
+251	       20 20 5E 4B 58 20	
+252	       73 61 76 65 20 61	
+253	       6E 64 20 65 78 69	
+254	       74 0D 0A	 	 	
+255	 04C1  20 20 20 20 20 20	        DB      "        ^KQ quit",13,1
 	 	 	 	0,13,10
-251	       20 20 5E 4B 51 20	
-252	       71 75 69 74 0D 0A	
-253	       0D 0A	 	 	
-254	 04BB  50 72 65 73 73 20	        DB      "Press a key",0
-255	       61 20 6B 65 79 00	
-256	 	 	 	 	
-257	 04C7  05CB R 0AD5 R 05CB R	CTAB    DW      NOKEY,WORDL,NOKEY,PGDN 
+256	       20 20 5E 4B 51 20	
+257	       71 75 69 74 0D 0A	
+258	       0D 0A	 	 	
+259	 04D5  50 72 65 73 73 20	        DB      "Press a key",0
+260	       61 20 6B 65 79 00	
+261	 	 	 	 	
+262	 04E1  05E5 R 0B15 R 05E5 R	CTAB    DW      NOKEY,WORDL,NOKEY,PGDN 
 	 	 	 	         ; ^@ ^A ^B ^C
-258	       0A87 R	 	 	
-259	 04CF  0A22 R 0A30 R 0AB2 R	        DW      RIGHT,UP,WORDR,DELF    
+263	       0AC7 R	 	 	
+264	 04E9  0A62 R 0A70 R 0AF2 R	        DW      RIGHT,UP,WORDR,DELF    
 	 	 	 	         ; ^D ^E ^F ^G
-260	       0BA5 R	 	 	
-261	 04D7  0B7C R 0B29 R 1311 R	        DW      DELB,TABK,HELP,KPRE    
+265	       0BE5 R	 	 	
+266	 04F1  0BBC R 0B69 R 1354 R	        DW      DELB,TABK,HELP,KPRE    
 	 	 	 	         ; ^H ^I ^J ^K
-262	       05EB R	 	 	
-263	 04DF  0C70 R 0B25 R 0B5B R	        DW      FNEXT,NEWLN,SPLIT,NOKEY
+267	       0605 R	 	 	
+268	 04F9  0CB0 R 0B65 R 0B9B R	        DW      FNEXT,NEWLN,SPLIT,NOKEY
 	 	 	 	         ; ^L ^M ^N ^O
-264	       05CB R	 	 	
-265	 04E7  05CB R 0625 R 0A97 R	        DW      NOKEY,QPRE,PGUP,LEFTK  
+269	       05E5 R	 	 	
+270	 0501  05E5 R 0645 R 0AD7 R	        DW      NOKEY,QPRE,PGUP,LEFTK  
 	 	 	 	         ; ^P ^Q ^R ^S
-266	       0A15 R	 	 	
-267	 04EF  0C11 R 05CB R 05CB R	        DW      DELWD,NOKEY,NOKEY,NOKEY
+271	       0A55 R	 	 	
+272	 0509  0C51 R 05E5 R 05E5 R	        DW      DELWD,NOKEY,NOKEY,NOKEY
 	 	 	 	         ; ^T ^U ^V ^W
-268	       05CB R	 	 	
-269	 04F7  0A5D R 0BE8 R 05CB R	        DW      DOWN,DELLN,NOKEY,ESCK  
+273	       05E5 R	 	 	
+274	 0511  0A9D R 0C28 R 05E5 R	        DW      DOWN,DELLN,NOKEY,ESCK  
 	 	 	 	         ; ^X ^Y ^Z ESC
-270	       05CC R	 	 	
-271	 04FF  05CB R 05CB R 05CB R	        DW      NOKEY,NOKEY,NOKEY,NOKEY
-272	       05CB R	 	 	
-273	 	 	 	 	
-274	 0507  BA 0201 R	 	USAGE:  MOV     DX,OFFSET USEMSG
-275	 050A  B4 09	 	 	DOSMSG: MOV     AH,9
-276	 050C  CD 21	 	 	        INT     33
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-8
+275	       05E6 R	 	 	
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-8
 
 
 
-277	 050E  CD 20	 	 	        INT     32
+276	 0519  05E5 R 05E5 R 05E5 R	        DW      NOKEY,NOKEY,NOKEY,NOKEY
+277	       05E5 R	 	 	
 278	 	 	 	 	
-279	 0510  BC 243D R	 	START:  MOV     SP,OFFSET BUFFERS+STKOF
+279	 0521  BA 0201 R	 	USAGE:  MOV     DX,OFFSET USEMSG
+280	 0524  B4 09	 	 	DOSMSG: MOV     AH,9
+281	 0526  CD 21	 	 	        INT     33
+282	 0528  CD 20	 	 	        INT     32
+283	 	 	 	 	
+284	 052A  BC 2480 R	 	START:  MOV     SP,OFFSET BUFFERS+STKOF
 	 	 	 	F
-280	 0513  FC	 	 	        CLD
-281	 0514  E8 067A R	 	        CALL    OPTS
-282	 0517  80 3E 005D 20	 	        CMP     BYTE PTR DS:[5DH]," "
-283	 051C  74 E9	 	 	        JZ      USAGE
-284	 051E  BF 005D	 	 	        MOV     DI,5DH
-285	 0521  B9 000B	 	 	        MOV     CX,11
-286	 0524  B0 3F	 	 	        MOV     AL,"?"
-287	 0526  F2/ AE	 	 	        REPNE   SCASB
-288	 0528  74 DD	 	 	        JZ      USAGE
-289	 052A  BE 005C	 	 	        MOV     SI,5CH
-290	 052D  BF 0192 R	 	        MOV     DI,OFFSET FCB
-291	 0530  B9 000C	 	 	        MOV     CX,12
-292	 0533  F3/ A4	 	 	        REP     MOVSB
-293	 0535  A0 0192 R	 	        MOV     AL,[FCB]
-294	 0538  0A C0	 	 	        OR      AL,AL
-295	 053A  75 06	 	 	        JNZ     DRV1
-296	 053C  B4 19	 	 	        MOV     AH,25           ; the c
+285	 052D  FC	 	 	        CLD
+286	 052E  E8 06A5 R	 	        CALL    OPTS
+287	 0531  80 3E 005D 20	 	        CMP     BYTE PTR DS:[5DH]," "
+288	 0536  74 E9	 	 	        JZ      USAGE
+289	 0538  BF 005D	 	 	        MOV     DI,5DH
+290	 053B  B9 000B	 	 	        MOV     CX,11
+291	 053E  B0 3F	 	 	        MOV     AL,"?"
+292	 0540  F2/ AE	 	 	        REPNE   SCASB
+293	 0542  74 DD	 	 	        JZ      USAGE
+294	 0544  BE 005C	 	 	        MOV     SI,5CH
+295	 0547  BF 0192 R	 	        MOV     DI,OFFSET FCB
+296	 054A  B9 000C	 	 	        MOV     CX,12
+297	 054D  F3/ A4	 	 	        REP     MOVSB
+298	 054F  A0 0192 R	 	        MOV     AL,[FCB]
+299	 0552  0A C0	 	 	        OR      AL,AL
+300	 0554  75 06	 	 	        JNZ     DRV1
+301	 0556  B4 19	 	 	        MOV     AH,25           ; the c
 	 	 	 	urrent drive
-297	 053E  CD 21	 	 	        INT     33
-298	 0540  FE C0	 	 	        INC     AL
-299	 0542  04 40	 	 	DRV1:   ADD     AL,"A"-1
-300	 0544  A2 0136 R	 	        MOV     [DRVL],AL
-301	 0547  A1 0002	 	 	        MOV     AX,DS:[2]       ; memor
+302	 0558  CD 21	 	 	        INT     33
+303	 055A  FE C0	 	 	        INC     AL
+304	 055C  04 40	 	 	DRV1:   ADD     AL,"A"-1
+305	 055E  A2 0136 R	 	        MOV     [DRVL],AL
+306	 0561  A1 0002	 	 	        MOV     AX,DS:[2]       ; memor
 	 	 	 	y: up to the end of ours, in this segment
-302	 054A  8C CB	 	 	        MOV     BX,CS
-303	 054C  2B C3	 	 	        SUB     AX,BX
-304	 054E  BB FFF0	 	 	        MOV     BX,0FFF0H
-305	 0551  3D 0FFF	 	 	        CMP     AX,0FFFH
-306	 0554  73 06	 	 	        JAE     MEM1
-307	 0556  B1 04	 	 	        MOV     CL,4
-308	 0558  D3 E0	 	 	        SHL     AX,CL
-309	 055A  8B D8	 	 	        MOV     BX,AX
-310	 055C  89 1E 010F R	 	MEM1:   MOV     [TEND],BX
-311	 0560  C7 06 0109 R 243D R	        MOV     WORD PTR [BUFS],OFFSET 
+307	 0564  8C CB	 	 	        MOV     BX,CS
+308	 0566  2B C3	 	 	        SUB     AX,BX
+309	 0568  BB FFF0	 	 	        MOV     BX,0FFF0H
+310	 056B  3D 0FFF	 	 	        CMP     AX,0FFFH
+311	 056E  73 06	 	 	        JAE     MEM1
+312	 0570  B1 04	 	 	        MOV     CL,4
+313	 0572  D3 E0	 	 	        SHL     AX,CL
+314	 0574  8B D8	 	 	        MOV     BX,AX
+315	 0576  89 1E 010F R	 	MEM1:   MOV     [TEND],BX
+316	 057A  C7 06 0109 R 2480 R	        MOV     WORD PTR [BUFS],OFFSET 
 	 	 	 	BUFFERS+TXOFF
-312	 0566  E8 06B8 R	 	        CALL    LOADF
-313	 0569  BA 0881 R	 	        MOV     DX,OFFSET CRIT  ; INT 2
+317	 0580  E8 06E3 R	 	        CALL    LOADF
+318	 0583  BA 08C1 R	 	        MOV     DX,OFFSET CRIT  ; INT 2
 	 	 	 	4H: note disk errors (DOS puts the
-314	 056C  B8 2524	 	 	        MOV     AX,2524H        ;   old
+319	 0586  B8 2524	 	 	        MOV     AX,2524H        ;   old
 	 	 	 	 vector back when we end)
-315	 056F  1E	 	 	        PUSH    DS
-316	 0570  33 DB	 	 	        XOR     BX,BX
-317	 0572  8E DB	 	 	        MOV     DS,BX
-318	 0574  8B 1E 0090	 	        MOV     BX,DS:[90H]
-319	 0578  8B 0E 0092	 	        MOV     CX,DS:[92H]
-320	 057C  1F	 	 	        POP     DS
-321	 057D  89 1E 0156 R	 	        MOV     [OLD24],BX
-322	 0581  89 0E 0158 R	 	        MOV     [OLD24+2],CX
-323	 0585  CD 21	 	 	        INT     33
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-9
+320	 0589  1E	 	 	        PUSH    DS
+321	 058A  33 DB	 	 	        XOR     BX,BX
+322	 058C  8E DB	 	 	        MOV     DS,BX
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-9
 
 
 
-324	 0587  E8 0DC7 R	 	        CALL    REDRAW
-325	 	 	 	 	;
-326	 	 	 	 	; the main loop: the screen for the cur
+323	 058E  8B 1E 0090	 	        MOV     BX,DS:[90H]
+324	 0592  8B 0E 0092	 	        MOV     CX,DS:[92H]
+325	 0596  1F	 	 	        POP     DS
+326	 0597  89 1E 0156 R	 	        MOV     [OLD24],BX
+327	 059B  89 0E 0158 R	 	        MOV     [OLD24+2],CX
+328	 059F  CD 21	 	 	        INT     33
+329	 05A1  E8 0E0A R	 	        CALL    REDRAW
+330	 	 	 	 	;
+331	 	 	 	 	; the main loop: the screen for the cur
 	 	 	 	sor, then draw it unless a key is
-327	 	 	 	 	; waiting, then the key
-328	 	 	 	 	;
-329	 058A  E8 0DD3 R	 	MAIN:   CALL    FIXSCR
-330	 058D  E8 1307 R	 	        CALL    KEYRDY
-331	 0590  75 0B	 	 	        JNZ     MAIN1
-332	 0592  E8 0F3F R	 	        CALL    DRAW
-333	 0595  72 06	 	 	        JB      MAIN1
-334	 0597  E8 1132 R	 	        CALL    STATUS
-335	 059A  E8 1283 R	 	        CALL    PLACE
-336	 059D  E8 12DD R	 	MAIN1:  CALL    FLUSH
-337	 05A0  E8 130C R	 	        CALL    GETKEY
-338	 05A3  C7 06 012C R 0000	        MOV     WORD PTR [MSG],0       
+332	 	 	 	 	; waiting, then the key
+333	 	 	 	 	;
+334	 05A4  E8 0E16 R	 	MAIN:   CALL    FIXSCR
+335	 05A7  E8 134A R	 	        CALL    KEYRDY
+336	 05AA  75 0B	 	 	        JNZ     MAIN1
+337	 05AC  E8 0F82 R	 	        CALL    DRAW
+338	 05AF  72 06	 	 	        JB      MAIN1
+339	 05B1  E8 1175 R	 	        CALL    STATUS
+340	 05B4  E8 12C6 R	 	        CALL    PLACE
+341	 05B7  E8 1320 R	 	MAIN1:  CALL    FLUSH
+342	 05BA  E8 134F R	 	        CALL    GETKEY
+343	 05BD  C7 06 012C R 0000	        MOV     WORD PTR [MSG],0       
 	 	 	 	 ; a message lasts until the next key
-339	 05A9  C6 06 0128 R 00	 	        MOV     [VERT],0
-340	 05AE  E8 05B3 R	 	        CALL    DOKEY
-341	 05B1  EB D7	 	 	        JMP     MAIN
-342	 	 	 	 	
-343	 05B3  3C 7F	 	 	DOKEY:  CMP     AL,7FH
-344	 05B5  75 03	 	 	        JNZ     DK1
-345	 05B7  E9 0B7C R	 	        JMP     DELB
-346	 05BA  3C 20	 	 	DK1:    CMP     AL," "
-347	 05BC  72 03	 	 	        JB      DK2
-348	 05BE  E9 0B2B R	 	        JMP     INSCH
-349	 05C1  8A D8	 	 	DK2:    MOV     BL,AL
-350	 05C3  32 FF	 	 	        XOR     BH,BH
-351	 05C5  D1 E3	 	 	        SHL     BX,1
-352	 05C7  FF A7 04C7 R	 	        JMP     CTAB[BX]
-353	 	 	 	 	
-354	 05CB  C3	 	 	NOKEY:  RET
-355	 	 	 	 	
-356	 05CC  E8 130C R	 	ESCK:   CALL    GETKEY          ; the a
+344	 05C3  C6 06 0128 R 00	 	        MOV     [VERT],0
+345	 05C8  E8 05CD R	 	        CALL    DOKEY
+346	 05CB  EB D7	 	 	        JMP     MAIN
+347	 	 	 	 	
+348	 05CD  3C 7F	 	 	DOKEY:  CMP     AL,7FH
+349	 05CF  75 03	 	 	        JNZ     DK1
+350	 05D1  E9 0BBC R	 	        JMP     DELB
+351	 05D4  3C 20	 	 	DK1:    CMP     AL," "
+352	 05D6  72 03	 	 	        JB      DK2
+353	 05D8  E9 0B6B R	 	        JMP     INSCH
+354	 05DB  8A D8	 	 	DK2:    MOV     BL,AL
+355	 05DD  32 FF	 	 	        XOR     BH,BH
+356	 05DF  D1 E3	 	 	        SHL     BX,1
+357	 05E1  FF A7 04E1 R	 	        JMP     CTAB[BX]
+358	 	 	 	 	
+359	 05E5  C3	 	 	NOKEY:  RET
+360	 	 	 	 	
+361	 05E6  E8 134F R	 	ESCK:   CALL    GETKEY          ; the a
 	 	 	 	rrow keys: ESC A, B, C, D
-357	 05CF  3C 41	 	 	        CMP     AL,"A"
-358	 05D1  75 03	 	 	        JNZ     EK1
-359	 05D3  E9 0A30 R	 	        JMP     UP
-360	 05D6  3C 42	 	 	EK1:    CMP     AL,"B"
-361	 05D8  75 03	 	 	        JNZ     EK2
-362	 05DA  E9 0A5D R	 	        JMP     DOWN
-363	 05DD  3C 43	 	 	EK2:    CMP     AL,"C"
-364	 05DF  75 03	 	 	        JNZ     EK3
-365	 05E1  E9 0A22 R	 	        JMP     RIGHT
-366	 05E4  3C 44	 	 	EK3:    CMP     AL,"D"
-367	 05E6  75 E3	 	 	        JNZ     NOKEY
-368	 05E8  E9 0A15 R	 	        JMP     LEFTK
-369	 	 	 	 	
-370	 05EB  BE 025C R	 	KPRE:   MOV     SI,OFFSET MKPRE
-371	 05EE  E8 0656 R	 	        CALL    PREFIX
-372	 05F1  3C 53	 	 	        CMP     AL,"S"
-373	 05F3  75 03	 	 	        JNZ     KP1
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-10
+362	 05E9  3C 41	 	 	        CMP     AL,"A"
+363	 05EB  75 03	 	 	        JNZ     EK1
+364	 05ED  E9 0A70 R	 	        JMP     UP
+365	 05F0  3C 42	 	 	EK1:    CMP     AL,"B"
+366	 05F2  75 03	 	 	        JNZ     EK2
+367	 05F4  E9 0A9D R	 	        JMP     DOWN
+368	 05F7  3C 43	 	 	EK2:    CMP     AL,"C"
+369	 05F9  75 03	 	 	        JNZ     EK3
+370	 05FB  E9 0A62 R	 	        JMP     RIGHT
+371	 05FE  3C 44	 	 	EK3:    CMP     AL,"D"
+372	 0600  75 E3	 	 	        JNZ     NOKEY
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-10
 
 
 
-374	 05F5  E9 076E R	 	        JMP     SAVE
-375	 05F8  3C 58	 	 	KP1:    CMP     AL,"X"
-376	 05FA  74 09	 	 	        JZ      SAVEX
-377	 05FC  3C 44	 	 	        CMP     AL,"D"
-378	 05FE  74 05	 	 	        JZ      SAVEX
-379	 0600  3C 51	 	 	        CMP     AL,"Q"
-380	 0602  74 07	 	 	        JZ      QUIT
-381	 0604  C3	 	 	        RET
-382	 	 	 	 	
-383	 0605  E8 076E R	 	SAVEX:  CALL    SAVE
-384	 0608  73 13	 	 	        JNB     EXIT
-385	 060A  C3	 	 	        RET
-386	 	 	 	 	
-387	 060B  80 3E 0123 R 00	 	QUIT:   CMP     [MODIF],0
-388	 0610  74 0B	 	 	        JZ      EXIT
-389	 0612  BE 02AB R	 	        MOV     SI,OFFSET MABAN
-390	 0615  E8 0656 R	 	        CALL    PREFIX
-391	 0618  3C 59	 	 	        CMP     AL,"Y"
-392	 061A  74 01	 	 	        JZ      EXIT
-393	 061C  C3	 	 	        RET
-394	 	 	 	 	
-395	 061D  E8 12F4 R	 	EXIT:   CALL    CLS
-396	 0620  E8 12DD R	 	        CALL    FLUSH
-397	 0623  CD 20	 	 	        INT     32
-398	 	 	 	 	
-399	 0625  BE 025F R	 	QPRE:   MOV     SI,OFFSET MQPRE
-400	 0628  E8 0656 R	 	        CALL    PREFIX
-401	 062B  3C 53	 	 	        CMP     AL,"S"
-402	 062D  75 03	 	 	        JNZ     QP1
-403	 062F  E9 0B00 R	 	        JMP     LBEG
-404	 0632  3C 44	 	 	QP1:    CMP     AL,"D"
-405	 0634  75 03	 	 	        JNZ     QP2
-406	 0636  E9 0B09 R	 	        JMP     LEND
-407	 0639  3C 52	 	 	QP2:    CMP     AL,"R"
-408	 063B  75 03	 	 	        JNZ     QP3
-409	 063D  E9 0B19 R	 	        JMP     FTOP
-410	 0640  3C 43	 	 	QP3:    CMP     AL,"C"
-411	 0642  75 03	 	 	        JNZ     QP4
-412	 0644  E9 0B1F R	 	        JMP     FEND
-413	 0647  3C 46	 	 	QP4:    CMP     AL,"F"
-414	 0649  75 03	 	 	        JNZ     QP5
-415	 064B  E9 0C53 R	 	        JMP     FIND
-416	 064E  3C 59	 	 	QP5:    CMP     AL,"Y"
-417	 0650  75 03	 	 	        JNZ     QP6
-418	 0652  E9 0BC8 R	 	        JMP     DELEOL
-419	 0655  C3	 	 	QP6:    RET
-420	 	 	 	 	
-421	 	 	 	 	; PREFIX: SI (a message) on the status 
+373	 0602  E9 0A55 R	 	        JMP     LEFTK
+374	 	 	 	 	
+375	 0605  BE 025C R	 	KPRE:   MOV     SI,OFFSET MKPRE
+376	 0608  E8 0676 R	 	        CALL    PREFIX
+377	 060B  3C 53	 	 	        CMP     AL,"S"
+378	 060D  75 03	 	 	        JNZ     KP1
+379	 060F  E9 0799 R	 	        JMP     SAVE
+380	 0612  3C 58	 	 	KP1:    CMP     AL,"X"
+381	 0614  74 09	 	 	        JZ      SAVEX
+382	 0616  3C 44	 	 	        CMP     AL,"D"
+383	 0618  74 05	 	 	        JZ      SAVEX
+384	 061A  3C 51	 	 	        CMP     AL,"Q"
+385	 061C  74 07	 	 	        JZ      QUIT
+386	 061E  C3	 	 	        RET
+387	 	 	 	 	
+388	 061F  E8 0799 R	 	SAVEX:  CALL    SAVE
+389	 0622  73 19	 	 	        JNB     EXIT
+390	 0624  C3	 	 	        RET
+391	 	 	 	 	
+392	 0625  80 3E 0123 R 00	 	QUIT:   CMP     [MODIF],0
+393	 062A  74 11	 	 	        JZ      EXIT
+394	 062C  BE 02C5 R	 	        MOV     SI,OFFSET MABAN
+395	 062F  E8 0676 R	 	        CALL    PREFIX
+396	 0632  80 FC 59	 	 	        CMP     AH,"Y"          ; the k
+	 	 	 	ey as typed: only Y or y abandons
+397	 0635  74 06	 	 	        JZ      EXIT            ; (PREF
+	 	 	 	IX's AL folds ^Y to Y as well)
+398	 0637  80 FC 79	 	 	        CMP     AH,"y"
+399	 063A  74 01	 	 	        JZ      EXIT
+400	 063C  C3	 	 	        RET
+401	 	 	 	 	
+402	 063D  E8 1337 R	 	EXIT:   CALL    CLS
+403	 0640  E8 1320 R	 	        CALL    FLUSH
+404	 0643  CD 20	 	 	        INT     32
+405	 	 	 	 	
+406	 0645  BE 025F R	 	QPRE:   MOV     SI,OFFSET MQPRE
+407	 0648  E8 0676 R	 	        CALL    PREFIX
+408	 064B  3C 53	 	 	        CMP     AL,"S"
+409	 064D  75 03	 	 	        JNZ     QP1
+410	 064F  E9 0B40 R	 	        JMP     LBEG
+411	 0652  3C 44	 	 	QP1:    CMP     AL,"D"
+412	 0654  75 03	 	 	        JNZ     QP2
+413	 0656  E9 0B49 R	 	        JMP     LEND
+414	 0659  3C 52	 	 	QP2:    CMP     AL,"R"
+415	 065B  75 03	 	 	        JNZ     QP3
+416	 065D  E9 0B59 R	 	        JMP     FTOP
+417	 0660  3C 43	 	 	QP3:    CMP     AL,"C"
+418	 0662  75 03	 	 	        JNZ     QP4
+419	 0664  E9 0B5F R	 	        JMP     FEND
+420	 0667  3C 46	 	 	QP4:    CMP     AL,"F"
+421	 0669  75 03	 	 	        JNZ     QP5
+422	 066B  E9 0C93 R	 	        JMP     FIND
+423	 066E  3C 59	 	 	QP5:    CMP     AL,"Y"
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-11
+
+
+
+424	 0670  75 03	 	 	        JNZ     QP6
+425	 0672  E9 0C08 R	 	        JMP     DELEOL
+426	 0675  C3	 	 	QP6:    RET
+427	 	 	 	 	
+428	 	 	 	 	; PREFIX: SI (a message) on the status 
 	 	 	 	line, then the next key as a
-422	 	 	 	 	; capital letter (^S, s and S are all S
-	 	 	 	)
-423	 0656  89 36 012C R	 	PREFIX: MOV     [MSG],SI
-424	 065A  E8 1132 R	 	        CALL    STATUS
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-11
-
-
-
-425	 065D  E8 12DD R	 	        CALL    FLUSH
-426	 0660  E8 130C R	 	        CALL    GETKEY
-427	 0663  C7 06 012C R 0000	        MOV     WORD PTR [MSG],0
-428	 0669  3C 20	 	 	        CMP     AL," "
-429	 066B  73 02	 	 	        JNB     UPPER
-430	 066D  04 40	 	 	        ADD     AL,40H
-431	 066F  3C 61	 	 	UPPER:  CMP     AL,"a"
-432	 0671  72 06	 	 	        JB      UPX
-433	 0673  3C 7A	 	 	        CMP     AL,"z"
-434	 0675  77 02	 	 	        JA      UPX
-435	 0677  2C 20	 	 	        SUB     AL,20H
-436	 0679  C3	 	 	UPX:    RET
-437	 	 	 	 	
-438	 	 	 	 	; OPTS: /nn in the command tail: nn col
+429	 	 	 	 	; capital letter in AL (^S, s and S are
+	 	 	 	 all S), and as typed in AH. ESC
+430	 	 	 	 	; also takes the key after it, as ESCK 
+	 	 	 	does: an arrow key (ESC A..D) is
+431	 	 	 	 	; then dropped instead of its letter re
+	 	 	 	aching the text.
+432	 0676  89 36 012C R	 	PREFIX: MOV     [MSG],SI
+433	 067A  E8 1175 R	 	        CALL    STATUS
+434	 067D  E8 1320 R	 	        CALL    FLUSH
+435	 0680  E8 134F R	 	        CALL    GETKEY
+436	 0683  3C 1B	 	 	        CMP     AL,KESC
+437	 0685  75 05	 	 	        JNZ     PFX1
+438	 0687  E8 134F R	 	        CALL    GETKEY          ; the a
+	 	 	 	rrow's letter: dropped
+439	 068A  B0 1B	 	 	        MOV     AL,KESC
+440	 068C  8A E0	 	 	PFX1:   MOV     AH,AL
+441	 068E  C7 06 012C R 0000	        MOV     WORD PTR [MSG],0
+442	 0694  3C 20	 	 	        CMP     AL," "
+443	 0696  73 02	 	 	        JNB     UPPER
+444	 0698  04 40	 	 	        ADD     AL,40H
+445	 069A  3C 61	 	 	UPPER:  CMP     AL,"a"
+446	 069C  72 06	 	 	        JB      UPX
+447	 069E  3C 7A	 	 	        CMP     AL,"z"
+448	 06A0  77 02	 	 	        JA      UPX
+449	 06A2  2C 20	 	 	        SUB     AL,20H
+450	 06A4  C3	 	 	UPX:    RET
+451	 	 	 	 	
+452	 	 	 	 	; OPTS: /nn in the command tail: nn col
 	 	 	 	umns (64 to 80)
-439	 067A  BE 0081	 	 	OPTS:   MOV     SI,81H
-440	 067D  8A 0E 0080	 	        MOV     CL,DS:[80H]
-441	 0681  32 ED	 	 	        XOR     CH,CH
-442	 0683  E3 32	 	 	        JCXZ    OPX
-443	 0685  8B FE	 	 	        MOV     DI,SI
-444	 0687  B0 2F	 	 	        MOV     AL,"/"
-445	 0689  F2/ AE	 	 	        REPNE   SCASB
-446	 068B  75 2A	 	 	        JNZ     OPX
-447	 068D  33 D2	 	 	        XOR     DX,DX
-448	 068F  8A 05	 	 	OP1:    MOV     AL,[DI]
-449	 0691  2C 30	 	 	        SUB     AL,"0"
-450	 0693  3C 09	 	 	        CMP     AL,9
-451	 0695  77 0D	 	 	        JA      OP2
-452	 0697  47	 	 	        INC     DI
-453	 0698  92	 	 	        XCHG    AX,DX
-454	 0699  B3 0A	 	 	        MOV     BL,10
-455	 069B  F6 E3	 	 	        MUL     BL
-456	 069D  32 F6	 	 	        XOR     DH,DH
-457	 069F  03 C2	 	 	        ADD     AX,DX
-458	 06A1  92	 	 	        XCHG    AX,DX
-459	 06A2  EB EB	 	 	        JMP     OP1
-460	 06A4  83 FA 40	 	 	OP2:    CMP     DX,64
-461	 06A7  72 0E	 	 	        JB      OPX
-462	 06A9  83 FA 50	 	 	        CMP     DX,80
-463	 06AC  77 09	 	 	        JA      OPX
-464	 06AE  89 16 011D R	 	        MOV     [COLS],DX
-465	 06B2  4A	 	 	        DEC     DX
-466	 06B3  89 16 0121 R	 	        MOV     [W],DX
-467	 06B7  C3	 	 	OPX:    RET
-468	 	 	 	 	
-469	 	 	 	 	; -------------------------------------
+453	 06A5  BE 0081	 	 	OPTS:   MOV     SI,81H
+454	 06A8  8A 0E 0080	 	        MOV     CL,DS:[80H]
+455	 06AC  32 ED	 	 	        XOR     CH,CH
+456	 06AE  E3 32	 	 	        JCXZ    OPX
+457	 06B0  8B FE	 	 	        MOV     DI,SI
+458	 06B2  B0 2F	 	 	        MOV     AL,"/"
+459	 06B4  F2/ AE	 	 	        REPNE   SCASB
+460	 06B6  75 2A	 	 	        JNZ     OPX
+461	 06B8  33 D2	 	 	        XOR     DX,DX
+462	 06BA  8A 05	 	 	OP1:    MOV     AL,[DI]
+463	 06BC  2C 30	 	 	        SUB     AL,"0"
+464	 06BE  3C 09	 	 	        CMP     AL,9
+465	 06C0  77 0D	 	 	        JA      OP2
+466	 06C2  47	 	 	        INC     DI
+467	 06C3  92	 	 	        XCHG    AX,DX
+468	 06C4  B3 0A	 	 	        MOV     BL,10
+469	 06C6  F6 E3	 	 	        MUL     BL
+470	 06C8  32 F6	 	 	        XOR     DH,DH
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-12
+
+
+
+471	 06CA  03 C2	 	 	        ADD     AX,DX
+472	 06CC  92	 	 	        XCHG    AX,DX
+473	 06CD  EB EB	 	 	        JMP     OP1
+474	 06CF  83 FA 40	 	 	OP2:    CMP     DX,64
+475	 06D2  72 0E	 	 	        JB      OPX
+476	 06D4  83 FA 50	 	 	        CMP     DX,80
+477	 06D7  77 09	 	 	        JA      OPX
+478	 06D9  89 16 011D R	 	        MOV     [COLS],DX
+479	 06DD  4A	 	 	        DEC     DX
+480	 06DE  89 16 0121 R	 	        MOV     [W],DX
+481	 06E2  C3	 	 	OPX:    RET
+482	 	 	 	 	
+483	 	 	 	 	; -------------------------------------
 	 	 	 	--------------------------- the file
-470	 	 	 	 	;
-471	 	 	 	 	; LOADF: read the file into the text; a
+484	 	 	 	 	;
+485	 	 	 	 	; LOADF: read the file into the text; a
 	 	 	 	 missing file is a new one
-472	 	 	 	 	;
-473	 06B8  A1 0109 R	 	LOADF:  MOV     AX,[BUFS]
-474	 06BB  A3 010B R	 	        MOV     [GAPS],AX
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-12
-
-
-
-475	 06BE  A3 0111 R	 	        MOV     [TOP],AX
-476	 06C1  A1 010F R	 	        MOV     AX,[TEND]
-477	 06C4  A3 010D R	 	        MOV     [GAPE],AX
-478	 06C7  BA 0192 R	 	        MOV     DX,OFFSET FCB
-479	 06CA  B4 0F	 	 	        MOV     AH,15
-480	 06CC  CD 21	 	 	        INT     33
-481	 06CE  0A C0	 	 	        OR      AL,AL
-482	 06D0  74 07	 	 	        JZ      LD1
-483	 06D2  C7 06 012C R 0262 R	        MOV     WORD PTR [MSG],OFFSET M
+486	 	 	 	 	;
+487	 06E3  A1 0109 R	 	LOADF:  MOV     AX,[BUFS]
+488	 06E6  A3 010B R	 	        MOV     [GAPS],AX
+489	 06E9  A3 0111 R	 	        MOV     [TOP],AX
+490	 06EC  A1 010F R	 	        MOV     AX,[TEND]
+491	 06EF  A3 010D R	 	        MOV     [GAPE],AX
+492	 06F2  BA 0192 R	 	        MOV     DX,OFFSET FCB
+493	 06F5  B4 0F	 	 	        MOV     AH,15
+494	 06F7  CD 21	 	 	        INT     33
+495	 06F9  0A C0	 	 	        OR      AL,AL
+496	 06FB  74 07	 	 	        JZ      LD1
+497	 06FD  C7 06 012C R 0262 R	        MOV     WORD PTR [MSG],OFFSET M
 	 	 	 	NEW
-484	 06D8  C3	 	 	        RET
-485	 06D9  A1 010F R	 	LD1:    MOV     AX,[TEND]
-486	 06DC  2B 06 0109 R	 	        SUB     AX,[BUFS]
-487	 06E0  83 3E 01A4 R 00	 	        CMP     WORD PTR [FCB+18],0
-488	 06E5  75 08	 	 	        JNZ     TOOBIG
-489	 06E7  8B 0E 01A2 R	 	        MOV     CX,WORD PTR [FCB+16]
-490	 06EB  3B C8	 	 	        CMP     CX,AX
-491	 06ED  76 06	 	 	        JBE     LD2
-492	 06EF  BA 0242 R	 	TOOBIG: MOV     DX,OFFSET BIGMSG
-493	 06F2  E9 050A R	 	        JMP     DOSMSG
-494	 06F5  E3 76	 	 	LD2:    JCXZ    LDX
-495	 06F7  8B 16 0109 R	 	        MOV     DX,[BUFS]
-496	 06FB  B4 1A	 	 	        MOV     AH,26           ; DTA
-497	 06FD  CD 21	 	 	        INT     33
-498	 06FF  C7 06 01A0 R 0001	        MOV     WORD PTR [FCB+14],1    
+498	 0703  C3	 	 	        RET
+499	 0704  A1 010F R	 	LD1:    MOV     AX,[TEND]
+500	 0707  2B 06 0109 R	 	        SUB     AX,[BUFS]
+501	 070B  83 3E 01A4 R 00	 	        CMP     WORD PTR [FCB+18],0
+502	 0710  75 08	 	 	        JNZ     TOOBIG
+503	 0712  8B 0E 01A2 R	 	        MOV     CX,WORD PTR [FCB+16]
+504	 0716  3B C8	 	 	        CMP     CX,AX
+505	 0718  76 06	 	 	        JBE     LD2
+506	 071A  BA 0242 R	 	TOOBIG: MOV     DX,OFFSET BIGMSG
+507	 071D  E9 0524 R	 	        JMP     DOSMSG
+508	 0720  E3 76	 	 	LD2:    JCXZ    LDX
+509	 0722  8B 16 0109 R	 	        MOV     DX,[BUFS]
+510	 0726  B4 1A	 	 	        MOV     AH,26           ; DTA
+511	 0728  CD 21	 	 	        INT     33
+512	 072A  C7 06 01A0 R 0001	        MOV     WORD PTR [FCB+14],1    
 	 	 	 	 ; record size 1: CX records = bytes
-499	 0705  C7 06 01B3 R 0000	        MOV     WORD PTR [FCB+33],0
-500	 070B  C7 06 01B5 R 0000	        MOV     WORD PTR [FCB+35],0
-501	 0711  BA 0192 R	 	        MOV     DX,OFFSET FCB
-502	 0714  B4 27	 	 	        MOV     AH,39           ; rando
+513	 0730  C7 06 01B3 R 0000	        MOV     WORD PTR [FCB+33],0
+514	 0736  C7 06 01B5 R 0000	        MOV     WORD PTR [FCB+35],0
+515	 073C  BA 0192 R	 	        MOV     DX,OFFSET FCB
+516	 073F  B4 27	 	 	        MOV     AH,39           ; rando
 	 	 	 	m block read
-503	 0716  CD 21	 	 	        INT     33
-504	 0718  8B 1E 0109 R	 	        MOV     BX,[BUFS]       ; the t
+517	 0741  CD 21	 	 	        INT     33
+518	 0743  8B 1E 0109 R	 	        MOV     BX,[BUFS]       ; the t
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-13
+
+
+
 	 	 	 	ext ends at the first ^Z of the last
-505	 071C  03 D9	 	 	        ADD     BX,CX           ;   128
+519	 0747  03 D9	 	 	        ADD     BX,CX           ;   128
 	 	 	 	 bytes (CP/M fills its last record
-506	 071E  8B FB	 	 	        MOV     DI,BX           ;   wit
-	 	 	 	h them); a scan costs 300 T a byte
-507	 0720  B9 0080	 	 	        MOV     CX,128
-508	 0723  2B F9	 	 	        SUB     DI,CX
-509	 0725  3B 3E 0109 R	 	        CMP     DI,[BUFS]
-510	 0729  73 08	 	 	        JAE     LD2A
-511	 072B  8B 3E 0109 R	 	        MOV     DI,[BUFS]
-512	 072F  8B CB	 	 	        MOV     CX,BX
-513	 0731  2B CF	 	 	        SUB     CX,DI
-514	 0733  B0 1A	 	 	LD2A:   MOV     AL,CTLZ
-515	 0735  F2/ AE	 	 	        REPNE   SCASB
-516	 0737  75 03	 	 	        JNZ     LD3
-517	 0739  8B DF	 	 	        MOV     BX,DI
-518	 073B  4B	 	 	        DEC     BX
-519	 073C  8B 36 0109 R	 	LD3:    MOV     SI,[BUFS]       ; drop 
+520	 0749  8B FB	 	 	        MOV     DI,BX           ;   wit
+	 	 	 	h them)
+521	 074B  B9 0080	 	 	        MOV     CX,128
+522	 074E  2B F9	 	 	        SUB     DI,CX
+523	 0750  3B 3E 0109 R	 	        CMP     DI,[BUFS]
+524	 0754  73 08	 	 	        JAE     LD2A
+525	 0756  8B 3E 0109 R	 	        MOV     DI,[BUFS]
+526	 075A  8B CB	 	 	        MOV     CX,BX
+527	 075C  2B CF	 	 	        SUB     CX,DI
+528	 075E  B0 1A	 	 	LD2A:   MOV     AL,CTLZ
+529	 0760  F2/ AE	 	 	        REPNE   SCASB
+530	 0762  75 03	 	 	        JNZ     LD3
+531	 0764  8B DF	 	 	        MOV     BX,DI
+532	 0766  4B	 	 	        DEC     BX
+533	 0767  8B 36 0109 R	 	LD3:    MOV     SI,[BUFS]       ; drop 
 	 	 	 	the CRs: copy what is between them
-520	 0740  8B CB	 	 	        MOV     CX,BX
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-13
-
-
-
-521	 0742  2B CE	 	 	        SUB     CX,SI
-522	 0744  8B DE	 	 	        MOV     BX,SI           ; BX = 
+534	 076B  8B CB	 	 	        MOV     CX,BX
+535	 076D  2B CE	 	 	        SUB     CX,SI
+536	 076F  8B DE	 	 	        MOV     BX,SI           ; BX = 
 	 	 	 	where the next part goes
-523	 0746  E3 1B	 	 	LD4:    JCXZ    LD6
-524	 0748  8B FE	 	 	        MOV     DI,SI
-525	 074A  B0 0D	 	 	        MOV     AL,CR
-526	 074C  F2/ AE	 	 	        REPNE   SCASB
-527	 074E  8B D1	 	 	        MOV     DX,CX           ; left 
+537	 0771  E3 1B	 	 	LD4:    JCXZ    LD6
+538	 0773  8B FE	 	 	        MOV     DI,SI
+539	 0775  B0 0D	 	 	        MOV     AL,CR
+540	 0777  F2/ AE	 	 	        REPNE   SCASB
+541	 0779  8B D1	 	 	        MOV     DX,CX           ; left 
 	 	 	 	after this part
-528	 0750  8B CF	 	 	        MOV     CX,DI
-529	 0752  75 01	 	 	        JNZ     LD5
-530	 0754  49	 	 	        DEC     CX              ; not t
+542	 077B  8B CF	 	 	        MOV     CX,DI
+543	 077D  75 01	 	 	        JNZ     LD5
+544	 077F  49	 	 	        DEC     CX              ; not t
 	 	 	 	he CR
-531	 0755  2B CE	 	 	LD5:    SUB     CX,SI
-532	 0757  87 FB	 	 	        XCHG    DI,BX
-533	 0759  F3/ A4	 	 	        REP     MOVSB
-534	 075B  8B F3	 	 	        MOV     SI,BX
-535	 075D  8B DF	 	 	        MOV     BX,DI
-536	 075F  8B CA	 	 	        MOV     CX,DX
-537	 0761  EB E3	 	 	        JMP     LD4
-538	 0763  89 1E 010B R	 	LD6:    MOV     [GAPS],BX
-539	 0767  A1 0109 R	 	        MOV     AX,[BUFS]       ; the c
+545	 0780  2B CE	 	 	LD5:    SUB     CX,SI
+546	 0782  87 FB	 	 	        XCHG    DI,BX
+547	 0784  F3/ A4	 	 	        REP     MOVSB
+548	 0786  8B F3	 	 	        MOV     SI,BX
+549	 0788  8B DF	 	 	        MOV     BX,DI
+550	 078A  8B CA	 	 	        MOV     CX,DX
+551	 078C  EB E3	 	 	        JMP     LD4
+552	 078E  89 1E 010B R	 	LD6:    MOV     [GAPS],BX
+553	 0792  A1 0109 R	 	        MOV     AX,[BUFS]       ; the c
 	 	 	 	ursor to the start
-540	 076A  E8 0923 R	 	        CALL    GAPMV
-541	 076D  C3	 	 	LDX:    RET
-542	 	 	 	 	
-543	 	 	 	 	;
-544	 	 	 	 	; SAVE: write name.$$$, then name.ext b
+554	 0795  E8 0963 R	 	        CALL    GAPMV
+555	 0798  C3	 	 	LDX:    RET
+556	 	 	 	 	
+557	 	 	 	 	;
+558	 	 	 	 	; SAVE: write name.$$$, then name.ext b
 	 	 	 	ecomes name.BAK and name.$$$
-545	 	 	 	 	; becomes name.ext. CF=1 if it was not 
+559	 	 	 	 	; becomes name.ext. CF=1 if it was not 
 	 	 	 	saved (the old file is as it was).
-546	 	 	 	 	;
-547	 076E  BE 0192 R	 	SAVE:   MOV     SI,OFFSET FCB
-548	 0771  BF 01B7 R	 	        MOV     DI,OFFSET TFCB
-549	 0774  B9 000C	 	 	        MOV     CX,12
-550	 0777  F3/ A4	 	 	        REP     MOVSB
-551	 0779  32 C0	 	 	        XOR     AL,AL
-552	 077B  B9 0019	 	 	        MOV     CX,25
-553	 077E  F3/ AA	 	 	        REP     STOSB
-554	 0780  BF 01C0 R	 	        MOV     DI,OFFSET TFCB+9
-555	 0783  B0 24	 	 	        MOV     AL,"$"
-556	 0785  AA	 	 	        STOSB
-557	 0786  AA	 	 	        STOSB
-558	 0787  AA	 	 	        STOSB
-559	 0788  C6 06 0155 R 00	 	        MOV     [ERRF],0
-560	 078D  C6 06 0154 R 00	 	        MOV     [DFULL],0
-561	 0792  C7 06 0152 R 0000	        MOV     WORD PTR [WCNT],0
-562	 0798  BA 01B7 R	 	        MOV     DX,OFFSET TFCB
-563	 079B  B4 13	 	 	        MOV     AH,19           ; delet
+560	 	 	 	 	;
+561	 0799  BE 0192 R	 	SAVE:   MOV     SI,OFFSET FCB
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-14
+
+
+
+562	 079C  BF 01B7 R	 	        MOV     DI,OFFSET TFCB
+563	 079F  B9 000C	 	 	        MOV     CX,12
+564	 07A2  F3/ A4	 	 	        REP     MOVSB
+565	 07A4  32 C0	 	 	        XOR     AL,AL
+566	 07A6  B9 0019	 	 	        MOV     CX,25
+567	 07A9  F3/ AA	 	 	        REP     STOSB
+568	 07AB  BF 01C0 R	 	        MOV     DI,OFFSET TFCB+9
+569	 07AE  B0 24	 	 	        MOV     AL,"$"
+570	 07B0  AA	 	 	        STOSB
+571	 07B1  AA	 	 	        STOSB
+572	 07B2  AA	 	 	        STOSB
+573	 07B3  C6 06 0155 R 00	 	        MOV     [ERRF],0
+574	 07B8  C6 06 0154 R 00	 	        MOV     [DFULL],0
+575	 07BD  C7 06 0152 R 0000	        MOV     WORD PTR [WCNT],0
+576	 07C3  BA 01B7 R	 	        MOV     DX,OFFSET TFCB
+577	 07C6  B4 13	 	 	        MOV     AH,19           ; delet
 	 	 	 	e an old one
-564	 079D  CD 21	 	 	        INT     33
-565	 079F  BA 01B7 R	 	        MOV     DX,OFFSET TFCB
-566	 07A2  B4 16	 	 	        MOV     AH,22           ; make
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-14
-
-
-
-567	 07A4  CD 21	 	 	        INT     33
-568	 07A6  0A C0	 	 	        OR      AL,AL
-569	 07A8  74 09	 	 	        JZ      SV1
-570	 07AA  C7 06 012C R 029C R	        MOV     WORD PTR [MSG],OFFSET M
+578	 07C8  CD 21	 	 	        INT     33
+579	 07CA  BA 01B7 R	 	        MOV     DX,OFFSET TFCB
+580	 07CD  B4 16	 	 	        MOV     AH,22           ; make
+581	 07CF  CD 21	 	 	        INT     33
+582	 07D1  0A C0	 	 	        OR      AL,AL
+583	 07D3  74 09	 	 	        JZ      SV1
+584	 07D5  C7 06 012C R 02B6 R	        MOV     WORD PTR [MSG],OFFSET M
 	 	 	 	DIR
-571	 07B0  E9 0867 R	 	        JMP     SVFAIL
-572	 07B3  C7 06 01C5 R 0001	SV1:    MOV     WORD PTR [TFCB+14],1
-573	 07B9  BA 1B3D R	 	        MOV     DX,OFFSET BUFFERS+WBOFF
-574	 07BC  B4 1A	 	 	        MOV     AH,26
-575	 07BE  CD 21	 	 	        INT     33
-576	 07C0  8B 36 0109 R	 	        MOV     SI,[BUFS]
-577	 07C4  8B 0E 010B R	 	        MOV     CX,[GAPS]
-578	 07C8  2B CE	 	 	        SUB     CX,SI
-579	 07CA  E8 088C R	 	        CALL    WTEXT
-580	 07CD  8B 36 010D R	 	        MOV     SI,[GAPE]
-581	 07D1  8B 0E 010F R	 	        MOV     CX,[TEND]
-582	 07D5  2B CE	 	 	        SUB     CX,SI
-583	 07D7  E8 088C R	 	        CALL    WTEXT
-584	 07DA  B0 1A	 	 	        MOV     AL,CTLZ
-585	 07DC  E8 08E8 R	 	        CALL    WBYTE
-586	 07DF  E8 08FB R	 	        CALL    WFLUSH
-587	 07E2  BA 01B7 R	 	        MOV     DX,OFFSET TFCB
-588	 07E5  B4 10	 	 	        MOV     AH,16           ; close
-589	 07E7  CD 21	 	 	        INT     33
-590	 07E9  80 3E 0154 R 00	 	        CMP     [DFULL],0
-591	 07EE  74 0F	 	 	        JZ      SV2
-592	 07F0  BA 01B7 R	 	        MOV     DX,OFFSET TFCB
-593	 07F3  B4 13	 	 	        MOV     AH,19
-594	 07F5  CD 21	 	 	        INT     33
-595	 07F7  C7 06 012C R 0287 R	        MOV     WORD PTR [MSG],OFFSET M
+585	 07DB  E9 08A7 R	 	        JMP     SVFAIL
+586	 07DE  C7 06 01C5 R 0001	SV1:    MOV     WORD PTR [TFCB+14],1
+587	 07E4  BA 1B80 R	 	        MOV     DX,OFFSET BUFFERS+WBOFF
+588	 07E7  B4 1A	 	 	        MOV     AH,26
+589	 07E9  CD 21	 	 	        INT     33
+590	 07EB  8B 36 0109 R	 	        MOV     SI,[BUFS]
+591	 07EF  8B 0E 010B R	 	        MOV     CX,[GAPS]
+592	 07F3  2B CE	 	 	        SUB     CX,SI
+593	 07F5  E8 08CC R	 	        CALL    WTEXT
+594	 07F8  8B 36 010D R	 	        MOV     SI,[GAPE]
+595	 07FC  8B 0E 010F R	 	        MOV     CX,[TEND]
+596	 0800  2B CE	 	 	        SUB     CX,SI
+597	 0802  E8 08CC R	 	        CALL    WTEXT
+598	 0805  B0 1A	 	 	        MOV     AL,CTLZ
+599	 0807  E8 0928 R	 	        CALL    WBYTE
+600	 080A  E8 093B R	 	        CALL    WFLUSH
+601	 080D  BA 01B7 R	 	        MOV     DX,OFFSET TFCB
+602	 0810  B4 10	 	 	        MOV     AH,16           ; close
+603	 0812  CD 21	 	 	        INT     33
+604	 0814  0A C0	 	 	        OR      AL,AL           ; a fai
+	 	 	 	led close: not saved either
+605	 0816  74 05	 	 	        JZ      SVCL
+606	 0818  C6 06 0154 R 01	 	        MOV     [DFULL],1
+607	 081D  80 3E 0154 R 00	 	SVCL:   CMP     [DFULL],0
+608	 0822  74 0F	 	 	        JZ      SV2
+609	 0824  BA 01B7 R	 	        MOV     DX,OFFSET TFCB
+610	 0827  B4 13	 	 	        MOV     AH,19
+611	 0829  CD 21	 	 	        INT     33
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-15
+
+
+
+612	 082B  C7 06 012C R 0287 R	        MOV     WORD PTR [MSG],OFFSET M
 	 	 	 	DFULL
-596	 07FD  EB 68	 	 	        JMP     SHORT SVFAIL
-597	 07FF  BE 0192 R	 	SV2:    MOV     SI,OFFSET FCB   ; name.
+613	 0831  EB 74	 	 	        JMP     SHORT SVFAIL
+614	 0833  BE 0192 R	 	SV2:    MOV     SI,OFFSET FCB   ; name.
 	 	 	 	BAK: delete, then name.ext -> name.BAK
-598	 0802  BF 01DC R	 	        MOV     DI,OFFSET RFCB
-599	 0805  B9 000C	 	 	        MOV     CX,12
-600	 0808  F3/ A4	 	 	        REP     MOVSB
-601	 080A  BF 01E5 R	 	        MOV     DI,OFFSET RFCB+9
-602	 080D  E8 086C R	 	        CALL    BAKEXT
-603	 0810  BA 01DC R	 	        MOV     DX,OFFSET RFCB
-604	 0813  B4 13	 	 	        MOV     AH,19
-605	 0815  CD 21	 	 	        INT     33
-606	 0817  BE 0192 R	 	        MOV     SI,OFFSET FCB
-607	 081A  BF 01DC R	 	        MOV     DI,OFFSET RFCB
-608	 081D  B9 000C	 	 	        MOV     CX,12
-609	 0820  F3/ A4	 	 	        REP     MOVSB
-610	 0822  BE 0193 R	 	        MOV     SI,OFFSET FCB+1
-611	 0825  BF 01ED R	 	        MOV     DI,OFFSET RFCB+17
-612	 0828  B9 000B	 	 	        MOV     CX,11
-613	 082B  F3/ A4	 	 	        REP     MOVSB
-614	 082D  BF 01F5 R	 	        MOV     DI,OFFSET RFCB+25
-615	 0830  E8 086C R	 	        CALL    BAKEXT
-616	 0833  BA 01DC R	 	        MOV     DX,OFFSET RFCB
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-15
-
-
-
-617	 0836  B4 17	 	 	        MOV     AH,23           ; renam
+615	 0836  BF 01DC R	 	        MOV     DI,OFFSET RFCB
+616	 0839  B9 000C	 	 	        MOV     CX,12
+617	 083C  F3/ A4	 	 	        REP     MOVSB
+618	 083E  BF 01E5 R	 	        MOV     DI,OFFSET RFCB+9
+619	 0841  E8 08AC R	 	        CALL    BAKEXT
+620	 0844  BA 01DC R	 	        MOV     DX,OFFSET RFCB
+621	 0847  B4 13	 	 	        MOV     AH,19
+622	 0849  CD 21	 	 	        INT     33
+623	 084B  BE 0192 R	 	        MOV     SI,OFFSET FCB
+624	 084E  BF 01DC R	 	        MOV     DI,OFFSET RFCB
+625	 0851  B9 000C	 	 	        MOV     CX,12
+626	 0854  F3/ A4	 	 	        REP     MOVSB
+627	 0856  BE 0193 R	 	        MOV     SI,OFFSET FCB+1
+628	 0859  BF 01ED R	 	        MOV     DI,OFFSET RFCB+17
+629	 085C  B9 000B	 	 	        MOV     CX,11
+630	 085F  F3/ A4	 	 	        REP     MOVSB
+631	 0861  BF 01F5 R	 	        MOV     DI,OFFSET RFCB+25
+632	 0864  E8 08AC R	 	        CALL    BAKEXT
+633	 0867  BA 01DC R	 	        MOV     DX,OFFSET RFCB
+634	 086A  B4 17	 	 	        MOV     AH,23           ; renam
 	 	 	 	e (a new file has none)
-618	 0838  CD 21	 	 	        INT     33
-619	 083A  BE 01B7 R	 	        MOV     SI,OFFSET TFCB  ; name.
+635	 086C  CD 21	 	 	        INT     33
+636	 086E  BE 01B7 R	 	        MOV     SI,OFFSET TFCB  ; name.
 	 	 	 	$$$ -> name.ext
-620	 083D  BF 01DC R	 	        MOV     DI,OFFSET RFCB
-621	 0840  B9 000C	 	 	        MOV     CX,12
-622	 0843  F3/ A4	 	 	        REP     MOVSB
-623	 0845  BE 0193 R	 	        MOV     SI,OFFSET FCB+1
-624	 0848  BF 01ED R	 	        MOV     DI,OFFSET RFCB+17
-625	 084B  B9 000B	 	 	        MOV     CX,11
-626	 084E  F3/ A4	 	 	        REP     MOVSB
-627	 0850  BA 01DC R	 	        MOV     DX,OFFSET RFCB
-628	 0853  B4 17	 	 	        MOV     AH,23
-629	 0855  CD 21	 	 	        INT     33
-630	 0857  C6 06 0123 R 00	 	        MOV     [MODIF],0
-631	 085C  C7 06 012C R 026B R	        MOV     WORD PTR [MSG],OFFSET M
+637	 0871  BF 01DC R	 	        MOV     DI,OFFSET RFCB
+638	 0874  B9 000C	 	 	        MOV     CX,12
+639	 0877  F3/ A4	 	 	        REP     MOVSB
+640	 0879  BE 0193 R	 	        MOV     SI,OFFSET FCB+1
+641	 087C  BF 01ED R	 	        MOV     DI,OFFSET RFCB+17
+642	 087F  B9 000B	 	 	        MOV     CX,11
+643	 0882  F3/ A4	 	 	        REP     MOVSB
+644	 0884  BA 01DC R	 	        MOV     DX,OFFSET RFCB
+645	 0887  B4 17	 	 	        MOV     AH,23
+646	 0889  CD 21	 	 	        INT     33
+647	 088B  0A C0	 	 	        OR      AL,AL           ; name.
+	 	 	 	$$$ not renamed: the text is safe in
+648	 088D  74 08	 	 	        JZ      SVOK            ; it, b
+	 	 	 	ut say so and keep MODIF
+649	 088F  C7 06 012C R 029C R	        MOV     WORD PTR [MSG],OFFSET M
+	 	 	 	REN
+650	 0895  EB 10	 	 	        JMP     SHORT SVFAIL
+651	 0897  C6 06 0123 R 00	 	SVOK:   MOV     [MODIF],0
+652	 089C  C7 06 012C R 026B R	        MOV     WORD PTR [MSG],OFFSET M
 	 	 	 	SAVED
-632	 0862  E8 0876 R	 	        CALL    AFTDOS
-633	 0865  F8	 	 	        CLC
-634	 0866  C3	 	 	        RET
-635	 0867  E8 0876 R	 	SVFAIL: CALL    AFTDOS
-636	 086A  F9	 	 	        STC
-637	 086B  C3	 	 	        RET
-638	 	 	 	 	
-639	 086C  B0 42	 	 	BAKEXT: MOV     AL,"B"
-640	 086E  AA	 	 	        STOSB
-641	 086F  B0 41	 	 	        MOV     AL,"A"
-642	 0871  AA	 	 	        STOSB
-643	 0872  B0 4B	 	 	        MOV     AL,"K"
-644	 0874  AA	 	 	        STOSB
-645	 0875  C3	 	 	        RET
-646	 	 	 	 	
-647	 	 	 	 	; AFTDOS: if DOS asked about a disk err
+653	 08A2  E8 08B6 R	 	        CALL    AFTDOS
+654	 08A5  F8	 	 	        CLC
+655	 08A6  C3	 	 	        RET
+656	 08A7  E8 08B6 R	 	SVFAIL: CALL    AFTDOS
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-16
+
+
+
+657	 08AA  F9	 	 	        STC
+658	 08AB  C3	 	 	        RET
+659	 	 	 	 	
+660	 08AC  B0 42	 	 	BAKEXT: MOV     AL,"B"
+661	 08AE  AA	 	 	        STOSB
+662	 08AF  B0 41	 	 	        MOV     AL,"A"
+663	 08B1  AA	 	 	        STOSB
+664	 08B2  B0 4B	 	 	        MOV     AL,"K"
+665	 08B4  AA	 	 	        STOSB
+666	 08B5  C3	 	 	        RET
+667	 	 	 	 	
+668	 	 	 	 	; AFTDOS: if DOS asked about a disk err
 	 	 	 	or, its question is on the screen
-648	 0876  80 3E 0155 R 00	 	AFTDOS: CMP     [ERRF],0
-649	 087B  74 03	 	 	        JZ      AFX
-650	 087D  E8 0DC7 R	 	        CALL    REDRAW
-651	 0880  C3	 	 	AFX:    RET
-652	 	 	 	 	
-653	 	 	 	 	; CRIT: INT 24H. Note it, then DOS's ow
+669	 08B6  80 3E 0155 R 00	 	AFTDOS: CMP     [ERRF],0
+670	 08BB  74 03	 	 	        JZ      AFX
+671	 08BD  E8 0E0A R	 	        CALL    REDRAW
+672	 08C0  C3	 	 	AFX:    RET
+673	 	 	 	 	
+674	 	 	 	 	; CRIT: INT 24H. Note it, then DOS's ow
 	 	 	 	n handler asks the question.
-654	 0881  2E: C6 06 0155 R 01	CRIT:   MOV     CS:[ERRF],1
-655	 0887  2E: FF 2E 0156 R	 	        JMP     DWORD PTR CS:[OLD24]
-656	 	 	 	 	
-657	 	 	 	 	; WTEXT: CX bytes at SI to the file, ea
+675	 08C1  2E: C6 06 0155 R 01	CRIT:   MOV     CS:[ERRF],1
+676	 08C7  2E: FF 2E 0156 R	 	        JMP     DWORD PTR CS:[OLD24]
+677	 	 	 	 	
+678	 	 	 	 	; WTEXT: CX bytes at SI to the file, ea
 	 	 	 	ch LF as CR LF
-658	 088C  E3 2B	 	 	WTEXT:  JCXZ    WTX
-659	 088E  8B FE	 	 	        MOV     DI,SI
-660	 0890  B0 0A	 	 	        MOV     AL,LF
-661	 0892  F2/ AE	 	 	        REPNE   SCASB
-662	 0894  8B D1	 	 	        MOV     DX,CX           ; left 
+679	 08CC  E3 2B	 	 	WTEXT:  JCXZ    WTX
+680	 08CE  8B FE	 	 	        MOV     DI,SI
+681	 08D0  B0 0A	 	 	        MOV     AL,LF
+682	 08D2  F2/ AE	 	 	        REPNE   SCASB
+683	 08D4  8B D1	 	 	        MOV     DX,CX           ; left 
 	 	 	 	after this line
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-16
-
-
-
-663	 0896  8B CF	 	 	        MOV     CX,DI
-664	 0898  B4 00	 	 	        MOV     AH,0
-665	 089A  75 03	 	 	        JNZ     WT1
-666	 089C  49	 	 	        DEC     CX              ; not t
+684	 08D6  8B CF	 	 	        MOV     CX,DI
+685	 08D8  B4 00	 	 	        MOV     AH,0
+686	 08DA  75 03	 	 	        JNZ     WT1
+687	 08DC  49	 	 	        DEC     CX              ; not t
 	 	 	 	he LF
-667	 089D  B4 01	 	 	        MOV     AH,1
-668	 089F  2B CE	 	 	WT1:    SUB     CX,SI
-669	 08A1  52	 	 	        PUSH    DX
-670	 08A2  50	 	 	        PUSH    AX
-671	 08A3  E8 08BA R	 	        CALL    WCOPY
-672	 08A6  58	 	 	        POP     AX
-673	 08A7  0A E4	 	 	        OR      AH,AH
-674	 08A9  74 0B	 	 	        JZ      WT2
-675	 08AB  46	 	 	        INC     SI
-676	 08AC  B0 0D	 	 	        MOV     AL,CR
-677	 08AE  E8 08E8 R	 	        CALL    WBYTE
-678	 08B1  B0 0A	 	 	        MOV     AL,LF
-679	 08B3  E8 08E8 R	 	        CALL    WBYTE
-680	 08B6  59	 	 	WT2:    POP     CX
-681	 08B7  EB D3	 	 	        JMP     WTEXT
-682	 08B9  C3	 	 	WTX:    RET
-683	 	 	 	 	
-684	 	 	 	 	; WCOPY: CX bytes at SI to the write bu
+688	 08DD  B4 01	 	 	        MOV     AH,1
+689	 08DF  2B CE	 	 	WT1:    SUB     CX,SI
+690	 08E1  52	 	 	        PUSH    DX
+691	 08E2  50	 	 	        PUSH    AX
+692	 08E3  E8 08FA R	 	        CALL    WCOPY
+693	 08E6  58	 	 	        POP     AX
+694	 08E7  0A E4	 	 	        OR      AH,AH
+695	 08E9  74 0B	 	 	        JZ      WT2
+696	 08EB  46	 	 	        INC     SI
+697	 08EC  B0 0D	 	 	        MOV     AL,CR
+698	 08EE  E8 0928 R	 	        CALL    WBYTE
+699	 08F1  B0 0A	 	 	        MOV     AL,LF
+700	 08F3  E8 0928 R	 	        CALL    WBYTE
+701	 08F6  59	 	 	WT2:    POP     CX
+702	 08F7  EB D3	 	 	        JMP     WTEXT
+703	 08F9  C3	 	 	WTX:    RET
+704	 	 	 	 	
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-17
+
+
+
+705	 	 	 	 	; WCOPY: CX bytes at SI to the write bu
 	 	 	 	ffer
-685	 08BA  E3 FD	 	 	WCOPY:  JCXZ    WTX
-686	 08BC  8B 3E 0152 R	 	        MOV     DI,[WCNT]
-687	 08C0  B8 0800	 	 	        MOV     AX,WBSZ
-688	 08C3  2B C7	 	 	        SUB     AX,DI
-689	 08C5  81 C7 1B3D R	 	        ADD     DI,OFFSET BUFFERS+WBOFF
-690	 08C9  8B D1	 	 	        MOV     DX,CX
-691	 08CB  3B C8	 	 	        CMP     CX,AX
-692	 08CD  76 02	 	 	        JBE     WC1
-693	 08CF  8B C8	 	 	        MOV     CX,AX
-694	 08D1  2B D1	 	 	WC1:    SUB     DX,CX
-695	 08D3  01 0E 0152 R	 	        ADD     [WCNT],CX
-696	 08D7  F3/ A4	 	 	        REP     MOVSB
-697	 08D9  81 3E 0152 R 0800	        CMP     WORD PTR [WCNT],WBSZ
-698	 08DF  72 03	 	 	        JB      WC2
-699	 08E1  E8 08FB R	 	        CALL    WFLUSH
-700	 08E4  8B CA	 	 	WC2:    MOV     CX,DX
-701	 08E6  EB D2	 	 	        JMP     WCOPY
-702	 	 	 	 	
-703	 	 	 	 	; WBYTE: AL to the write buffer
-704	 08E8  8B 3E 0152 R	 	WBYTE:  MOV     DI,[WCNT]
-705	 08EC  88 85 1B3D R	 	        MOV     BYTE PTR BUFFERS+WBOFF[
+706	 08FA  E3 FD	 	 	WCOPY:  JCXZ    WTX
+707	 08FC  8B 3E 0152 R	 	        MOV     DI,[WCNT]
+708	 0900  B8 0800	 	 	        MOV     AX,WBSZ
+709	 0903  2B C7	 	 	        SUB     AX,DI
+710	 0905  81 C7 1B80 R	 	        ADD     DI,OFFSET BUFFERS+WBOFF
+711	 0909  8B D1	 	 	        MOV     DX,CX
+712	 090B  3B C8	 	 	        CMP     CX,AX
+713	 090D  76 02	 	 	        JBE     WC1
+714	 090F  8B C8	 	 	        MOV     CX,AX
+715	 0911  2B D1	 	 	WC1:    SUB     DX,CX
+716	 0913  01 0E 0152 R	 	        ADD     [WCNT],CX
+717	 0917  F3/ A4	 	 	        REP     MOVSB
+718	 0919  81 3E 0152 R 0800	        CMP     WORD PTR [WCNT],WBSZ
+719	 091F  72 03	 	 	        JB      WC2
+720	 0921  E8 093B R	 	        CALL    WFLUSH
+721	 0924  8B CA	 	 	WC2:    MOV     CX,DX
+722	 0926  EB D2	 	 	        JMP     WCOPY
+723	 	 	 	 	
+724	 	 	 	 	; WBYTE: AL to the write buffer
+725	 0928  8B 3E 0152 R	 	WBYTE:  MOV     DI,[WCNT]
+726	 092C  88 85 1B80 R	 	        MOV     BYTE PTR BUFFERS+WBOFF[
 	 	 	 	DI],AL
-706	 08F0  47	 	 	        INC     DI
-707	 08F1  89 3E 0152 R	 	        MOV     [WCNT],DI
-708	 08F5  81 FF 0800	 	        CMP     DI,WBSZ
-709	 08F9  72 BE	 	 	        JB      WTX
-710	 	 	 	 	
-711	 	 	 	 	; WFLUSH: the write buffer to the file 
+727	 0930  47	 	 	        INC     DI
+728	 0931  89 3E 0152 R	 	        MOV     [WCNT],DI
+729	 0935  81 FF 0800	 	        CMP     DI,WBSZ
+730	 0939  72 BE	 	 	        JB      WTX
+731	 	 	 	 	
+732	 	 	 	 	; WFLUSH: the write buffer to the file 
 	 	 	 	(random block write); after a
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-17
-
-
-
-712	 	 	 	 	; failed write, nothing more is written
-713	 08FB  8B 0E 0152 R	 	WFLUSH: MOV     CX,[WCNT]
-714	 08FF  E3 B8	 	 	        JCXZ    WTX
-715	 0901  C7 06 0152 R 0000	        MOV     WORD PTR [WCNT],0
-716	 0907  80 3E 0154 R 00	 	        CMP     [DFULL],0
-717	 090C  75 AB	 	 	        JNZ     WTX
-718	 090E  56	 	 	        PUSH    SI
-719	 090F  52	 	 	        PUSH    DX
-720	 0910  BA 01B7 R	 	        MOV     DX,OFFSET TFCB
-721	 0913  B4 28	 	 	        MOV     AH,40
-722	 0915  CD 21	 	 	        INT     33
-723	 0917  5A	 	 	        POP     DX
-724	 0918  5E	 	 	        POP     SI
-725	 0919  0A C0	 	 	        OR      AL,AL
-726	 091B  74 9C	 	 	        JZ      WTX
-727	 091D  C6 06 0154 R 01	 	        MOV     [DFULL],1
-728	 0922  C3	 	 	        RET
-729	 	 	 	 	
-730	 	 	 	 	; -------------------------------------
+733	 	 	 	 	; failed write, nothing more is written
+734	 093B  8B 0E 0152 R	 	WFLUSH: MOV     CX,[WCNT]
+735	 093F  E3 B8	 	 	        JCXZ    WTX
+736	 0941  C7 06 0152 R 0000	        MOV     WORD PTR [WCNT],0
+737	 0947  80 3E 0154 R 00	 	        CMP     [DFULL],0
+738	 094C  75 AB	 	 	        JNZ     WTX
+739	 094E  56	 	 	        PUSH    SI
+740	 094F  52	 	 	        PUSH    DX
+741	 0950  BA 01B7 R	 	        MOV     DX,OFFSET TFCB
+742	 0953  B4 28	 	 	        MOV     AH,40
+743	 0955  CD 21	 	 	        INT     33
+744	 0957  5A	 	 	        POP     DX
+745	 0958  5E	 	 	        POP     SI
+746	 0959  0A C0	 	 	        OR      AL,AL
+747	 095B  74 9C	 	 	        JZ      WTX
+748	 095D  C6 06 0154 R 01	 	        MOV     [DFULL],1
+749	 0962  C3	 	 	        RET
+750	 	 	 	 	
+751	 	 	 	 	; -------------------------------------
 	 	 	 	--------------------------- the text
-731	 	 	 	 	;
-732	 	 	 	 	; GAPMV: the gap to address AX, AX <= G
+752	 	 	 	 	;
+753	 	 	 	 	; GAPMV: the gap to address AX, AX <= G
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-18
+
+
+
 	 	 	 	APS (the cursor goes back) or
-733	 	 	 	 	; AX >= GAPE (forward)
-734	 	 	 	 	;
-735	 0923  3B 06 010B R	 	GAPMV:  CMP     AX,[GAPS]
-736	 0927  77 1F	 	 	        JA      GM2
-737	 0929  8B 0E 010B R	 	        MOV     CX,[GAPS]
-738	 092D  2B C8	 	 	        SUB     CX,AX
-739	 092F  74 16	 	 	        JZ      GMX
-740	 0931  8B 36 010B R	 	        MOV     SI,[GAPS]
-741	 0935  4E	 	 	        DEC     SI
-742	 0936  8B 3E 010D R	 	        MOV     DI,[GAPE]
-743	 093A  4F	 	 	        DEC     DI
-744	 093B  FD	 	 	        STD
-745	 093C  F3/ A4	 	 	        REP     MOVSB
-746	 093E  FC	 	 	        CLD
-747	 093F  47	 	 	        INC     DI
-748	 0940  89 3E 010D R	 	        MOV     [GAPE],DI
-749	 0944  A3 010B R	 	        MOV     [GAPS],AX
-750	 0947  C3	 	 	GMX:    RET
-751	 0948  8B C8	 	 	GM2:    MOV     CX,AX
-752	 094A  2B 0E 010D R	 	        SUB     CX,[GAPE]
-753	 094E  74 F7	 	 	        JZ      GMX
-754	 0950  8B 36 010D R	 	        MOV     SI,[GAPE]
-755	 0954  8B 3E 010B R	 	        MOV     DI,[GAPS]
-756	 0958  F3/ A4	 	 	        REP     MOVSB
-757	 095A  89 3E 010B R	 	        MOV     [GAPS],DI
-758	 095E  A3 010D R	 	        MOV     [GAPE],AX
-759	 0961  C3	 	 	        RET
-760	 	 	 	 	
-761	 	 	 	 	; MOVETO: GAPMV, and LINE counts the LF
+754	 	 	 	 	; AX >= GAPE (forward)
+755	 	 	 	 	;
+756	 0963  3B 06 010B R	 	GAPMV:  CMP     AX,[GAPS]
+757	 0967  77 1F	 	 	        JA      GM2
+758	 0969  8B 0E 010B R	 	        MOV     CX,[GAPS]
+759	 096D  2B C8	 	 	        SUB     CX,AX
+760	 096F  74 16	 	 	        JZ      GMX
+761	 0971  8B 36 010B R	 	        MOV     SI,[GAPS]
+762	 0975  4E	 	 	        DEC     SI
+763	 0976  8B 3E 010D R	 	        MOV     DI,[GAPE]
+764	 097A  4F	 	 	        DEC     DI
+765	 097B  FD	 	 	        STD
+766	 097C  F3/ A4	 	 	        REP     MOVSB
+767	 097E  FC	 	 	        CLD
+768	 097F  47	 	 	        INC     DI
+769	 0980  89 3E 010D R	 	        MOV     [GAPE],DI
+770	 0984  A3 010B R	 	        MOV     [GAPS],AX
+771	 0987  C3	 	 	GMX:    RET
+772	 0988  8B C8	 	 	GM2:    MOV     CX,AX
+773	 098A  2B 0E 010D R	 	        SUB     CX,[GAPE]
+774	 098E  74 F7	 	 	        JZ      GMX
+775	 0990  8B 36 010D R	 	        MOV     SI,[GAPE]
+776	 0994  8B 3E 010B R	 	        MOV     DI,[GAPS]
+777	 0998  F3/ A4	 	 	        REP     MOVSB
+778	 099A  89 3E 010B R	 	        MOV     [GAPS],DI
+779	 099E  A3 010D R	 	        MOV     [GAPE],AX
+780	 09A1  C3	 	 	        RET
+781	 	 	 	 	
+782	 	 	 	 	; MOVETO: GAPMV, and LINE counts the LF
 	 	 	 	s passed
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-18
+783	 09A2  50	 	 	MOVETO: PUSH    AX
+784	 09A3  3B 06 010B R	 	        CMP     AX,[GAPS]
+785	 09A7  77 11	 	 	        JA      MT1
+786	 09A9  8B F8	 	 	        MOV     DI,AX
+787	 09AB  8B 0E 010B R	 	        MOV     CX,[GAPS]
+788	 09AF  2B C8	 	 	        SUB     CX,AX
+789	 09B1  E8 09CC R	 	        CALL    CNTLF
+790	 09B4  29 16 0115 R	 	        SUB     [LINE],DX
+791	 09B8  EB 0F	 	 	        JMP     SHORT MT2
+792	 09BA  8B 3E 010D R	 	MT1:    MOV     DI,[GAPE]
+793	 09BE  8B C8	 	 	        MOV     CX,AX
+794	 09C0  2B CF	 	 	        SUB     CX,DI
+795	 09C2  E8 09CC R	 	        CALL    CNTLF
+796	 09C5  01 16 0115 R	 	        ADD     [LINE],DX
+797	 09C9  58	 	 	MT2:    POP     AX
+798	 09CA  EB 97	 	 	        JMP     GAPMV
+799	 	 	 	 	
+800	 	 	 	 	; CNTLF: DX = LFs in the CX bytes at DI
+801	 09CC  33 D2	 	 	CNTLF:  XOR     DX,DX
+802	 09CE  B0 0A	 	 	        MOV     AL,LF
+803	 09D0  E3 07	 	 	CN1:    JCXZ    CNX
+804	 09D2  F2/ AE	 	 	        REPNE   SCASB
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-19
 
 
 
-762	 0962  50	 	 	MOVETO: PUSH    AX
-763	 0963  3B 06 010B R	 	        CMP     AX,[GAPS]
-764	 0967  77 11	 	 	        JA      MT1
-765	 0969  8B F8	 	 	        MOV     DI,AX
-766	 096B  8B 0E 010B R	 	        MOV     CX,[GAPS]
-767	 096F  2B C8	 	 	        SUB     CX,AX
-768	 0971  E8 098C R	 	        CALL    CNTLF
-769	 0974  29 16 0115 R	 	        SUB     [LINE],DX
-770	 0978  EB 0F	 	 	        JMP     SHORT MT2
-771	 097A  8B 3E 010D R	 	MT1:    MOV     DI,[GAPE]
-772	 097E  8B C8	 	 	        MOV     CX,AX
-773	 0980  2B CF	 	 	        SUB     CX,DI
-774	 0982  E8 098C R	 	        CALL    CNTLF
-775	 0985  01 16 0115 R	 	        ADD     [LINE],DX
-776	 0989  58	 	 	MT2:    POP     AX
-777	 098A  EB 97	 	 	        JMP     GAPMV
-778	 	 	 	 	
-779	 	 	 	 	; CNTLF: DX = LFs in the CX bytes at DI
-780	 098C  33 D2	 	 	CNTLF:  XOR     DX,DX
-781	 098E  B0 0A	 	 	        MOV     AL,LF
-782	 0990  E3 07	 	 	CN1:    JCXZ    CNX
-783	 0992  F2/ AE	 	 	        REPNE   SCASB
-784	 0994  75 03	 	 	        JNZ     CNX
-785	 0996  42	 	 	        INC     DX
-786	 0997  EB F7	 	 	        JMP     CN1
-787	 0999  C3	 	 	CNX:    RET
-788	 	 	 	 	
-789	 	 	 	 	; LSOF: AX = start of the line that hol
+805	 09D4  75 03	 	 	        JNZ     CNX
+806	 09D6  42	 	 	        INC     DX
+807	 09D7  EB F7	 	 	        JMP     CN1
+808	 09D9  C3	 	 	CNX:    RET
+809	 	 	 	 	
+810	 	 	 	 	; LSOF: AX = start of the line that hol
 	 	 	 	ds the byte before address AX
-790	 	 	 	 	; (AX at most GAPS)
-791	 099A  8B C8	 	 	LSOF:   MOV     CX,AX
-792	 099C  2B 0E 0109 R	 	        SUB     CX,[BUFS]
-793	 09A0  74 12	 	 	        JZ      LSX
-794	 09A2  8B F8	 	 	        MOV     DI,AX
-795	 09A4  4F	 	 	        DEC     DI
-796	 09A5  B0 0A	 	 	        MOV     AL,LF
-797	 09A7  FD	 	 	        STD
-798	 09A8  F2/ AE	 	 	        REPNE   SCASB
-799	 09AA  FC	 	 	        CLD
-800	 09AB  75 04	 	 	        JNZ     LS1
-801	 09AD  8D 45 02	 	 	        LEA     AX,[DI+2]
-802	 09B0  C3	 	 	        RET
-803	 09B1  A1 0109 R	 	LS1:    MOV     AX,[BUFS]
-804	 09B4  C3	 	 	LSX:    RET
-805	 	 	 	 	
-806	 	 	 	 	; NEXTLF: DI = the next LF from DI on, 
+811	 	 	 	 	; (AX at most GAPS)
+812	 09DA  8B C8	 	 	LSOF:   MOV     CX,AX
+813	 09DC  2B 0E 0109 R	 	        SUB     CX,[BUFS]
+814	 09E0  74 12	 	 	        JZ      LSX
+815	 09E2  8B F8	 	 	        MOV     DI,AX
+816	 09E4  4F	 	 	        DEC     DI
+817	 09E5  B0 0A	 	 	        MOV     AL,LF
+818	 09E7  FD	 	 	        STD
+819	 09E8  F2/ AE	 	 	        REPNE   SCASB
+820	 09EA  FC	 	 	        CLD
+821	 09EB  75 04	 	 	        JNZ     LS1
+822	 09ED  8D 45 02	 	 	        LEA     AX,[DI+2]
+823	 09F0  C3	 	 	        RET
+824	 09F1  A1 0109 R	 	LS1:    MOV     AX,[BUFS]
+825	 09F4  C3	 	 	LSX:    RET
+826	 	 	 	 	
+827	 	 	 	 	; NEXTLF: DI = the next LF from DI on, 
 	 	 	 	below BX; CF=1 none, DI = BX
-807	 09B5  8B CB	 	 	NEXTLF: MOV     CX,BX
-808	 09B7  2B CF	 	 	        SUB     CX,DI
-809	 09B9  74 09	 	 	        JZ      NLN
-810	 09BB  B0 0A	 	 	        MOV     AL,LF
-811	 09BD  F2/ AE	 	 	        REPNE   SCASB
-812	 09BF  75 03	 	 	        JNZ     NLN
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-19
-
-
-
-813	 09C1  4F	 	 	        DEC     DI
-814	 09C2  F8	 	 	        CLC
-815	 09C3  C3	 	 	        RET
-816	 09C4  8B FB	 	 	NLN:    MOV     DI,BX
-817	 09C6  F9	 	 	        STC
-818	 09C7  C3	 	 	        RET
-819	 	 	 	 	
-820	 	 	 	 	; WALK: SI = the place in the line SI..
+828	 09F5  8B CB	 	 	NEXTLF: MOV     CX,BX
+829	 09F7  2B CF	 	 	        SUB     CX,DI
+830	 09F9  74 09	 	 	        JZ      NLN
+831	 09FB  B0 0A	 	 	        MOV     AL,LF
+832	 09FD  F2/ AE	 	 	        REPNE   SCASB
+833	 09FF  75 03	 	 	        JNZ     NLN
+834	 0A01  4F	 	 	        DEC     DI
+835	 0A02  F8	 	 	        CLC
+836	 0A03  C3	 	 	        RET
+837	 0A04  8B FB	 	 	NLN:    MOV     DI,BX
+838	 0A06  F9	 	 	        STC
+839	 0A07  C3	 	 	        RET
+840	 	 	 	 	
+841	 	 	 	 	; WALK: SI = the place in the line SI..
 	 	 	 	BX-1 at column DX, or the last
-821	 	 	 	 	; one before it
-822	 09C8  8B CB	 	 	WALK:   MOV     CX,BX
-823	 09CA  2B CE	 	 	        SUB     CX,SI
-824	 09CC  3B CA	 	 	        CMP     CX,DX
-825	 09CE  76 02	 	 	        JBE     WK1
-826	 09D0  8B CA	 	 	        MOV     CX,DX
-827	 09D2  E3 0C	 	 	WK1:    JCXZ    WKX
-828	 09D4  8B FE	 	 	        MOV     DI,SI
-829	 09D6  B0 09	 	 	        MOV     AL,TAB
-830	 09D8  51	 	 	        PUSH    CX
-831	 09D9  F2/ AE	 	 	        REPNE   SCASB
-832	 09DB  59	 	 	        POP     CX
-833	 09DC  74 03	 	 	        JZ      WK2
-834	 09DE  03 F1	 	 	        ADD     SI,CX           ; no ta
+842	 	 	 	 	; one before it
+843	 0A08  8B CB	 	 	WALK:   MOV     CX,BX
+844	 0A0A  2B CE	 	 	        SUB     CX,SI
+845	 0A0C  3B CA	 	 	        CMP     CX,DX
+846	 0A0E  76 02	 	 	        JBE     WK1
+847	 0A10  8B CA	 	 	        MOV     CX,DX
+848	 0A12  E3 0C	 	 	WK1:    JCXZ    WKX
+849	 0A14  8B FE	 	 	        MOV     DI,SI
+850	 0A16  B0 09	 	 	        MOV     AL,TAB
+851	 0A18  51	 	 	        PUSH    CX
+852	 0A19  F2/ AE	 	 	        REPNE   SCASB
+853	 0A1B  59	 	 	        POP     CX
+854	 0A1C  74 03	 	 	        JZ      WK2
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-20
+
+
+
+855	 0A1E  03 F1	 	 	        ADD     SI,CX           ; no ta
 	 	 	 	b: a column a byte
-835	 09E0  C3	 	 	WKX:    RET
-836	 09E1  33 C9	 	 	WK2:    XOR     CX,CX
-837	 09E3  3B F3	 	 	WK3:    CMP     SI,BX
-838	 09E5  73 F9	 	 	        JAE     WKX
-839	 09E7  8B F9	 	 	        MOV     DI,CX
-840	 09E9  80 3C 09	 	 	        CMP     BYTE PTR [SI],TAB
-841	 09EC  75 04	 	 	        JNZ     WK4
-842	 09EE  81 CF 0007	 	        OR      DI,7
-843	 09F2  47	 	 	WK4:    INC     DI              ; the c
+856	 0A20  C3	 	 	WKX:    RET
+857	 0A21  33 C9	 	 	WK2:    XOR     CX,CX
+858	 0A23  3B F3	 	 	WK3:    CMP     SI,BX
+859	 0A25  73 F9	 	 	        JAE     WKX
+860	 0A27  8B F9	 	 	        MOV     DI,CX
+861	 0A29  80 3C 09	 	 	        CMP     BYTE PTR [SI],TAB
+862	 0A2C  75 04	 	 	        JNZ     WK4
+863	 0A2E  81 CF 0007	 	        OR      DI,7
+864	 0A32  47	 	 	WK4:    INC     DI              ; the c
 	 	 	 	olumn after this byte
-844	 09F3  3B FA	 	 	        CMP     DI,DX
-845	 09F5  77 E9	 	 	        JA      WKX
-846	 09F7  8B CF	 	 	        MOV     CX,DI
-847	 09F9  46	 	 	        INC     SI
-848	 09FA  EB E7	 	 	        JMP     WK3
-849	 	 	 	 	
-850	 	 	 	 	; ISWD: CF=1 if AL is a letter or a dig
+865	 0A33  3B FA	 	 	        CMP     DI,DX
+866	 0A35  77 E9	 	 	        JA      WKX
+867	 0A37  8B CF	 	 	        MOV     CX,DI
+868	 0A39  46	 	 	        INC     SI
+869	 0A3A  EB E7	 	 	        JMP     WK3
+870	 	 	 	 	
+871	 	 	 	 	; ISWD: CF=1 if AL is a letter or a dig
 	 	 	 	it
-851	 09FC  3C 30	 	 	ISWD:   CMP     AL,"0"
-852	 09FE  72 13	 	 	        JB      IWN
-853	 0A00  3C 3A	 	 	        CMP     AL,"9"+1
-854	 0A02  72 0E	 	 	        JB      IWX
-855	 0A04  3C 41	 	 	        CMP     AL,"A"
-856	 0A06  72 0B	 	 	        JB      IWN
-857	 0A08  3C 5B	 	 	        CMP     AL,"Z"+1
-858	 0A0A  72 06	 	 	        JB      IWX
-859	 0A0C  3C 61	 	 	        CMP     AL,"a"
-860	 0A0E  72 03	 	 	        JB      IWN
-861	 0A10  3C 7B	 	 	        CMP     AL,"z"+1
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-20
-
-
-
-862	 0A12  C3	 	 	IWX:    RET
-863	 0A13  F8	 	 	IWN:    CLC
-864	 0A14  C3	 	 	        RET
-865	 	 	 	 	
-866	 	 	 	 	; -------------------------------------
+872	 0A3C  3C 30	 	 	ISWD:   CMP     AL,"0"
+873	 0A3E  72 13	 	 	        JB      IWN
+874	 0A40  3C 3A	 	 	        CMP     AL,"9"+1
+875	 0A42  72 0E	 	 	        JB      IWX
+876	 0A44  3C 41	 	 	        CMP     AL,"A"
+877	 0A46  72 0B	 	 	        JB      IWN
+878	 0A48  3C 5B	 	 	        CMP     AL,"Z"+1
+879	 0A4A  72 06	 	 	        JB      IWX
+880	 0A4C  3C 61	 	 	        CMP     AL,"a"
+881	 0A4E  72 03	 	 	        JB      IWN
+882	 0A50  3C 7B	 	 	        CMP     AL,"z"+1
+883	 0A52  C3	 	 	IWX:    RET
+884	 0A53  F8	 	 	IWN:    CLC
+885	 0A54  C3	 	 	        RET
+886	 	 	 	 	
+887	 	 	 	 	; -------------------------------------
 	 	 	 	--------------------------- moving
-867	 0A15  A1 010B R	 	LEFTK:  MOV     AX,[GAPS]
-868	 0A18  3B 06 0109 R	 	        CMP     AX,[BUFS]
-869	 0A1C  74 11	 	 	        JZ      MVX
-870	 0A1E  48	 	 	        DEC     AX
-871	 0A1F  E9 0962 R	 	        JMP     MOVETO
-872	 	 	 	 	
-873	 0A22  A1 010D R	 	RIGHT:  MOV     AX,[GAPE]
-874	 0A25  3B 06 010F R	 	        CMP     AX,[TEND]
-875	 0A29  74 04	 	 	        JZ      MVX
-876	 0A2B  40	 	 	        INC     AX
-877	 0A2C  E9 0962 R	 	        JMP     MOVETO
-878	 0A2F  C3	 	 	MVX:    RET
-879	 	 	 	 	
-880	 	 	 	 	; UP, DOWN: to the column GOAL of the l
+888	 0A55  A1 010B R	 	LEFTK:  MOV     AX,[GAPS]
+889	 0A58  3B 06 0109 R	 	        CMP     AX,[BUFS]
+890	 0A5C  74 11	 	 	        JZ      MVX
+891	 0A5E  48	 	 	        DEC     AX
+892	 0A5F  E9 09A2 R	 	        JMP     MOVETO
+893	 	 	 	 	
+894	 0A62  A1 010D R	 	RIGHT:  MOV     AX,[GAPE]
+895	 0A65  3B 06 010F R	 	        CMP     AX,[TEND]
+896	 0A69  74 04	 	 	        JZ      MVX
+897	 0A6B  40	 	 	        INC     AX
+898	 0A6C  E9 09A2 R	 	        JMP     MOVETO
+899	 0A6F  C3	 	 	MVX:    RET
+900	 	 	 	 	
+901	 	 	 	 	; UP, DOWN: to the column GOAL of the l
 	 	 	 	ine above, below; CF=1 if none
-881	 0A30  C6 06 0128 R 01	 	UP:     MOV     [VERT],1
-882	 0A35  A1 010B R	 	        MOV     AX,[GAPS]
-883	 0A38  E8 099A R	 	        CALL    LSOF
-884	 0A3B  3B 06 0109 R	 	        CMP     AX,[BUFS]
-885	 0A3F  74 1A	 	 	        JZ      UPN
-886	 0A41  8B D8	 	 	        MOV     BX,AX
-887	 0A43  4B	 	 	        DEC     BX              ; the L
+902	 0A70  C6 06 0128 R 01	 	UP:     MOV     [VERT],1
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-21
+
+
+
+903	 0A75  A1 010B R	 	        MOV     AX,[GAPS]
+904	 0A78  E8 09DA R	 	        CALL    LSOF
+905	 0A7B  3B 06 0109 R	 	        CMP     AX,[BUFS]
+906	 0A7F  74 1A	 	 	        JZ      UPN
+907	 0A81  8B D8	 	 	        MOV     BX,AX
+908	 0A83  4B	 	 	        DEC     BX              ; the L
 	 	 	 	F that ends the line above
-888	 0A44  8B C3	 	 	        MOV     AX,BX
-889	 0A46  53	 	 	        PUSH    BX
-890	 0A47  E8 099A R	 	        CALL    LSOF
-891	 0A4A  5B	 	 	        POP     BX
-892	 0A4B  8B F0	 	 	        MOV     SI,AX
-893	 0A4D  8B 16 0126 R	 	        MOV     DX,[GOAL]
-894	 0A51  E8 09C8 R	 	        CALL    WALK
-895	 0A54  8B C6	 	 	        MOV     AX,SI
-896	 0A56  E8 0962 R	 	        CALL    MOVETO
-897	 0A59  F8	 	 	        CLC
-898	 0A5A  C3	 	 	        RET
-899	 0A5B  F9	 	 	UPN:    STC
-900	 0A5C  C3	 	 	        RET
-901	 	 	 	 	
-902	 0A5D  C6 06 0128 R 01	 	DOWN:   MOV     [VERT],1
-903	 0A62  8B 3E 010D R	 	        MOV     DI,[GAPE]
-904	 0A66  8B 1E 010F R	 	        MOV     BX,[TEND]
-905	 0A6A  E8 09B5 R	 	        CALL    NEXTLF
-906	 0A6D  72 17	 	 	        JB      DNX
-907	 0A6F  47	 	 	        INC     DI
-908	 0A70  8B F7	 	 	        MOV     SI,DI
-909	 0A72  56	 	 	        PUSH    SI
-910	 0A73  E8 09B5 R	 	        CALL    NEXTLF
-911	 0A76  8B DF	 	 	        MOV     BX,DI
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-21
-
-
-
-912	 0A78  5E	 	 	        POP     SI
-913	 0A79  8B 16 0126 R	 	        MOV     DX,[GOAL]
-914	 0A7D  E8 09C8 R	 	        CALL    WALK
-915	 0A80  8B C6	 	 	        MOV     AX,SI
-916	 0A82  E8 0962 R	 	        CALL    MOVETO
-917	 0A85  F8	 	 	        CLC
-918	 0A86  C3	 	 	DNX:    RET
-919	 	 	 	 	
-920	 	 	 	 	; page down, up: the cursor stays on it
+909	 0A84  8B C3	 	 	        MOV     AX,BX
+910	 0A86  53	 	 	        PUSH    BX
+911	 0A87  E8 09DA R	 	        CALL    LSOF
+912	 0A8A  5B	 	 	        POP     BX
+913	 0A8B  8B F0	 	 	        MOV     SI,AX
+914	 0A8D  8B 16 0126 R	 	        MOV     DX,[GOAL]
+915	 0A91  E8 0A08 R	 	        CALL    WALK
+916	 0A94  8B C6	 	 	        MOV     AX,SI
+917	 0A96  E8 09A2 R	 	        CALL    MOVETO
+918	 0A99  F8	 	 	        CLC
+919	 0A9A  C3	 	 	        RET
+920	 0A9B  F9	 	 	UPN:    STC
+921	 0A9C  C3	 	 	        RET
+922	 	 	 	 	
+923	 0A9D  C6 06 0128 R 01	 	DOWN:   MOV     [VERT],1
+924	 0AA2  8B 3E 010D R	 	        MOV     DI,[GAPE]
+925	 0AA6  8B 1E 010F R	 	        MOV     BX,[TEND]
+926	 0AAA  E8 09F5 R	 	        CALL    NEXTLF
+927	 0AAD  72 17	 	 	        JB      DNX
+928	 0AAF  47	 	 	        INC     DI
+929	 0AB0  8B F7	 	 	        MOV     SI,DI
+930	 0AB2  56	 	 	        PUSH    SI
+931	 0AB3  E8 09F5 R	 	        CALL    NEXTLF
+932	 0AB6  8B DF	 	 	        MOV     BX,DI
+933	 0AB8  5E	 	 	        POP     SI
+934	 0AB9  8B 16 0126 R	 	        MOV     DX,[GOAL]
+935	 0ABD  E8 0A08 R	 	        CALL    WALK
+936	 0AC0  8B C6	 	 	        MOV     AX,SI
+937	 0AC2  E8 09A2 R	 	        CALL    MOVETO
+938	 0AC5  F8	 	 	        CLC
+939	 0AC6  C3	 	 	DNX:    RET
+940	 	 	 	 	
+941	 	 	 	 	; page down, up: the cursor stays on it
 	 	 	 	s row, the text moves a page
-921	 0A87  8B 0E 011F R	 	PGDN:   MOV     CX,[NR]
-922	 0A8B  49	 	 	        DEC     CX
-923	 0A8C  51	 	 	PD1:    PUSH    CX
-924	 0A8D  E8 0A5D R	 	        CALL    DOWN
-925	 0A90  59	 	 	        POP     CX
-926	 0A91  72 12	 	 	        JB      KEEPRW
-927	 0A93  E2 F7	 	 	        LOOP    PD1
-928	 0A95  EB 0E	 	 	        JMP     SHORT KEEPRW
-929	 	 	 	 	
-930	 0A97  8B 0E 011F R	 	PGUP:   MOV     CX,[NR]
-931	 0A9B  49	 	 	        DEC     CX
-932	 0A9C  51	 	 	PU1:    PUSH    CX
-933	 0A9D  E8 0A30 R	 	        CALL    UP
-934	 0AA0  59	 	 	        POP     CX
-935	 0AA1  72 02	 	 	        JB      KEEPRW
-936	 0AA3  E2 F7	 	 	        LOOP    PU1
-937	 0AA5  A1 010B R	 	KEEPRW: MOV     AX,[GAPS]
-938	 0AA8  E8 099A R	 	        CALL    LSOF
-939	 0AAB  8B 0E 011B R	 	        MOV     CX,[CROW]
-940	 0AAF  E9 0EC1 R	 	        JMP     SETTOP
-941	 	 	 	 	
-942	 0AB2  8B 36 010D R	 	WORDR:  MOV     SI,[GAPE]       ; over 
+942	 0AC7  8B 0E 011F R	 	PGDN:   MOV     CX,[NR]
+943	 0ACB  49	 	 	        DEC     CX
+944	 0ACC  51	 	 	PD1:    PUSH    CX
+945	 0ACD  E8 0A9D R	 	        CALL    DOWN
+946	 0AD0  59	 	 	        POP     CX
+947	 0AD1  72 12	 	 	        JB      KEEPRW
+948	 0AD3  E2 F7	 	 	        LOOP    PD1
+949	 0AD5  EB 0E	 	 	        JMP     SHORT KEEPRW
+950	 	 	 	 	
+951	 0AD7  8B 0E 011F R	 	PGUP:   MOV     CX,[NR]
+952	 0ADB  49	 	 	        DEC     CX
+953	 0ADC  51	 	 	PU1:    PUSH    CX
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-22
+
+
+
+954	 0ADD  E8 0A70 R	 	        CALL    UP
+955	 0AE0  59	 	 	        POP     CX
+956	 0AE1  72 02	 	 	        JB      KEEPRW
+957	 0AE3  E2 F7	 	 	        LOOP    PU1
+958	 0AE5  A1 010B R	 	KEEPRW: MOV     AX,[GAPS]
+959	 0AE8  E8 09DA R	 	        CALL    LSOF
+960	 0AEB  8B 0E 011B R	 	        MOV     CX,[CROW]
+961	 0AEF  E9 0F04 R	 	        JMP     SETTOP
+962	 	 	 	 	
+963	 0AF2  8B 36 010D R	 	WORDR:  MOV     SI,[GAPE]       ; over 
 	 	 	 	this word, then to the next one
-943	 0AB6  3B 36 010F R	 	WR1:    CMP     SI,[TEND]
-944	 0ABA  73 14	 	 	        JAE     WR3
-945	 0ABC  AC	 	 	        LODSB
-946	 0ABD  E8 09FC R	 	        CALL    ISWD
-947	 0AC0  72 F4	 	 	        JB      WR1
-948	 0AC2  4E	 	 	        DEC     SI
-949	 0AC3  3B 36 010F R	 	WR2:    CMP     SI,[TEND]
-950	 0AC7  73 07	 	 	        JAE     WR3
-951	 0AC9  AC	 	 	        LODSB
-952	 0ACA  E8 09FC R	 	        CALL    ISWD
-953	 0ACD  73 F4	 	 	        JNB     WR2
-954	 0ACF  4E	 	 	        DEC     SI
-955	 0AD0  8B C6	 	 	WR3:    MOV     AX,SI
-956	 0AD2  E9 0962 R	 	        JMP     MOVETO
-957	 	 	 	 	
-958	 0AD5  8B 36 010B R	 	WORDL:  MOV     SI,[GAPS]       ; back 
+964	 0AF6  3B 36 010F R	 	WR1:    CMP     SI,[TEND]
+965	 0AFA  73 14	 	 	        JAE     WR3
+966	 0AFC  AC	 	 	        LODSB
+967	 0AFD  E8 0A3C R	 	        CALL    ISWD
+968	 0B00  72 F4	 	 	        JB      WR1
+969	 0B02  4E	 	 	        DEC     SI
+970	 0B03  3B 36 010F R	 	WR2:    CMP     SI,[TEND]
+971	 0B07  73 07	 	 	        JAE     WR3
+972	 0B09  AC	 	 	        LODSB
+973	 0B0A  E8 0A3C R	 	        CALL    ISWD
+974	 0B0D  73 F4	 	 	        JNB     WR2
+975	 0B0F  4E	 	 	        DEC     SI
+976	 0B10  8B C6	 	 	WR3:    MOV     AX,SI
+977	 0B12  E9 09A2 R	 	        JMP     MOVETO
+978	 	 	 	 	
+979	 0B15  8B 36 010B R	 	WORDL:  MOV     SI,[GAPS]       ; back 
 	 	 	 	over the gap, then over a word
-959	 0AD9  3B 36 0109 R	 	WL1:    CMP     SI,[BUFS]
-960	 0ADD  74 1C	 	 	        JZ      WL3
-961	 0ADF  8A 44 FF	 	 	        MOV     AL,[SI-1]
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-22
+980	 0B19  3B 36 0109 R	 	WL1:    CMP     SI,[BUFS]
+981	 0B1D  74 1C	 	 	        JZ      WL3
+982	 0B1F  8A 44 FF	 	 	        MOV     AL,[SI-1]
+983	 0B22  E8 0A3C R	 	        CALL    ISWD
+984	 0B25  72 03	 	 	        JB      WL2
+985	 0B27  4E	 	 	        DEC     SI
+986	 0B28  EB EF	 	 	        JMP     WL1
+987	 0B2A  3B 36 0109 R	 	WL2:    CMP     SI,[BUFS]
+988	 0B2E  74 0B	 	 	        JZ      WL3
+989	 0B30  8A 44 FF	 	 	        MOV     AL,[SI-1]
+990	 0B33  E8 0A3C R	 	        CALL    ISWD
+991	 0B36  73 03	 	 	        JNB     WL3
+992	 0B38  4E	 	 	        DEC     SI
+993	 0B39  EB EF	 	 	        JMP     WL2
+994	 0B3B  8B C6	 	 	WL3:    MOV     AX,SI
+995	 0B3D  E9 09A2 R	 	        JMP     MOVETO
+996	 	 	 	 	
+997	 0B40  A1 010B R	 	LBEG:   MOV     AX,[GAPS]
+998	 0B43  E8 09DA R	 	        CALL    LSOF
+999	 0B46  E9 09A2 R	 	        JMP     MOVETO
+1000	 	 	 	 	
+1001	 0B49  8B 3E 010D R	 	LEND:   MOV     DI,[GAPE]
+1002	 0B4D  8B 1E 010F R	 	        MOV     BX,[TEND]
+1003	 0B51  E8 09F5 R	 	        CALL    NEXTLF
+1004	 0B54  8B C7	 	 	        MOV     AX,DI
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-23
 
 
 
-962	 0AE2  E8 09FC R	 	        CALL    ISWD
-963	 0AE5  72 03	 	 	        JB      WL2
-964	 0AE7  4E	 	 	        DEC     SI
-965	 0AE8  EB EF	 	 	        JMP     WL1
-966	 0AEA  3B 36 0109 R	 	WL2:    CMP     SI,[BUFS]
-967	 0AEE  74 0B	 	 	        JZ      WL3
-968	 0AF0  8A 44 FF	 	 	        MOV     AL,[SI-1]
-969	 0AF3  E8 09FC R	 	        CALL    ISWD
-970	 0AF6  73 03	 	 	        JNB     WL3
-971	 0AF8  4E	 	 	        DEC     SI
-972	 0AF9  EB EF	 	 	        JMP     WL2
-973	 0AFB  8B C6	 	 	WL3:    MOV     AX,SI
-974	 0AFD  E9 0962 R	 	        JMP     MOVETO
-975	 	 	 	 	
-976	 0B00  A1 010B R	 	LBEG:   MOV     AX,[GAPS]
-977	 0B03  E8 099A R	 	        CALL    LSOF
-978	 0B06  E9 0962 R	 	        JMP     MOVETO
-979	 	 	 	 	
-980	 0B09  8B 3E 010D R	 	LEND:   MOV     DI,[GAPE]
-981	 0B0D  8B 1E 010F R	 	        MOV     BX,[TEND]
-982	 0B11  E8 09B5 R	 	        CALL    NEXTLF
-983	 0B14  8B C7	 	 	        MOV     AX,DI
-984	 0B16  E9 0962 R	 	        JMP     MOVETO
-985	 	 	 	 	
-986	 0B19  A1 0109 R	 	FTOP:   MOV     AX,[BUFS]
-987	 0B1C  E9 0962 R	 	        JMP     MOVETO
-988	 	 	 	 	
-989	 0B1F  A1 010F R	 	FEND:   MOV     AX,[TEND]
-990	 0B22  E9 0962 R	 	        JMP     MOVETO
-991	 	 	 	 	
-992	 	 	 	 	; -------------------------------------
+1005	 0B56  E9 09A2 R	 	        JMP     MOVETO
+1006	 	 	 	 	
+1007	 0B59  A1 0109 R	 	FTOP:   MOV     AX,[BUFS]
+1008	 0B5C  E9 09A2 R	 	        JMP     MOVETO
+1009	 	 	 	 	
+1010	 0B5F  A1 010F R	 	FEND:   MOV     AX,[TEND]
+1011	 0B62  E9 09A2 R	 	        JMP     MOVETO
+1012	 	 	 	 	
+1013	 	 	 	 	; -------------------------------------
 	 	 	 	--------------------------- editing
-993	 0B25  B0 0A	 	 	NEWLN:  MOV     AL,LF
-994	 0B27  EB 02	 	 	        JMP     SHORT INSCH
-995	 0B29  B0 09	 	 	TABK:   MOV     AL,TAB
-996	 0B2B  8B 3E 010B R	 	INSCH:  MOV     DI,[GAPS]
-997	 0B2F  3B 3E 010D R	 	        CMP     DI,[GAPE]
-998	 0B33  74 1F	 	 	        JZ      MFULL
-999	 0B35  50	 	 	        PUSH    AX
-1000	 0B36  E8 0D89 R	 	        CALL    MARKC
-1001	 0B39  58	 	 	        POP     AX
-1002	 0B3A  8B 3E 010B R	 	        MOV     DI,[GAPS]
-1003	 0B3E  AA	 	 	        STOSB
-1004	 0B3F  89 3E 010B R	 	        MOV     [GAPS],DI
-1005	 0B43  C6 06 0123 R 01	 	        MOV     [MODIF],1
-1006	 0B48  3C 0A	 	 	        CMP     AL,LF
-1007	 0B4A  75 07	 	 	        JNZ     INX
-1008	 0B4C  FF 06 0115 R	 	        INC     WORD PTR [LINE]
-1009	 0B50  E8 0D9F R	 	        CALL    MARKB
-1010	 0B53  C3	 	 	INX:    RET
-1011	 0B54  C7 06 012C R 027B R	MFULL:  MOV     WORD PTR [MSG],OFFSET M
+1014	 0B65  B0 0A	 	 	NEWLN:  MOV     AL,LF
+1015	 0B67  EB 02	 	 	        JMP     SHORT INSCH
+1016	 0B69  B0 09	 	 	TABK:   MOV     AL,TAB
+1017	 0B6B  8B 3E 010B R	 	INSCH:  MOV     DI,[GAPS]
+1018	 0B6F  3B 3E 010D R	 	        CMP     DI,[GAPE]
+1019	 0B73  74 1F	 	 	        JZ      MFULL
+1020	 0B75  50	 	 	        PUSH    AX
+1021	 0B76  E8 0DCC R	 	        CALL    MARKC
+1022	 0B79  58	 	 	        POP     AX
+1023	 0B7A  8B 3E 010B R	 	        MOV     DI,[GAPS]
+1024	 0B7E  AA	 	 	        STOSB
+1025	 0B7F  89 3E 010B R	 	        MOV     [GAPS],DI
+1026	 0B83  C6 06 0123 R 01	 	        MOV     [MODIF],1
+1027	 0B88  3C 0A	 	 	        CMP     AL,LF
+1028	 0B8A  75 07	 	 	        JNZ     INX
+1029	 0B8C  FF 06 0115 R	 	        INC     WORD PTR [LINE]
+1030	 0B90  E8 0DE2 R	 	        CALL    MARKB
+1031	 0B93  C3	 	 	INX:    RET
+1032	 0B94  C7 06 012C R 027B R	MFULL:  MOV     WORD PTR [MSG],OFFSET M
 	 	 	 	MEM
-1012	 0B5A  C3	 	 	        RET
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-23
-
-
-
-1013	 	 	 	 	
-1014	 0B5B  8B 3E 010D R	 	SPLIT:  MOV     DI,[GAPE]       ; a LF 
+1033	 0B9A  C3	 	 	        RET
+1034	 	 	 	 	
+1035	 0B9B  8B 3E 010D R	 	SPLIT:  MOV     DI,[GAPE]       ; a LF 
 	 	 	 	after the cursor
-1015	 0B5F  3B 3E 010B R	 	        CMP     DI,[GAPS]
-1016	 0B63  74 EF	 	 	        JZ      MFULL
-1017	 0B65  E8 0D89 R	 	        CALL    MARKC
-1018	 0B68  E8 0D9F R	 	        CALL    MARKB
-1019	 0B6B  FF 0E 010D R	 	        DEC     WORD PTR [GAPE]
-1020	 0B6F  8B 3E 010D R	 	        MOV     DI,[GAPE]
-1021	 0B73  C6 05 0A	 	 	        MOV     BYTE PTR [DI],LF
-1022	 0B76  C6 06 0123 R 01	 	        MOV     [MODIF],1
-1023	 0B7B  C3	 	 	        RET
-1024	 	 	 	 	
-1025	 0B7C  8B 36 010B R	 	DELB:   MOV     SI,[GAPS]
-1026	 0B80  3B 36 0109 R	 	        CMP     SI,[BUFS]
-1027	 0B84  74 1E	 	 	        JZ      DBX
-1028	 0B86  4E	 	 	        DEC     SI
-1029	 0B87  89 36 010B R	 	        MOV     [GAPS],SI
-1030	 0B8B  C6 06 0123 R 01	 	        MOV     [MODIF],1
-1031	 0B90  C6 06 0129 R 01	 	        MOV     [MARKF],1       ; the r
+1036	 0B9F  3B 3E 010B R	 	        CMP     DI,[GAPS]
+1037	 0BA3  74 EF	 	 	        JZ      MFULL
+1038	 0BA5  E8 0DCC R	 	        CALL    MARKC
+1039	 0BA8  E8 0DE2 R	 	        CALL    MARKB
+1040	 0BAB  FF 0E 010D R	 	        DEC     WORD PTR [GAPE]
+1041	 0BAF  8B 3E 010D R	 	        MOV     DI,[GAPE]
+1042	 0BB3  C6 05 0A	 	 	        MOV     BYTE PTR [DI],LF
+1043	 0BB6  C6 06 0123 R 01	 	        MOV     [MODIF],1
+1044	 0BBB  C3	 	 	        RET
+1045	 	 	 	 	
+1046	 0BBC  8B 36 010B R	 	DELB:   MOV     SI,[GAPS]
+1047	 0BC0  3B 36 0109 R	 	        CMP     SI,[BUFS]
+1048	 0BC4  74 1E	 	 	        JZ      DBX
+1049	 0BC6  4E	 	 	        DEC     SI
+1050	 0BC7  89 36 010B R	 	        MOV     [GAPS],SI
+1051	 0BCB  C6 06 0123 R 01	 	        MOV     [MODIF],1
+1052	 0BD0  C6 06 0129 R 01	 	        MOV     [MARKF],1       ; the r
 	 	 	 	ow from the cursor (FIXSCR)
-1032	 0B95  80 3C 0A	 	 	        CMP     BYTE PTR [SI],LF
-1033	 0B98  75 0A	 	 	        JNZ     DBX
-1034	 0B9A  FF 0E 0115 R	 	        DEC     WORD PTR [LINE]
-1035	 0B9E  A1 011B R	 	        MOV     AX,[CROW]       ; the r
+1053	 0BD5  80 3C 0A	 	 	        CMP     BYTE PTR [SI],LF
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-24
+
+
+
+1054	 0BD8  75 0A	 	 	        JNZ     DBX
+1055	 0BDA  FF 0E 0115 R	 	        DEC     WORD PTR [LINE]
+1056	 0BDE  A1 011B R	 	        MOV     AX,[CROW]       ; the r
 	 	 	 	ows below move up
-1036	 0BA1  E8 0DA3 R	 	        CALL    MARKR
-1037	 0BA4  C3	 	 	DBX:    RET
-1038	 	 	 	 	
-1039	 0BA5  8B 36 010D R	 	DELF:   MOV     SI,[GAPE]
-1040	 0BA9  3B 36 010F R	 	        CMP     SI,[TEND]
-1041	 0BAD  74 18	 	 	        JZ      DFX
-1042	 0BAF  E8 0D89 R	 	        CALL    MARKC
-1043	 0BB2  8B 36 010D R	 	        MOV     SI,[GAPE]
-1044	 0BB6  AC	 	 	        LODSB
-1045	 0BB7  89 36 010D R	 	        MOV     [GAPE],SI
-1046	 0BBB  C6 06 0123 R 01	 	        MOV     [MODIF],1
-1047	 0BC0  3C 0A	 	 	        CMP     AL,LF
-1048	 0BC2  75 03	 	 	        JNZ     DFX
-1049	 0BC4  E8 0D9F R	 	        CALL    MARKB
-1050	 0BC7  C3	 	 	DFX:    RET
-1051	 	 	 	 	
-1052	 0BC8  8B 3E 010D R	 	DELEOL: MOV     DI,[GAPE]       ; up to
+1057	 0BE1  E8 0DE6 R	 	        CALL    MARKR
+1058	 0BE4  C3	 	 	DBX:    RET
+1059	 	 	 	 	
+1060	 0BE5  8B 36 010D R	 	DELF:   MOV     SI,[GAPE]
+1061	 0BE9  3B 36 010F R	 	        CMP     SI,[TEND]
+1062	 0BED  74 18	 	 	        JZ      DFX
+1063	 0BEF  E8 0DCC R	 	        CALL    MARKC
+1064	 0BF2  8B 36 010D R	 	        MOV     SI,[GAPE]
+1065	 0BF6  AC	 	 	        LODSB
+1066	 0BF7  89 36 010D R	 	        MOV     [GAPE],SI
+1067	 0BFB  C6 06 0123 R 01	 	        MOV     [MODIF],1
+1068	 0C00  3C 0A	 	 	        CMP     AL,LF
+1069	 0C02  75 03	 	 	        JNZ     DFX
+1070	 0C04  E8 0DE2 R	 	        CALL    MARKB
+1071	 0C07  C3	 	 	DFX:    RET
+1072	 	 	 	 	
+1073	 0C08  8B 3E 010D R	 	DELEOL: MOV     DI,[GAPE]       ; up to
 	 	 	 	 the LF
-1053	 0BCC  8B 1E 010F R	 	        MOV     BX,[TEND]
-1054	 0BD0  E8 09B5 R	 	        CALL    NEXTLF
-1055	 0BD3  3B 3E 010D R	 	        CMP     DI,[GAPE]
-1056	 0BD7  74 EE	 	 	        JZ      DFX
-1057	 0BD9  57	 	 	        PUSH    DI
-1058	 0BDA  E8 0D89 R	 	        CALL    MARKC
-1059	 0BDD  5F	 	 	        POP     DI
-1060	 0BDE  89 3E 010D R	 	        MOV     [GAPE],DI
-1061	 0BE2  C6 06 0123 R 01	 	        MOV     [MODIF],1
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-24
-
-
-
-1062	 0BE7  C3	 	 	        RET
-1063	 	 	 	 	
-1064	 0BE8  A1 0124 R	 	DELLN:  MOV     AX,[CLS_]       ; from 
+1074	 0C0C  8B 1E 010F R	 	        MOV     BX,[TEND]
+1075	 0C10  E8 09F5 R	 	        CALL    NEXTLF
+1076	 0C13  3B 3E 010D R	 	        CMP     DI,[GAPE]
+1077	 0C17  74 EE	 	 	        JZ      DFX
+1078	 0C19  57	 	 	        PUSH    DI
+1079	 0C1A  E8 0DCC R	 	        CALL    MARKC
+1080	 0C1D  5F	 	 	        POP     DI
+1081	 0C1E  89 3E 010D R	 	        MOV     [GAPE],DI
+1082	 0C22  C6 06 0123 R 01	 	        MOV     [MODIF],1
+1083	 0C27  C3	 	 	        RET
+1084	 	 	 	 	
+1085	 0C28  A1 0124 R	 	DELLN:  MOV     AX,[CLS_]       ; from 
 	 	 	 	the start of the line, with its LF
-1065	 0BEB  E8 0962 R	 	        CALL    MOVETO
-1066	 0BEE  8B 3E 010D R	 	        MOV     DI,[GAPE]
-1067	 0BF2  8B 1E 010F R	 	        MOV     BX,[TEND]
-1068	 0BF6  E8 09B5 R	 	        CALL    NEXTLF
-1069	 0BF9  72 01	 	 	        JB      DL1
-1070	 0BFB  47	 	 	        INC     DI
-1071	 0BFC  3B 3E 010D R	 	DL1:    CMP     DI,[GAPE]
-1072	 0C00  74 C5	 	 	        JZ      DFX
-1073	 0C02  89 3E 010D R	 	        MOV     [GAPE],DI
-1074	 0C06  C6 06 0123 R 01	 	        MOV     [MODIF],1
-1075	 0C0B  A1 011B R	 	        MOV     AX,[CROW]
-1076	 0C0E  E9 0DA3 R	 	        JMP     MARKR
-1077	 	 	 	 	
-1078	 0C11  8B 36 010D R	 	DELWD:  MOV     SI,[GAPE]       ; a wor
+1086	 0C2B  E8 09A2 R	 	        CALL    MOVETO
+1087	 0C2E  8B 3E 010D R	 	        MOV     DI,[GAPE]
+1088	 0C32  8B 1E 010F R	 	        MOV     BX,[TEND]
+1089	 0C36  E8 09F5 R	 	        CALL    NEXTLF
+1090	 0C39  72 01	 	 	        JB      DL1
+1091	 0C3B  47	 	 	        INC     DI
+1092	 0C3C  3B 3E 010D R	 	DL1:    CMP     DI,[GAPE]
+1093	 0C40  74 C5	 	 	        JZ      DFX
+1094	 0C42  89 3E 010D R	 	        MOV     [GAPE],DI
+1095	 0C46  C6 06 0123 R 01	 	        MOV     [MODIF],1
+1096	 0C4B  A1 011B R	 	        MOV     AX,[CROW]
+1097	 0C4E  E9 0DE6 R	 	        JMP     MARKR
+1098	 	 	 	 	
+1099	 0C51  8B 36 010D R	 	DELWD:  MOV     SI,[GAPE]       ; a wor
 	 	 	 	d and the blanks after it
-1079	 0C15  3B 36 010F R	 	        CMP     SI,[TEND]
-1080	 0C19  74 AC	 	 	        JZ      DFX
-1081	 0C1B  AC	 	 	        LODSB
-1082	 0C1C  3C 0A	 	 	        CMP     AL,LF
-1083	 0C1E  75 02	 	 	        JNZ     DW0
-1084	 0C20  EB 83	 	 	        JMP     DELF
-1085	 0C22  E8 09FC R	 	DW0:    CALL    ISWD
-1086	 0C25  73 0D	 	 	        JNB     DW2
-1087	 0C27  3B 36 010F R	 	DW1:    CMP     SI,[TEND]
-1088	 0C2B  73 17	 	 	        JAE     DW3
-1089	 0C2D  AC	 	 	        LODSB
-1090	 0C2E  E8 09FC R	 	        CALL    ISWD
-1091	 0C31  72 F4	 	 	        JB      DW1
-1092	 0C33  4E	 	 	        DEC     SI
-1093	 0C34  3B 36 010F R	 	DW2:    CMP     SI,[TEND]
-1094	 0C38  73 0A	 	 	        JAE     DW3
-1095	 0C3A  AC	 	 	        LODSB
-1096	 0C3B  3C 20	 	 	        CMP     AL," "
-1097	 0C3D  74 F5	 	 	        JZ      DW2
-1098	 0C3F  3C 09	 	 	        CMP     AL,TAB
-1099	 0C41  74 F1	 	 	        JZ      DW2
-1100	 0C43  4E	 	 	        DEC     SI
-1101	 0C44  56	 	 	DW3:    PUSH    SI
-1102	 0C45  E8 0D89 R	 	        CALL    MARKC
-1103	 0C48  5E	 	 	        POP     SI
-1104	 0C49  89 36 010D R	 	        MOV     [GAPE],SI
-1105	 0C4D  C6 06 0123 R 01	 	        MOV     [MODIF],1
-1106	 0C52  C3	 	 	        RET
-1107	 	 	 	 	
-1108	 	 	 	 	; -------------------------------------
+1100	 0C55  3B 36 010F R	 	        CMP     SI,[TEND]
+1101	 0C59  74 AC	 	 	        JZ      DFX
+1102	 0C5B  AC	 	 	        LODSB
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-25
+
+
+
+1103	 0C5C  3C 0A	 	 	        CMP     AL,LF
+1104	 0C5E  75 02	 	 	        JNZ     DW0
+1105	 0C60  EB 83	 	 	        JMP     DELF
+1106	 0C62  E8 0A3C R	 	DW0:    CALL    ISWD
+1107	 0C65  73 0D	 	 	        JNB     DW2
+1108	 0C67  3B 36 010F R	 	DW1:    CMP     SI,[TEND]
+1109	 0C6B  73 17	 	 	        JAE     DW3
+1110	 0C6D  AC	 	 	        LODSB
+1111	 0C6E  E8 0A3C R	 	        CALL    ISWD
+1112	 0C71  72 F4	 	 	        JB      DW1
+1113	 0C73  4E	 	 	        DEC     SI
+1114	 0C74  3B 36 010F R	 	DW2:    CMP     SI,[TEND]
+1115	 0C78  73 0A	 	 	        JAE     DW3
+1116	 0C7A  AC	 	 	        LODSB
+1117	 0C7B  3C 20	 	 	        CMP     AL," "
+1118	 0C7D  74 F5	 	 	        JZ      DW2
+1119	 0C7F  3C 09	 	 	        CMP     AL,TAB
+1120	 0C81  74 F1	 	 	        JZ      DW2
+1121	 0C83  4E	 	 	        DEC     SI
+1122	 0C84  56	 	 	DW3:    PUSH    SI
+1123	 0C85  E8 0DCC R	 	        CALL    MARKC
+1124	 0C88  5E	 	 	        POP     SI
+1125	 0C89  89 36 010D R	 	        MOV     [GAPE],SI
+1126	 0C8D  C6 06 0123 R 01	 	        MOV     [MODIF],1
+1127	 0C92  C3	 	 	        RET
+1128	 	 	 	 	
+1129	 	 	 	 	; -------------------------------------
 	 	 	 	--------------------------- find
-1109	 0C53  E8 0D1E R	 	FIND:   CALL    PROMPT
-1110	 0C56  73 01	 	 	        JNB     FI0
-1111	 0C58  C3	 	 	        RET
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-25
-
-
-
-1112	 0C59  8B 0E 0148 R	 	FI0:    MOV     CX,[TLEN]
-1113	 0C5D  E3 11	 	 	        JCXZ    FNEXT           ; nothi
+1130	 0C93  E8 0D5E R	 	FIND:   CALL    PROMPT
+1131	 0C96  73 01	 	 	        JNB     FI0
+1132	 0C98  C3	 	 	        RET
+1133	 0C99  8B 0E 0148 R	 	FI0:    MOV     CX,[TLEN]
+1134	 0C9D  E3 11	 	 	        JCXZ    FNEXT           ; nothi
 	 	 	 	ng typed: the last string again
-1114	 0C5F  89 0E 014A R	 	        MOV     [FLEN],CX
-1115	 0C63  BE 0172 R	 	        MOV     SI,OFFSET TBUF
-1116	 0C66  BF 0182 R	 	        MOV     DI,OFFSET FSTR
-1117	 0C69  AC	 	 	FI1:    LODSB
-1118	 0C6A  E8 066F R	 	        CALL    UPPER
-1119	 0C6D  AA	 	 	        STOSB
-1120	 0C6E  E2 F9	 	 	        LOOP    FI1
-1121	 0C70  8B 0E 014A R	 	FNEXT:  MOV     CX,[FLEN]       ; from 
+1135	 0C9F  89 0E 014A R	 	        MOV     [FLEN],CX
+1136	 0CA3  BE 0172 R	 	        MOV     SI,OFFSET TBUF
+1137	 0CA6  BF 0182 R	 	        MOV     DI,OFFSET FSTR
+1138	 0CA9  AC	 	 	FI1:    LODSB
+1139	 0CAA  E8 069A R	 	        CALL    UPPER
+1140	 0CAD  AA	 	 	        STOSB
+1141	 0CAE  E2 F9	 	 	        LOOP    FI1
+1142	 0CB0  8B 0E 014A R	 	FNEXT:  MOV     CX,[FLEN]       ; from 
 	 	 	 	after the cursor on
-1122	 0C74  E3 78	 	 	        JCXZ    FX
-1123	 0C76  8B 36 010D R	 	        MOV     SI,[GAPE]
-1124	 0C7A  46	 	 	        INC     SI
-1125	 0C7B  8B 1E 010F R	 	        MOV     BX,[TEND]
-1126	 0C7F  2B D9	 	 	        SUB     BX,CX
-1127	 0C81  43	 	 	        INC     BX              ; BX: w
+1143	 0CB4  E3 78	 	 	        JCXZ    FX
+1144	 0CB6  8B 36 010D R	 	        MOV     SI,[GAPE]
+1145	 0CBA  46	 	 	        INC     SI
+1146	 0CBB  8B 1E 010F R	 	        MOV     BX,[TEND]
+1147	 0CBF  2B D9	 	 	        SUB     BX,CX
+1148	 0CC1  43	 	 	        INC     BX              ; BX: w
 	 	 	 	here a match can start, below
-1128	 0C82  A0 0182 R	 	        MOV     AL,[FSTR]
-1129	 0C85  A2 014C R	 	        MOV     [FC1],AL
-1130	 0C88  8A E0	 	 	        MOV     AH,AL
-1131	 0C8A  3C 41	 	 	        CMP     AL,"A"
-1132	 0C8C  72 07	 	 	        JB      FN0
-1133	 0C8E  3C 5A	 	 	        CMP     AL,"Z"
-1134	 0C90  77 03	 	 	        JA      FN0
-1135	 0C92  80 CC 20	 	 	        OR      AH,20H
-1136	 0C95  88 26 014D R	 	FN0:    MOV     [FC2],AH
-1137	 0C99  E8 0CEF R	 	        CALL    SCANF           ; the f
+1149	 0CC2  A0 0182 R	 	        MOV     AL,[FSTR]
+1150	 0CC5  A2 014C R	 	        MOV     [FC1],AL
+1151	 0CC8  8A E0	 	 	        MOV     AH,AL
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-26
+
+
+
+1152	 0CCA  3C 41	 	 	        CMP     AL,"A"
+1153	 0CCC  72 07	 	 	        JB      FN0
+1154	 0CCE  3C 5A	 	 	        CMP     AL,"Z"
+1155	 0CD0  77 03	 	 	        JA      FN0
+1156	 0CD2  80 CC 20	 	 	        OR      AH,20H
+1157	 0CD5  88 26 014D R	 	FN0:    MOV     [FC2],AH
+1158	 0CD9  E8 0D2F R	 	        CALL    SCANF           ; the f
 	 	 	 	irst letter, both cases: the nearer
-1138	 0C9C  A3 014E R	 	        MOV     [FP1],AX        ;   one
+1159	 0CDC  A3 014E R	 	        MOV     [FP1],AX        ;   one
 	 	 	 	 is where the string may be
-1139	 0C9F  A0 014D R	 	        MOV     AL,[FC2]
-1140	 0CA2  E8 0CEF R	 	        CALL    SCANF
-1141	 0CA5  A3 0150 R	 	        MOV     [FP2],AX
-1142	 0CA8  A1 014E R	 	FN1:    MOV     AX,[FP1]
-1143	 0CAB  3B 06 0150 R	 	        CMP     AX,[FP2]
-1144	 0CAF  76 03	 	 	        JBE     FN2
-1145	 0CB1  A1 0150 R	 	        MOV     AX,[FP2]
-1146	 0CB4  3D FFFF	 	 	FN2:    CMP     AX,0FFFFH
-1147	 0CB7  74 2F	 	 	        JZ      NOTF
-1148	 0CB9  50	 	 	        PUSH    AX
-1149	 0CBA  E8 0D03 R	 	        CALL    MATCH
-1150	 0CBD  58	 	 	        POP     AX
-1151	 0CBE  74 25	 	 	        JZ      FOUND
-1152	 0CC0  8B F0	 	 	        MOV     SI,AX
-1153	 0CC2  46	 	 	        INC     SI
-1154	 0CC3  3B 06 014E R	 	        CMP     AX,[FP1]
-1155	 0CC7  75 0B	 	 	        JNZ     FN3
-1156	 0CC9  50	 	 	        PUSH    AX
-1157	 0CCA  A0 014C R	 	        MOV     AL,[FC1]
-1158	 0CCD  E8 0CEF R	 	        CALL    SCANF
-1159	 0CD0  A3 014E R	 	        MOV     [FP1],AX
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-26
-
-
-
-1160	 0CD3  58	 	 	        POP     AX
-1161	 0CD4  3B 06 0150 R	 	FN3:    CMP     AX,[FP2]
-1162	 0CD8  75 CE	 	 	        JNZ     FN1
-1163	 0CDA  A0 014D R	 	        MOV     AL,[FC2]
-1164	 0CDD  E8 0CEF R	 	        CALL    SCANF
-1165	 0CE0  A3 0150 R	 	        MOV     [FP2],AX
-1166	 0CE3  EB C3	 	 	        JMP     FN1
-1167	 0CE5  E9 0962 R	 	FOUND:  JMP     MOVETO
-1168	 0CE8  C7 06 012C R 0271 R	NOTF:   MOV     WORD PTR [MSG],OFFSET M
+1160	 0CDF  A0 014D R	 	        MOV     AL,[FC2]
+1161	 0CE2  E8 0D2F R	 	        CALL    SCANF
+1162	 0CE5  A3 0150 R	 	        MOV     [FP2],AX
+1163	 0CE8  A1 014E R	 	FN1:    MOV     AX,[FP1]
+1164	 0CEB  3B 06 0150 R	 	        CMP     AX,[FP2]
+1165	 0CEF  76 03	 	 	        JBE     FN2
+1166	 0CF1  A1 0150 R	 	        MOV     AX,[FP2]
+1167	 0CF4  3D FFFF	 	 	FN2:    CMP     AX,0FFFFH
+1168	 0CF7  74 2F	 	 	        JZ      NOTF
+1169	 0CF9  50	 	 	        PUSH    AX
+1170	 0CFA  E8 0D43 R	 	        CALL    MATCH
+1171	 0CFD  58	 	 	        POP     AX
+1172	 0CFE  74 25	 	 	        JZ      FOUND
+1173	 0D00  8B F0	 	 	        MOV     SI,AX
+1174	 0D02  46	 	 	        INC     SI
+1175	 0D03  3B 06 014E R	 	        CMP     AX,[FP1]
+1176	 0D07  75 0B	 	 	        JNZ     FN3
+1177	 0D09  50	 	 	        PUSH    AX
+1178	 0D0A  A0 014C R	 	        MOV     AL,[FC1]
+1179	 0D0D  E8 0D2F R	 	        CALL    SCANF
+1180	 0D10  A3 014E R	 	        MOV     [FP1],AX
+1181	 0D13  58	 	 	        POP     AX
+1182	 0D14  3B 06 0150 R	 	FN3:    CMP     AX,[FP2]
+1183	 0D18  75 CE	 	 	        JNZ     FN1
+1184	 0D1A  A0 014D R	 	        MOV     AL,[FC2]
+1185	 0D1D  E8 0D2F R	 	        CALL    SCANF
+1186	 0D20  A3 0150 R	 	        MOV     [FP2],AX
+1187	 0D23  EB C3	 	 	        JMP     FN1
+1188	 0D25  E9 09A2 R	 	FOUND:  JMP     MOVETO
+1189	 0D28  C7 06 012C R 0271 R	NOTF:   MOV     WORD PTR [MSG],OFFSET M
 	 	 	 	NOTF
-1169	 0CEE  C3	 	 	FX:     RET
-1170	 	 	 	 	
-1171	 	 	 	 	; SCANF: AX = the first AL from SI on, 
+1190	 0D2E  C3	 	 	FX:     RET
+1191	 	 	 	 	
+1192	 	 	 	 	; SCANF: AX = the first AL from SI on, 
 	 	 	 	below BX (FFFFH: none)
-1172	 0CEF  8B FE	 	 	SCANF:  MOV     DI,SI
-1173	 0CF1  8B CB	 	 	        MOV     CX,BX
-1174	 0CF3  2B CE	 	 	        SUB     CX,SI
-1175	 0CF5  76 08	 	 	        JBE     SFN
-1176	 0CF7  F2/ AE	 	 	        REPNE   SCASB
-1177	 0CF9  75 04	 	 	        JNZ     SFN
-1178	 0CFB  8D 45 FF	 	 	        LEA     AX,[DI-1]
-1179	 0CFE  C3	 	 	        RET
-1180	 0CFF  B8 FFFF	 	 	SFN:    MOV     AX,0FFFFH
-1181	 0D02  C3	 	 	        RET
-1182	 	 	 	 	
-1183	 	 	 	 	; MATCH: ZF=1 if the rest of the string
+1193	 0D2F  8B FE	 	 	SCANF:  MOV     DI,SI
+1194	 0D31  8B CB	 	 	        MOV     CX,BX
+1195	 0D33  2B CE	 	 	        SUB     CX,SI
+1196	 0D35  76 08	 	 	        JBE     SFN
+1197	 0D37  F2/ AE	 	 	        REPNE   SCASB
+1198	 0D39  75 04	 	 	        JNZ     SFN
+1199	 0D3B  8D 45 FF	 	 	        LEA     AX,[DI-1]
+1200	 0D3E  C3	 	 	        RET
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-27
+
+
+
+1201	 0D3F  B8 FFFF	 	 	SFN:    MOV     AX,0FFFFH
+1202	 0D42  C3	 	 	        RET
+1203	 	 	 	 	
+1204	 	 	 	 	; MATCH: ZF=1 if the rest of the string
 	 	 	 	 follows AX
-1184	 0D03  8B F0	 	 	MATCH:  MOV     SI,AX
-1185	 0D05  46	 	 	        INC     SI
-1186	 0D06  BF 0183 R	 	        MOV     DI,OFFSET FSTR+1
-1187	 0D09  8B 0E 014A R	 	        MOV     CX,[FLEN]
-1188	 0D0D  49	 	 	        DEC     CX
-1189	 0D0E  74 0D	 	 	        JZ      MAX
-1190	 0D10  AC	 	 	MA1:    LODSB
-1191	 0D11  E8 066F R	 	        CALL    UPPER
-1192	 0D14  3A 05	 	 	        CMP     AL,[DI]
-1193	 0D16  75 05	 	 	        JNZ     MAX
-1194	 0D18  47	 	 	        INC     DI
-1195	 0D19  E2 F5	 	 	        LOOP    MA1
-1196	 0D1B  3A C0	 	 	        CMP     AL,AL
-1197	 0D1D  C3	 	 	MAX:    RET
-1198	 	 	 	 	
-1199	 	 	 	 	; PROMPT: "Find: " on the status line, 
+1205	 0D43  8B F0	 	 	MATCH:  MOV     SI,AX
+1206	 0D45  46	 	 	        INC     SI
+1207	 0D46  BF 0183 R	 	        MOV     DI,OFFSET FSTR+1
+1208	 0D49  8B 0E 014A R	 	        MOV     CX,[FLEN]
+1209	 0D4D  49	 	 	        DEC     CX
+1210	 0D4E  74 0D	 	 	        JZ      MAX
+1211	 0D50  AC	 	 	MA1:    LODSB
+1212	 0D51  E8 069A R	 	        CALL    UPPER
+1213	 0D54  3A 05	 	 	        CMP     AL,[DI]
+1214	 0D56  75 05	 	 	        JNZ     MAX
+1215	 0D58  47	 	 	        INC     DI
+1216	 0D59  E2 F5	 	 	        LOOP    MA1
+1217	 0D5B  3A C0	 	 	        CMP     AL,AL
+1218	 0D5D  C3	 	 	MAX:    RET
+1219	 	 	 	 	
+1220	 	 	 	 	; PROMPT: "Find: " on the status line, 
 	 	 	 	then a line typed into TBUF (RETURN
-1200	 	 	 	 	; ends it, DEL takes back); CF=1 if ESC
+1221	 	 	 	 	; ends it, DEL takes back); CF=1 if ESC
 	 	 	 	 or ^U gave up
-1201	 0D1E  BE 02C3 R	 	PROMPT: MOV     SI,OFFSET MFIND
-1202	 0D21  89 36 012C R	 	        MOV     [MSG],SI
-1203	 0D25  E8 1132 R	 	        CALL    STATUS
-1204	 0D28  C7 06 012C R 0000	        MOV     WORD PTR [MSG],0
-1205	 0D2E  C7 06 012E R 0001	        MOV     WORD PTR [SHMSG],1     
+1222	 0D5E  BE 02DD R	 	PROMPT: MOV     SI,OFFSET MFIND
+1223	 0D61  89 36 012C R	 	        MOV     [MSG],SI
+1224	 0D65  E8 1175 R	 	        CALL    STATUS
+1225	 0D68  C7 06 012C R 0000	        MOV     WORD PTR [MSG],0
+1226	 0D6E  C7 06 012E R 0001	        MOV     WORD PTR [SHMSG],1     
 	 	 	 	 ; the message area is sent again later
-1206	 0D34  C7 06 0148 R 0000	        MOV     WORD PTR [TLEN],0
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-27
+1227	 0D74  C7 06 0148 R 0000	        MOV     WORD PTR [TLEN],0
+1228	 0D7A  E8 1320 R	 	PR1:    CALL    FLUSH
+1229	 0D7D  E8 134F R	 	        CALL    GETKEY
+1230	 0D80  3C 0D	 	 	        CMP     AL,CR
+1231	 0D82  74 41	 	 	        JZ      PRX
+1232	 0D84  3C 1B	 	 	        CMP     AL,KESC
+1233	 0D86  74 3F	 	 	        JZ      PRESC
+1234	 0D88  3C 15	 	 	        CMP     AL,"U"-40H
+1235	 0D8A  74 3E	 	 	        JZ      PRQ
+1236	 0D8C  8B 1E 0148 R	 	        MOV     BX,[TLEN]
+1237	 0D90  3C 7F	 	 	        CMP     AL,7FH
+1238	 0D92  74 1A	 	 	        JZ      PRDEL
+1239	 0D94  3C 08	 	 	        CMP     AL,8
+1240	 0D96  74 16	 	 	        JZ      PRDEL
+1241	 0D98  3C 20	 	 	        CMP     AL," "
+1242	 0D9A  72 DE	 	 	        JB      PR1
+1243	 0D9C  83 FB 10	 	 	        CMP     BX,FMAX
+1244	 0D9F  73 D9	 	 	        JAE     PR1
+1245	 0DA1  88 87 0172 R	 	        MOV     TBUF[BX],AL
+1246	 0DA5  FF 06 0148 R	 	        INC     WORD PTR [TLEN]
+1247	 0DA9  E8 12F5 R	 	        CALL    PUTC
+1248	 0DAC  EB CC	 	 	        JMP     PR1
+1249	 0DAE  0B DB	 	 	PRDEL:  OR      BX,BX
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-28
 
 
 
-1207	 0D3A  E8 12DD R	 	PR1:    CALL    FLUSH
-1208	 0D3D  E8 130C R	 	        CALL    GETKEY
-1209	 0D40  3C 0D	 	 	        CMP     AL,CR
-1210	 0D42  74 41	 	 	        JZ      PRX
-1211	 0D44  3C 1B	 	 	        CMP     AL,KESC
-1212	 0D46  74 3F	 	 	        JZ      PRQ
-1213	 0D48  3C 15	 	 	        CMP     AL,"U"-40H
-1214	 0D4A  74 3B	 	 	        JZ      PRQ
-1215	 0D4C  8B 1E 0148 R	 	        MOV     BX,[TLEN]
-1216	 0D50  3C 7F	 	 	        CMP     AL,7FH
-1217	 0D52  74 1A	 	 	        JZ      PRDEL
-1218	 0D54  3C 08	 	 	        CMP     AL,8
-1219	 0D56  74 16	 	 	        JZ      PRDEL
-1220	 0D58  3C 20	 	 	        CMP     AL," "
-1221	 0D5A  72 DE	 	 	        JB      PR1
-1222	 0D5C  83 FB 10	 	 	        CMP     BX,FMAX
-1223	 0D5F  73 D9	 	 	        JAE     PR1
-1224	 0D61  88 87 0172 R	 	        MOV     TBUF[BX],AL
-1225	 0D65  FF 06 0148 R	 	        INC     WORD PTR [TLEN]
-1226	 0D69  E8 12B2 R	 	        CALL    PUTC
-1227	 0D6C  EB CC	 	 	        JMP     PR1
-1228	 0D6E  0B DB	 	 	PRDEL:  OR      BX,BX
-1229	 0D70  74 C8	 	 	        JZ      PR1
-1230	 0D72  4B	 	 	        DEC     BX
-1231	 0D73  89 1E 0148 R	 	        MOV     [TLEN],BX
-1232	 0D77  8B C3	 	 	        MOV     AX,BX
-1233	 0D79  04 2D	 	 	        ADD     AL,MSGC+6       ; after
+1250	 0DB0  74 C8	 	 	        JZ      PR1
+1251	 0DB2  4B	 	 	        DEC     BX
+1252	 0DB3  89 1E 0148 R	 	        MOV     [TLEN],BX
+1253	 0DB7  8B C3	 	 	        MOV     AX,BX
+1254	 0DB9  04 2D	 	 	        ADD     AL,MSGC+6       ; after
 	 	 	 	 "Find: "
-1234	 0D7B  B4 00	 	 	        MOV     AH,0
-1235	 0D7D  E8 129B R	 	        CALL    PUTPOS
-1236	 0D80  E8 10DD R	 	        CALL    PUTEOL
-1237	 0D83  EB B5	 	 	        JMP     PR1
-1238	 0D85  F8	 	 	PRX:    CLC
-1239	 0D86  C3	 	 	        RET
-1240	 0D87  F9	 	 	PRQ:    STC
-1241	 0D88  C3	 	 	        RET
-1242	 	 	 	 	
-1243	 	 	 	 	; -------------------------------------
+1255	 0DBB  B4 00	 	 	        MOV     AH,0
+1256	 0DBD  E8 12DE R	 	        CALL    PUTPOS
+1257	 0DC0  E8 1120 R	 	        CALL    PUTEOL
+1258	 0DC3  EB B5	 	 	        JMP     PR1
+1259	 0DC5  F8	 	 	PRX:    CLC
+1260	 0DC6  C3	 	 	        RET
+1261	 0DC7  E8 134F R	 	PRESC:  CALL    GETKEY          ; ESC: 
+	 	 	 	take the arrow's letter too (ESCK)
+1262	 0DCA  F9	 	 	PRQ:    STC
+1263	 0DCB  C3	 	 	        RET
+1264	 	 	 	 	
+1265	 	 	 	 	; -------------------------------------
 	 	 	 	--------------------------- marks
-1244	 	 	 	 	; MARKC: the cursor's row, from the cur
+1266	 	 	 	 	; MARKC: the cursor's row, from the cur
 	 	 	 	sor on
-1245	 0D89  A1 0119 R	 	MARKC:  MOV     AX,[CCOL]
-1246	 0D8C  2B 06 0117 R	 	        SUB     AX,[LEFT]
-1247	 0D90  8B 1E 011B R	 	        MOV     BX,[CROW]
-1248	 0D94  3A 87 015A R	 	        CMP     AL,DIRTY[BX]
-1249	 0D98  73 04	 	 	        JNB     MCX
-1250	 0D9A  88 87 015A R	 	        MOV     DIRTY[BX],AL
-1251	 0D9E  C3	 	 	MCX:    RET
-1252	 	 	 	 	
-1253	 	 	 	 	; MARKB: the rows below the cursor's; M
+1267	 0DCC  A1 0119 R	 	MARKC:  MOV     AX,[CCOL]
+1268	 0DCF  2B 06 0117 R	 	        SUB     AX,[LEFT]
+1269	 0DD3  8B 1E 011B R	 	        MOV     BX,[CROW]
+1270	 0DD7  3A 87 015A R	 	        CMP     AL,DIRTY[BX]
+1271	 0DDB  73 04	 	 	        JNB     MCX
+1272	 0DDD  88 87 015A R	 	        MOV     DIRTY[BX],AL
+1273	 0DE1  C3	 	 	MCX:    RET
+1274	 	 	 	 	
+1275	 	 	 	 	; MARKB: the rows below the cursor's; M
 	 	 	 	ARKR: the rows from AX on
-1254	 0D9F  A1 011B R	 	MARKB:  MOV     AX,[CROW]
-1255	 0DA2  40	 	 	        INC     AX
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-28
-
-
-
-1256	 0DA3  0B C0	 	 	MARKR:  OR      AX,AX
-1257	 0DA5  79 02	 	 	        JNS     MR1
-1258	 0DA7  33 C0	 	 	        XOR     AX,AX
-1259	 0DA9  8B 0E 011F R	 	MR1:    MOV     CX,[NR]
-1260	 0DAD  2B C8	 	 	        SUB     CX,AX
-1261	 0DAF  76 ED	 	 	        JBE     MCX
-1262	 0DB1  8B F8	 	 	        MOV     DI,AX
-1263	 0DB3  81 C7 015A R	 	        ADD     DI,OFFSET DIRTY
-1264	 0DB7  32 C0	 	 	        XOR     AL,AL
-1265	 0DB9  F3/ AA	 	 	        REP     STOSB
-1266	 0DBB  C3	 	 	        RET
-1267	 	 	 	 	
-1268	 	 	 	 	; ALLD: every row, all of it
-1269	 0DBC  33 C0	 	 	ALLD:   XOR     AX,AX
-1270	 0DBE  E8 0DA3 R	 	        CALL    MARKR
-1271	 0DC1  C6 06 012A R 01	 	        MOV     [FULL],1
-1272	 0DC6  C3	 	 	        RET
-1273	 	 	 	 	
-1274	 	 	 	 	; REDRAW: clear the terminal, then ever
+1276	 0DE2  A1 011B R	 	MARKB:  MOV     AX,[CROW]
+1277	 0DE5  40	 	 	        INC     AX
+1278	 0DE6  0B C0	 	 	MARKR:  OR      AX,AX
+1279	 0DE8  79 02	 	 	        JNS     MR1
+1280	 0DEA  33 C0	 	 	        XOR     AX,AX
+1281	 0DEC  8B 0E 011F R	 	MR1:    MOV     CX,[NR]
+1282	 0DF0  2B C8	 	 	        SUB     CX,AX
+1283	 0DF2  76 ED	 	 	        JBE     MCX
+1284	 0DF4  8B F8	 	 	        MOV     DI,AX
+1285	 0DF6  81 C7 015A R	 	        ADD     DI,OFFSET DIRTY
+1286	 0DFA  32 C0	 	 	        XOR     AL,AL
+1287	 0DFC  F3/ AA	 	 	        REP     STOSB
+1288	 0DFE  C3	 	 	        RET
+1289	 	 	 	 	
+1290	 	 	 	 	; ALLD: every row, all of it
+1291	 0DFF  33 C0	 	 	ALLD:   XOR     AX,AX
+1292	 0E01  E8 0DE6 R	 	        CALL    MARKR
+1293	 0E04  C6 06 012A R 01	 	        MOV     [FULL],1
+1294	 0E09  C3	 	 	        RET
+1295	 	 	 	 	
+1296	 	 	 	 	; REDRAW: clear the terminal, then ever
 	 	 	 	ything is to be sent
-1275	 0DC7  E8 12F4 R	 	REDRAW: CALL    CLS
-1276	 0DCA  E8 0DBC R	 	        CALL    ALLD
-1277	 0DCD  C6 06 012B R 01	 	        MOV     [STFULL],1
-1278	 0DD2  C3	 	 	        RET
-1279	 	 	 	 	
-1280	 	 	 	 	; -------------------------------------
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-29
+
+
+
+1297	 0E0A  E8 1337 R	 	REDRAW: CALL    CLS
+1298	 0E0D  E8 0DFF R	 	        CALL    ALLD
+1299	 0E10  C6 06 012B R 01	 	        MOV     [STFULL],1
+1300	 0E15  C3	 	 	        RET
+1301	 	 	 	 	
+1302	 	 	 	 	; -------------------------------------
 	 	 	 	--------------------------- the screen
-1281	 	 	 	 	;
-1282	 	 	 	 	; FIXSCR: the cursor's line and column;
+1303	 	 	 	 	;
+1304	 	 	 	 	; FIXSCR: the cursor's line and column;
 	 	 	 	 the top line and the first column
-1283	 	 	 	 	; shown, so that the cursor is on the s
+1305	 	 	 	 	; shown, so that the cursor is on the s
 	 	 	 	creen
-1284	 	 	 	 	;
-1285	 0DD3  A1 010B R	 	FIXSCR: MOV     AX,[GAPS]       ; CLS_,
+1306	 	 	 	 	;
+1307	 0E16  A1 010B R	 	FIXSCR: MOV     AX,[GAPS]       ; CLS_,
 	 	 	 	 CCOL
-1286	 0DD6  E8 099A R	 	        CALL    LSOF
-1287	 0DD9  A3 0124 R	 	        MOV     [CLS_],AX
-1288	 0DDC  8B F0	 	 	        MOV     SI,AX
-1289	 0DDE  8B 0E 010B R	 	        MOV     CX,[GAPS]
-1290	 0DE2  2B CE	 	 	        SUB     CX,SI
-1291	 0DE4  E3 1A	 	 	        JCXZ    FS3
-1292	 0DE6  8B FE	 	 	        MOV     DI,SI
-1293	 0DE8  B0 09	 	 	        MOV     AL,TAB
-1294	 0DEA  51	 	 	        PUSH    CX
-1295	 0DEB  F2/ AE	 	 	        REPNE   SCASB
-1296	 0DED  59	 	 	        POP     CX
-1297	 0DEE  75 10	 	 	        JNZ     FS3             ; no ta
+1308	 0E19  E8 09DA R	 	        CALL    LSOF
+1309	 0E1C  A3 0124 R	 	        MOV     [CLS_],AX
+1310	 0E1F  8B F0	 	 	        MOV     SI,AX
+1311	 0E21  8B 0E 010B R	 	        MOV     CX,[GAPS]
+1312	 0E25  2B CE	 	 	        SUB     CX,SI
+1313	 0E27  E3 1A	 	 	        JCXZ    FS3
+1314	 0E29  8B FE	 	 	        MOV     DI,SI
+1315	 0E2B  B0 09	 	 	        MOV     AL,TAB
+1316	 0E2D  51	 	 	        PUSH    CX
+1317	 0E2E  F2/ AE	 	 	        REPNE   SCASB
+1318	 0E30  59	 	 	        POP     CX
+1319	 0E31  75 10	 	 	        JNZ     FS3             ; no ta
 	 	 	 	b: a column a byte
-1298	 0DF0  33 D2	 	 	        XOR     DX,DX
-1299	 0DF2  AC	 	 	FS2:    LODSB
-1300	 0DF3  3C 09	 	 	        CMP     AL,TAB
-1301	 0DF5  75 04	 	 	        JNZ     FS2A
-1302	 0DF7  81 CA 0007	 	        OR      DX,7
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-29
-
-
-
-1303	 0DFB  42	 	 	FS2A:   INC     DX
-1304	 0DFC  E2 F4	 	 	        LOOP    FS2
-1305	 0DFE  8B CA	 	 	        MOV     CX,DX
-1306	 0E00  89 0E 0119 R	 	FS3:    MOV     [CCOL],CX
-1307	 0E04  80 3E 0128 R 00	 	        CMP     [VERT],0
-1308	 0E09  75 04	 	 	        JNZ     FS4
-1309	 0E0B  89 0E 0126 R	 	        MOV     [GOAL],CX
-1310	 0E0F  A1 0115 R	 	FS4:    MOV     AX,[LINE]       ; the r
+1320	 0E33  33 D2	 	 	        XOR     DX,DX
+1321	 0E35  AC	 	 	FS2:    LODSB
+1322	 0E36  3C 09	 	 	        CMP     AL,TAB
+1323	 0E38  75 04	 	 	        JNZ     FS2A
+1324	 0E3A  81 CA 0007	 	        OR      DX,7
+1325	 0E3E  42	 	 	FS2A:   INC     DX
+1326	 0E3F  E2 F4	 	 	        LOOP    FS2
+1327	 0E41  8B CA	 	 	        MOV     CX,DX
+1328	 0E43  89 0E 0119 R	 	FS3:    MOV     [CCOL],CX
+1329	 0E47  80 3E 0128 R 00	 	        CMP     [VERT],0
+1330	 0E4C  75 04	 	 	        JNZ     FS4
+1331	 0E4E  89 0E 0126 R	 	        MOV     [GOAL],CX
+1332	 0E52  A1 0115 R	 	FS4:    MOV     AX,[LINE]       ; the r
 	 	 	 	ow
-1311	 0E12  2B 06 0113 R	 	        SUB     AX,[TOPLN]
-1312	 0E16  72 2C	 	 	        JB      FSUP
-1313	 0E18  3B 06 011F R	 	        CMP     AX,[NR]
-1314	 0E1C  72 52	 	 	        JB      FSROW
-1315	 0E1E  77 41	 	 	        JA      FSCEN
-1316	 0E20  8B 3E 0111 R	 	        MOV     DI,[TOP]        ; one b
+1333	 0E55  2B 06 0113 R	 	        SUB     AX,[TOPLN]
+1334	 0E59  72 2C	 	 	        JB      FSUP
+1335	 0E5B  3B 06 011F R	 	        CMP     AX,[NR]
+1336	 0E5F  72 52	 	 	        JB      FSROW
+1337	 0E61  77 41	 	 	        JA      FSCEN
+1338	 0E63  8B 3E 0111 R	 	        MOV     DI,[TOP]        ; one b
 	 	 	 	elow: a line up
-1317	 0E24  8B 1E 010B R	 	        MOV     BX,[GAPS]
-1318	 0E28  E8 09B5 R	 	        CALL    NEXTLF
-1319	 0E2B  47	 	 	        INC     DI
-1320	 0E2C  89 3E 0111 R	 	        MOV     [TOP],DI
-1321	 0E30  FF 06 0113 R	 	        INC     WORD PTR [TOPLN]
-1322	 0E34  80 3E 012A R 00	 	        CMP     [FULL],0
-1323	 0E39  75 03	 	 	        JNZ     FS5
-1324	 0E3B  E8 0EF0 R	 	        CALL    SCRUP
-1325	 0E3E  A1 011F R	 	FS5:    MOV     AX,[NR]
-1326	 0E41  48	 	 	        DEC     AX
-1327	 0E42  EB 2C	 	 	        JMP     SHORT FSROW
-1328	 0E44  40	 	 	FSUP:   INC     AX
-1329	 0E45  75 1A	 	 	        JNZ     FSCEN
-1330	 0E47  A1 0124 R	 	        MOV     AX,[CLS_]       ; one a
+1339	 0E67  8B 1E 010B R	 	        MOV     BX,[GAPS]
+1340	 0E6B  E8 09F5 R	 	        CALL    NEXTLF
+1341	 0E6E  47	 	 	        INC     DI
+1342	 0E6F  89 3E 0111 R	 	        MOV     [TOP],DI
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-30
+
+
+
+1343	 0E73  FF 06 0113 R	 	        INC     WORD PTR [TOPLN]
+1344	 0E77  80 3E 012A R 00	 	        CMP     [FULL],0
+1345	 0E7C  75 03	 	 	        JNZ     FS5
+1346	 0E7E  E8 0F33 R	 	        CALL    SCRUP
+1347	 0E81  A1 011F R	 	FS5:    MOV     AX,[NR]
+1348	 0E84  48	 	 	        DEC     AX
+1349	 0E85  EB 2C	 	 	        JMP     SHORT FSROW
+1350	 0E87  40	 	 	FSUP:   INC     AX
+1351	 0E88  75 1A	 	 	        JNZ     FSCEN
+1352	 0E8A  A1 0124 R	 	        MOV     AX,[CLS_]       ; one a
 	 	 	 	bove: a line down
-1331	 0E4A  A3 0111 R	 	        MOV     [TOP],AX
-1332	 0E4D  A1 0115 R	 	        MOV     AX,[LINE]
-1333	 0E50  A3 0113 R	 	        MOV     [TOPLN],AX
-1334	 0E53  80 3E 012A R 00	 	        CMP     [FULL],0
-1335	 0E58  75 03	 	 	        JNZ     FS6
-1336	 0E5A  E8 0F15 R	 	        CALL    SCRDN
-1337	 0E5D  33 C0	 	 	FS6:    XOR     AX,AX
-1338	 0E5F  EB 0F	 	 	        JMP     SHORT FSROW
-1339	 0E61  A1 0124 R	 	FSCEN:  MOV     AX,[CLS_]       ; furth
+1353	 0E8D  A3 0111 R	 	        MOV     [TOP],AX
+1354	 0E90  A1 0115 R	 	        MOV     AX,[LINE]
+1355	 0E93  A3 0113 R	 	        MOV     [TOPLN],AX
+1356	 0E96  80 3E 012A R 00	 	        CMP     [FULL],0
+1357	 0E9B  75 03	 	 	        JNZ     FS6
+1358	 0E9D  E8 0F58 R	 	        CALL    SCRDN
+1359	 0EA0  33 C0	 	 	FS6:    XOR     AX,AX
+1360	 0EA2  EB 0F	 	 	        JMP     SHORT FSROW
+1361	 0EA4  A1 0124 R	 	FSCEN:  MOV     AX,[CLS_]       ; furth
 	 	 	 	er: the cursor's line in the middle
-1340	 0E64  8B 0E 011F R	 	        MOV     CX,[NR]
-1341	 0E68  D1 E9	 	 	        SHR     CX,1
-1342	 0E6A  E8 0EC1 R	 	        CALL    SETTOP
-1343	 0E6D  A1 011B R	 	        MOV     AX,[CROW]
-1344	 0E70  A3 011B R	 	FSROW:  MOV     [CROW],AX
-1345	 0E73  A1 0119 R	 	        MOV     AX,[CCOL]       ; the c
+1362	 0EA7  8B 0E 011F R	 	        MOV     CX,[NR]
+1363	 0EAB  D1 E9	 	 	        SHR     CX,1
+1364	 0EAD  E8 0F04 R	 	        CALL    SETTOP
+1365	 0EB0  A1 011B R	 	        MOV     AX,[CROW]
+1366	 0EB3  A3 011B R	 	FSROW:  MOV     [CROW],AX
+1367	 0EB6  A1 0119 R	 	        MOV     AX,[CCOL]       ; the c
 	 	 	 	olumns
-1346	 0E76  3B 06 0117 R	 	        CMP     AX,[LEFT]
-1347	 0E7A  72 0D	 	 	        JB      FSH
-1348	 0E7C  8B 1E 0117 R	 	        MOV     BX,[LEFT]
-1349	 0E80  03 1E 0121 R	 	        ADD     BX,[W]
-1350	 0E84  4B	 	 	        DEC     BX
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-30
+1368	 0EB9  3B 06 0117 R	 	        CMP     AX,[LEFT]
+1369	 0EBD  72 0D	 	 	        JB      FSH
+1370	 0EBF  8B 1E 0117 R	 	        MOV     BX,[LEFT]
+1371	 0EC3  03 1E 0121 R	 	        ADD     BX,[W]
+1372	 0EC7  4B	 	 	        DEC     BX
+1373	 0EC8  3B C3	 	 	        CMP     AX,BX
+1374	 0ECA  76 28	 	 	        JBE     FSM
+1375	 0ECC  8B 1E 0121 R	 	FSH:    MOV     BX,[W]
+1376	 0ED0  D1 EB	 	 	        SHR     BX,1
+1377	 0ED2  2B C3	 	 	        SUB     AX,BX
+1378	 0ED4  73 02	 	 	        JNB     FSH1
+1379	 0ED6  33 C0	 	 	        XOR     AX,AX
+1380	 0ED8  25 FFF8	 	 	FSH1:   AND     AX,0FFF8H
+1381	 0EDB  BB 0400	 	 	        MOV     BX,LMAX
+1382	 0EDE  2B 1E 0121 R	 	        SUB     BX,[W]
+1383	 0EE2  3B C3	 	 	        CMP     AX,BX
+1384	 0EE4  76 02	 	 	        JBE     FSH2
+1385	 0EE6  8B C3	 	 	        MOV     AX,BX
+1386	 0EE8  3B 06 0117 R	 	FSH2:   CMP     AX,[LEFT]
+1387	 0EEC  74 06	 	 	        JZ      FSM
+1388	 0EEE  A3 0117 R	 	        MOV     [LEFT],AX
+1389	 0EF1  E8 0DFF R	 	        CALL    ALLD
+1390	 0EF4  80 3E 0129 R 00	 	FSM:    CMP     [MARKF],0
+1391	 0EF9  74 08	 	 	        JZ      FSX
+1392	 0EFB  C6 06 0129 R 00	 	        MOV     [MARKF],0
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-31
 
 
 
-1351	 0E85  3B C3	 	 	        CMP     AX,BX
-1352	 0E87  76 28	 	 	        JBE     FSM
-1353	 0E89  8B 1E 0121 R	 	FSH:    MOV     BX,[W]
-1354	 0E8D  D1 EB	 	 	        SHR     BX,1
-1355	 0E8F  2B C3	 	 	        SUB     AX,BX
-1356	 0E91  73 02	 	 	        JNB     FSH1
-1357	 0E93  33 C0	 	 	        XOR     AX,AX
-1358	 0E95  25 FFF8	 	 	FSH1:   AND     AX,0FFF8H
-1359	 0E98  BB 0400	 	 	        MOV     BX,LMAX
-1360	 0E9B  2B 1E 0121 R	 	        SUB     BX,[W]
-1361	 0E9F  3B C3	 	 	        CMP     AX,BX
-1362	 0EA1  76 02	 	 	        JBE     FSH2
-1363	 0EA3  8B C3	 	 	        MOV     AX,BX
-1364	 0EA5  3B 06 0117 R	 	FSH2:   CMP     AX,[LEFT]
-1365	 0EA9  74 06	 	 	        JZ      FSM
-1366	 0EAB  A3 0117 R	 	        MOV     [LEFT],AX
-1367	 0EAE  E8 0DBC R	 	        CALL    ALLD
-1368	 0EB1  80 3E 0129 R 00	 	FSM:    CMP     [MARKF],0
-1369	 0EB6  74 08	 	 	        JZ      FSX
-1370	 0EB8  C6 06 0129 R 00	 	        MOV     [MARKF],0
-1371	 0EBD  E8 0D89 R	 	        CALL    MARKC
-1372	 0EC0  C3	 	 	FSX:    RET
-1373	 	 	 	 	
-1374	 	 	 	 	; SETTOP: the top line CX lines above t
+1393	 0F00  E8 0DCC R	 	        CALL    MARKC
+1394	 0F03  C3	 	 	FSX:    RET
+1395	 	 	 	 	
+1396	 	 	 	 	; SETTOP: the top line CX lines above t
 	 	 	 	he line at AX (fewer at the start)
-1375	 0EC1  33 D2	 	 	SETTOP: XOR     DX,DX
-1376	 0EC3  E3 12	 	 	ST1:    JCXZ    ST2
-1377	 0EC5  3B 06 0109 R	 	        CMP     AX,[BUFS]
-1378	 0EC9  74 0C	 	 	        JZ      ST2
-1379	 0ECB  48	 	 	        DEC     AX
-1380	 0ECC  51	 	 	        PUSH    CX
-1381	 0ECD  52	 	 	        PUSH    DX
-1382	 0ECE  E8 099A R	 	        CALL    LSOF
-1383	 0ED1  5A	 	 	        POP     DX
-1384	 0ED2  59	 	 	        POP     CX
-1385	 0ED3  42	 	 	        INC     DX
-1386	 0ED4  49	 	 	        DEC     CX
-1387	 0ED5  EB EC	 	 	        JMP     ST1
-1388	 0ED7  A3 0111 R	 	ST2:    MOV     [TOP],AX
-1389	 0EDA  89 16 011B R	 	        MOV     [CROW],DX
-1390	 0EDE  A1 0115 R	 	        MOV     AX,[LINE]
-1391	 0EE1  2B C2	 	 	        SUB     AX,DX
-1392	 0EE3  3B 06 0113 R	 	        CMP     AX,[TOPLN]
-1393	 0EE7  A3 0113 R	 	        MOV     [TOPLN],AX
-1394	 0EEA  74 03	 	 	        JZ      ST3
-1395	 0EEC  E8 0DBC R	 	        CALL    ALLD
-1396	 0EEF  C3	 	 	ST3:    RET
-1397	 	 	 	 	
-1398	 	 	 	 	; SCRUP: LF on the bottom row moves eve
+1397	 0F04  33 D2	 	 	SETTOP: XOR     DX,DX
+1398	 0F06  E3 12	 	 	ST1:    JCXZ    ST2
+1399	 0F08  3B 06 0109 R	 	        CMP     AX,[BUFS]
+1400	 0F0C  74 0C	 	 	        JZ      ST2
+1401	 0F0E  48	 	 	        DEC     AX
+1402	 0F0F  51	 	 	        PUSH    CX
+1403	 0F10  52	 	 	        PUSH    DX
+1404	 0F11  E8 09DA R	 	        CALL    LSOF
+1405	 0F14  5A	 	 	        POP     DX
+1406	 0F15  59	 	 	        POP     CX
+1407	 0F16  42	 	 	        INC     DX
+1408	 0F17  49	 	 	        DEC     CX
+1409	 0F18  EB EC	 	 	        JMP     ST1
+1410	 0F1A  A3 0111 R	 	ST2:    MOV     [TOP],AX
+1411	 0F1D  89 16 011B R	 	        MOV     [CROW],DX
+1412	 0F21  A1 0115 R	 	        MOV     AX,[LINE]
+1413	 0F24  2B C2	 	 	        SUB     AX,DX
+1414	 0F26  3B 06 0113 R	 	        CMP     AX,[TOPLN]
+1415	 0F2A  A3 0113 R	 	        MOV     [TOPLN],AX
+1416	 0F2D  74 03	 	 	        JZ      ST3
+1417	 0F2F  E8 0DFF R	 	        CALL    ALLD
+1418	 0F32  C3	 	 	ST3:    RET
+1419	 	 	 	 	
+1420	 	 	 	 	; SCRUP: LF on the bottom row moves eve
 	 	 	 	ry row up; SCRDN: ESC I on the
-1399	 	 	 	 	; top row moves them down. The marks mo
+1421	 	 	 	 	; top row moves them down. The marks mo
 	 	 	 	ve with the rows; the status line
-1400	 	 	 	 	; is sent again.
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-31
+1422	 	 	 	 	; is sent again.
+1423	 0F33  A1 011F R	 	SCRUP:  MOV     AX,[NR]
+1424	 0F36  8A E0	 	 	        MOV     AH,AL
+1425	 0F38  32 C0	 	 	        XOR     AL,AL
+1426	 0F3A  E8 12DE R	 	        CALL    PUTPOS
+1427	 0F3D  B0 0A	 	 	        MOV     AL,LF
+1428	 0F3F  E8 12F5 R	 	        CALL    PUTC
+1429	 0F42  BF 015A R	 	        MOV     DI,OFFSET DIRTY
+1430	 0F45  BE 015B R	 	        MOV     SI,OFFSET DIRTY+1
+1431	 0F48  8B 0E 011F R	 	        MOV     CX,[NR]
+1432	 0F4C  49	 	 	        DEC     CX
+1433	 0F4D  F3/ A4	 	 	        REP     MOVSB
+1434	 0F4F  C6 05 00	 	 	        MOV     BYTE PTR [DI],0
+1435	 0F52  C6 06 012B R 01	 	        MOV     [STFULL],1
+1436	 0F57  C3	 	 	        RET
+1437	 	 	 	 	
+1438	 0F58  33 C0	 	 	SCRDN:  XOR     AX,AX
+1439	 0F5A  E8 12DE R	 	        CALL    PUTPOS
+1440	 0F5D  B0 1B	 	 	        MOV     AL,KESC
+1441	 0F5F  E8 12F5 R	 	        CALL    PUTC
+1442	 0F62  B0 49	 	 	        MOV     AL,"I"
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-32
 
 
 
-1401	 0EF0  A1 011F R	 	SCRUP:  MOV     AX,[NR]
-1402	 0EF3  8A E0	 	 	        MOV     AH,AL
-1403	 0EF5  32 C0	 	 	        XOR     AL,AL
-1404	 0EF7  E8 129B R	 	        CALL    PUTPOS
-1405	 0EFA  B0 0A	 	 	        MOV     AL,LF
-1406	 0EFC  E8 12B2 R	 	        CALL    PUTC
-1407	 0EFF  BF 015A R	 	        MOV     DI,OFFSET DIRTY
-1408	 0F02  BE 015B R	 	        MOV     SI,OFFSET DIRTY+1
-1409	 0F05  8B 0E 011F R	 	        MOV     CX,[NR]
-1410	 0F09  49	 	 	        DEC     CX
-1411	 0F0A  F3/ A4	 	 	        REP     MOVSB
-1412	 0F0C  C6 05 00	 	 	        MOV     BYTE PTR [DI],0
-1413	 0F0F  C6 06 012B R 01	 	        MOV     [STFULL],1
-1414	 0F14  C3	 	 	        RET
-1415	 	 	 	 	
-1416	 0F15  33 C0	 	 	SCRDN:  XOR     AX,AX
-1417	 0F17  E8 129B R	 	        CALL    PUTPOS
-1418	 0F1A  B0 1B	 	 	        MOV     AL,KESC
-1419	 0F1C  E8 12B2 R	 	        CALL    PUTC
-1420	 0F1F  B0 49	 	 	        MOV     AL,"I"
-1421	 0F21  E8 12B2 R	 	        CALL    PUTC
-1422	 0F24  8B 0E 011F R	 	        MOV     CX,[NR]
-1423	 0F28  8B F9	 	 	        MOV     DI,CX
-1424	 0F2A  81 C7 0159 R	 	        ADD     DI,OFFSET DIRTY-1
-1425	 0F2E  8D 75 FF	 	 	        LEA     SI,[DI-1]
-1426	 0F31  49	 	 	        DEC     CX
-1427	 0F32  FD	 	 	        STD
-1428	 0F33  F3/ A4	 	 	        REP     MOVSB
-1429	 0F35  FC	 	 	        CLD
-1430	 0F36  C6 05 00	 	 	        MOV     BYTE PTR [DI],0
-1431	 0F39  C6 06 012B R 01	 	        MOV     [STFULL],1
-1432	 0F3E  C3	 	 	        RET
-1433	 	 	 	 	
-1434	 	 	 	 	;
-1435	 	 	 	 	; DRAW: the marked rows, top to bottom;
+1443	 0F64  E8 12F5 R	 	        CALL    PUTC
+1444	 0F67  8B 0E 011F R	 	        MOV     CX,[NR]
+1445	 0F6B  8B F9	 	 	        MOV     DI,CX
+1446	 0F6D  81 C7 0159 R	 	        ADD     DI,OFFSET DIRTY-1
+1447	 0F71  8D 75 FF	 	 	        LEA     SI,[DI-1]
+1448	 0F74  49	 	 	        DEC     CX
+1449	 0F75  FD	 	 	        STD
+1450	 0F76  F3/ A4	 	 	        REP     MOVSB
+1451	 0F78  FC	 	 	        CLD
+1452	 0F79  C6 05 00	 	 	        MOV     BYTE PTR [DI],0
+1453	 0F7C  C6 06 012B R 01	 	        MOV     [STFULL],1
+1454	 0F81  C3	 	 	        RET
+1455	 	 	 	 	
+1456	 	 	 	 	;
+1457	 	 	 	 	; DRAW: the marked rows, top to bottom;
 	 	 	 	 CF=1 if a key came first
-1436	 	 	 	 	;
-1437	 0F3F  BF 015A R	 	DRAW:   MOV     DI,OFFSET DIRTY ; the f
+1458	 	 	 	 	;
+1459	 0F82  BF 015A R	 	DRAW:   MOV     DI,OFFSET DIRTY ; the f
 	 	 	 	irst and the last marked rows: the
-1438	 0F42  8B 0E 011F R	 	        MOV     CX,[NR]         ;   lin
+1460	 0F85  8B 0E 011F R	 	        MOV     CX,[NR]         ;   lin
 	 	 	 	es of the others are not even looked at
-1439	 0F46  B0 FF	 	 	        MOV     AL,0FFH
-1440	 0F48  F3/ AE	 	 	        REPE    SCASB
-1441	 0F4A  75 03	 	 	        JNZ     DR0
-1442	 0F4C  E9 1063 R	 	        JMP     DRDONE
-1443	 0F4F  81 EF 015B R	 	DR0:    SUB     DI,OFFSET DIRTY+1
-1444	 0F53  89 3E 0139 R	 	        MOV     [DRROW],DI
-1445	 0F57  BF 0159 R	 	        MOV     DI,OFFSET DIRTY-1
-1446	 0F5A  03 3E 011F R	 	        ADD     DI,[NR]
-1447	 0F5E  8B 0E 011F R	 	        MOV     CX,[NR]
-1448	 0F62  FD	 	 	        STD
-1449	 0F63  F3/ AE	 	 	        REPE    SCASB
-1450	 0F65  FC	 	 	        CLD
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-32
-
-
-
-1451	 0F66  81 EF 0159 R	 	        SUB     DI,OFFSET DIRTY-1
-1452	 0F6A  89 3E 013B R	 	        MOV     [DRLAST],DI
-1453	 0F6E  A1 0139 R	 	        MOV     AX,[DRROW]
-1454	 0F71  3B 06 011B R	 	        CMP     AX,[CROW]
-1455	 0F75  73 57	 	 	        JAE     DR2             ; none 
+1461	 0F89  B0 FF	 	 	        MOV     AL,0FFH
+1462	 0F8B  F3/ AE	 	 	        REPE    SCASB
+1463	 0F8D  75 03	 	 	        JNZ     DR0
+1464	 0F8F  E9 10A6 R	 	        JMP     DRDONE
+1465	 0F92  81 EF 015B R	 	DR0:    SUB     DI,OFFSET DIRTY+1
+1466	 0F96  89 3E 0139 R	 	        MOV     [DRROW],DI
+1467	 0F9A  BF 0159 R	 	        MOV     DI,OFFSET DIRTY-1
+1468	 0F9D  03 3E 011F R	 	        ADD     DI,[NR]
+1469	 0FA1  8B 0E 011F R	 	        MOV     CX,[NR]
+1470	 0FA5  FD	 	 	        STD
+1471	 0FA6  F3/ AE	 	 	        REPE    SCASB
+1472	 0FA8  FC	 	 	        CLD
+1473	 0FA9  81 EF 0159 R	 	        SUB     DI,OFFSET DIRTY-1
+1474	 0FAD  89 3E 013B R	 	        MOV     [DRLAST],DI
+1475	 0FB1  A1 0139 R	 	        MOV     AX,[DRROW]
+1476	 0FB4  3B 06 011B R	 	        CMP     AX,[CROW]
+1477	 0FB8  73 57	 	 	        JAE     DR2             ; none 
 	 	 	 	above the cursor's row
-1456	 0F77  C7 06 0139 R 0000	        MOV     WORD PTR [DRROW],0
-1457	 0F7D  A1 0111 R	 	        MOV     AX,[TOP]
-1458	 0F80  A3 013D R	 	        MOV     [DRP],AX
-1459	 0F83  EB 07	 	 	        JMP     SHORT DR1
-1460	 0F85  C6 06 012A R 00	 	DRDN0:  MOV     [FULL],0
-1461	 0F8A  F8	 	 	        CLC
-1462	 0F8B  C3	 	 	        RET
-1463	 0F8C  8B 1E 0139 R	 	DR1:    MOV     BX,[DRROW]      ; the r
+1478	 0FBA  C7 06 0139 R 0000	        MOV     WORD PTR [DRROW],0
+1479	 0FC0  A1 0111 R	 	        MOV     AX,[TOP]
+1480	 0FC3  A3 013D R	 	        MOV     [DRP],AX
+1481	 0FC6  EB 07	 	 	        JMP     SHORT DR1
+1482	 0FC8  C6 06 012A R 00	 	DRDN0:  MOV     [FULL],0
+1483	 0FCD  F8	 	 	        CLC
+1484	 0FCE  C3	 	 	        RET
+1485	 0FCF  8B 1E 0139 R	 	DR1:    MOV     BX,[DRROW]      ; the r
 	 	 	 	ows above the cursor's
-1464	 0F90  3B 1E 013B R	 	        CMP     BX,[DRLAST]
-1465	 0F94  77 EF	 	 	        JA      DRDN0
-1466	 0F96  3B 1E 011B R	 	        CMP     BX,[CROW]
-1467	 0F9A  73 32	 	 	        JAE     DR2
-1468	 0F9C  8B 3E 013D R	 	        MOV     DI,[DRP]
-1469	 0FA0  53	 	 	        PUSH    BX
-1470	 0FA1  8B 1E 010B R	 	        MOV     BX,[GAPS]
-1471	 0FA5  E8 09B5 R	 	        CALL    NEXTLF
-1472	 0FA8  5B	 	 	        POP     BX
-1473	 0FA9  8B 36 013D R	 	        MOV     SI,[DRP]
-1474	 0FAD  89 36 0140 R	 	        MOV     [P1],SI
-1475	 0FB1  2B FE	 	 	        SUB     DI,SI
-1476	 0FB3  89 3E 0142 R	 	        MOV     [N1],DI
-1477	 0FB7  47	 	 	        INC     DI
-1478	 0FB8  01 3E 013D R	 	        ADD     [DRP],DI
-1479	 0FBC  C7 06 0146 R 0000	        MOV     WORD PTR [N2],0
-1480	 0FC2  E8 106A R	 	        CALL    DRAWR
-1481	 0FC5  73 01	 	 	        JNB     DR1A
-1482	 0FC7  C3	 	 	        RET
-1483	 0FC8  FF 06 0139 R	 	DR1A:   INC     WORD PTR [DRROW]
-1484	 0FCC  EB BE	 	 	        JMP     DR1
-1485	 0FCE  A1 011B R	 	DR2:    MOV     AX,[CROW]       ; the c
+1486	 0FD3  3B 1E 013B R	 	        CMP     BX,[DRLAST]
+1487	 0FD7  77 EF	 	 	        JA      DRDN0
+1488	 0FD9  3B 1E 011B R	 	        CMP     BX,[CROW]
+1489	 0FDD  73 32	 	 	        JAE     DR2
+1490	 0FDF  8B 3E 013D R	 	        MOV     DI,[DRP]
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-33
+
+
+
+1491	 0FE3  53	 	 	        PUSH    BX
+1492	 0FE4  8B 1E 010B R	 	        MOV     BX,[GAPS]
+1493	 0FE8  E8 09F5 R	 	        CALL    NEXTLF
+1494	 0FEB  5B	 	 	        POP     BX
+1495	 0FEC  8B 36 013D R	 	        MOV     SI,[DRP]
+1496	 0FF0  89 36 0140 R	 	        MOV     [P1],SI
+1497	 0FF4  2B FE	 	 	        SUB     DI,SI
+1498	 0FF6  89 3E 0142 R	 	        MOV     [N1],DI
+1499	 0FFA  47	 	 	        INC     DI
+1500	 0FFB  01 3E 013D R	 	        ADD     [DRP],DI
+1501	 0FFF  C7 06 0146 R 0000	        MOV     WORD PTR [N2],0
+1502	 1005  E8 10AD R	 	        CALL    DRAWR
+1503	 1008  73 01	 	 	        JNB     DR1A
+1504	 100A  C3	 	 	        RET
+1505	 100B  FF 06 0139 R	 	DR1A:   INC     WORD PTR [DRROW]
+1506	 100F  EB BE	 	 	        JMP     DR1
+1507	 1011  A1 011B R	 	DR2:    MOV     AX,[CROW]       ; the c
 	 	 	 	ursor's row: the line in two pieces
-1486	 0FD1  3B 06 013B R	 	        CMP     AX,[DRLAST]
-1487	 0FD5  77 AE	 	 	        JA      DRDN0
-1488	 0FD7  A3 0139 R	 	        MOV     [DRROW],AX
-1489	 0FDA  A1 0124 R	 	        MOV     AX,[CLS_]
-1490	 0FDD  A3 0140 R	 	        MOV     [P1],AX
-1491	 0FE0  8B 0E 010B R	 	        MOV     CX,[GAPS]
-1492	 0FE4  2B C8	 	 	        SUB     CX,AX
-1493	 0FE6  89 0E 0142 R	 	        MOV     [N1],CX
-1494	 0FEA  8B 3E 010D R	 	        MOV     DI,[GAPE]
-1495	 0FEE  89 3E 0144 R	 	        MOV     [P2],DI
-1496	 0FF2  8B 1E 010F R	 	        MOV     BX,[TEND]
-1497	 0FF6  E8 09B5 R	 	        CALL    NEXTLF
-1498	 0FF9  C6 06 013F R 00	 	        MOV     [DREOT],0
-1499	 0FFE  73 05	 	 	        JNB     DR3
-1500	 1000  C6 06 013F R 01	 	        MOV     [DREOT],1
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-33
-
-
-
-1501	 1005  8B C7	 	 	DR3:    MOV     AX,DI
-1502	 1007  2B 06 010D R	 	        SUB     AX,[GAPE]
-1503	 100B  A3 0146 R	 	        MOV     [N2],AX
-1504	 100E  47	 	 	        INC     DI
-1505	 100F  89 3E 013D R	 	        MOV     [DRP],DI
-1506	 1013  E8 106A R	 	        CALL    DRAWR
-1507	 1016  72 4A	 	 	        JB      DRX
-1508	 1018  FF 06 0139 R	 	DR4:    INC     WORD PTR [DRROW]       
+1508	 1014  3B 06 013B R	 	        CMP     AX,[DRLAST]
+1509	 1018  77 AE	 	 	        JA      DRDN0
+1510	 101A  A3 0139 R	 	        MOV     [DRROW],AX
+1511	 101D  A1 0124 R	 	        MOV     AX,[CLS_]
+1512	 1020  A3 0140 R	 	        MOV     [P1],AX
+1513	 1023  8B 0E 010B R	 	        MOV     CX,[GAPS]
+1514	 1027  2B C8	 	 	        SUB     CX,AX
+1515	 1029  89 0E 0142 R	 	        MOV     [N1],CX
+1516	 102D  8B 3E 010D R	 	        MOV     DI,[GAPE]
+1517	 1031  89 3E 0144 R	 	        MOV     [P2],DI
+1518	 1035  8B 1E 010F R	 	        MOV     BX,[TEND]
+1519	 1039  E8 09F5 R	 	        CALL    NEXTLF
+1520	 103C  C6 06 013F R 00	 	        MOV     [DREOT],0
+1521	 1041  73 05	 	 	        JNB     DR3
+1522	 1043  C6 06 013F R 01	 	        MOV     [DREOT],1
+1523	 1048  8B C7	 	 	DR3:    MOV     AX,DI
+1524	 104A  2B 06 010D R	 	        SUB     AX,[GAPE]
+1525	 104E  A3 0146 R	 	        MOV     [N2],AX
+1526	 1051  47	 	 	        INC     DI
+1527	 1052  89 3E 013D R	 	        MOV     [DRP],DI
+1528	 1056  E8 10AD R	 	        CALL    DRAWR
+1529	 1059  72 4A	 	 	        JB      DRX
+1530	 105B  FF 06 0139 R	 	DR4:    INC     WORD PTR [DRROW]       
 	 	 	 	 ; the rows below
-1509	 101C  8B 1E 0139 R	 	        MOV     BX,[DRROW]
-1510	 1020  3B 1E 013B R	 	        CMP     BX,[DRLAST]
-1511	 1024  77 3D	 	 	        JA      DRDONE
-1512	 1026  C7 06 0142 R 0000	        MOV     WORD PTR [N1],0
-1513	 102C  C7 06 0146 R 0000	        MOV     WORD PTR [N2],0
-1514	 1032  80 3E 013F R 00	 	        CMP     [DREOT],0
-1515	 1037  75 24	 	 	        JNZ     DR5
-1516	 1039  8B 3E 013D R	 	        MOV     DI,[DRP]
-1517	 103D  89 3E 0140 R	 	        MOV     [P1],DI
-1518	 1041  8B 1E 010F R	 	        MOV     BX,[TEND]
-1519	 1045  E8 09B5 R	 	        CALL    NEXTLF
-1520	 1048  73 05	 	 	        JNB     DR6
-1521	 104A  C6 06 013F R 01	 	        MOV     [DREOT],1
-1522	 104F  8B C7	 	 	DR6:    MOV     AX,DI
-1523	 1051  2B 06 013D R	 	        SUB     AX,[DRP]
-1524	 1055  A3 0142 R	 	        MOV     [N1],AX
-1525	 1058  47	 	 	        INC     DI
-1526	 1059  89 3E 013D R	 	        MOV     [DRP],DI
-1527	 105D  E8 106A R	 	DR5:    CALL    DRAWR
-1528	 1060  73 B6	 	 	        JNB     DR4
-1529	 1062  C3	 	 	DRX:    RET
-1530	 1063  C6 06 012A R 00	 	DRDONE: MOV     [FULL],0
-1531	 1068  F8	 	 	        CLC
-1532	 1069  C3	 	 	        RET
-1533	 	 	 	 	
-1534	 	 	 	 	; DRAWR: row DRROW, if marked, unless a
+1531	 105F  8B 1E 0139 R	 	        MOV     BX,[DRROW]
+1532	 1063  3B 1E 013B R	 	        CMP     BX,[DRLAST]
+1533	 1067  77 3D	 	 	        JA      DRDONE
+1534	 1069  C7 06 0142 R 0000	        MOV     WORD PTR [N1],0
+1535	 106F  C7 06 0146 R 0000	        MOV     WORD PTR [N2],0
+1536	 1075  80 3E 013F R 00	 	        CMP     [DREOT],0
+1537	 107A  75 24	 	 	        JNZ     DR5
+1538	 107C  8B 3E 013D R	 	        MOV     DI,[DRP]
+1539	 1080  89 3E 0140 R	 	        MOV     [P1],DI
+1540	 1084  8B 1E 010F R	 	        MOV     BX,[TEND]
+1541	 1088  E8 09F5 R	 	        CALL    NEXTLF
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-34
+
+
+
+1542	 108B  73 05	 	 	        JNB     DR6
+1543	 108D  C6 06 013F R 01	 	        MOV     [DREOT],1
+1544	 1092  8B C7	 	 	DR6:    MOV     AX,DI
+1545	 1094  2B 06 013D R	 	        SUB     AX,[DRP]
+1546	 1098  A3 0142 R	 	        MOV     [N1],AX
+1547	 109B  47	 	 	        INC     DI
+1548	 109C  89 3E 013D R	 	        MOV     [DRP],DI
+1549	 10A0  E8 10AD R	 	DR5:    CALL    DRAWR
+1550	 10A3  73 B6	 	 	        JNB     DR4
+1551	 10A5  C3	 	 	DRX:    RET
+1552	 10A6  C6 06 012A R 00	 	DRDONE: MOV     [FULL],0
+1553	 10AB  F8	 	 	        CLC
+1554	 10AC  C3	 	 	        RET
+1555	 	 	 	 	
+1556	 	 	 	 	; DRAWR: row DRROW, if marked, unless a
 	 	 	 	 key is waiting (CF=1)
-1535	 106A  8B 1E 0139 R	 	DRAWR:  MOV     BX,[DRROW]
-1536	 106E  80 BF 015A R FF	 	        CMP     DIRTY[BX],0FFH
-1537	 1073  74 09	 	 	        JZ      DWX
-1538	 1075  E8 1307 R	 	        CALL    KEYRDY
-1539	 1078  F9	 	 	        STC
-1540	 1079  75 04	 	 	        JNZ     DWR
-1541	 107B  E8 1080 R	 	        CALL    ROWOUT
-1542	 107E  F8	 	 	DWX:    CLC
-1543	 107F  C3	 	 	DWR:    RET
-1544	 	 	 	 	
-1545	 	 	 	 	; ROWOUT: send row DRROW from its mark 
+1557	 10AD  8B 1E 0139 R	 	DRAWR:  MOV     BX,[DRROW]
+1558	 10B1  80 BF 015A R FF	 	        CMP     DIRTY[BX],0FFH
+1559	 10B6  74 09	 	 	        JZ      DWX
+1560	 10B8  E8 134A R	 	        CALL    KEYRDY
+1561	 10BB  F9	 	 	        STC
+1562	 10BC  75 04	 	 	        JNZ     DWR
+1563	 10BE  E8 10C3 R	 	        CALL    ROWOUT
+1564	 10C1  F8	 	 	DWX:    CLC
+1565	 10C2  C3	 	 	DWR:    RET
+1566	 	 	 	 	
+1567	 	 	 	 	; ROWOUT: send row DRROW from its mark 
 	 	 	 	on: the pieces P1/N1, P2/N2 with
-1546	 	 	 	 	; their tabs expanded, the columns LEFT
+1568	 	 	 	 	; their tabs expanded, the columns LEFT
 	 	 	 	.. of them, and ESC K
-1547	 1080  E8 12C9 R	 	ROWOUT: CALL    FLUSHQ
-1548	 1083  BF 172D R	 	        MOV     DI,OFFSET BUFFERS+EBOFF
-1549	 1086  8B 16 0117 R	 	        MOV     DX,[LEFT]
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-34
-
-
-
-1550	 108A  03 16 0121 R	 	        ADD     DX,[W]
-1551	 108E  03 D7	 	 	        ADD     DX,DI           ; DX: n
+1569	 10C3  E8 130C R	 	ROWOUT: CALL    FLUSHQ
+1570	 10C6  BF 1770 R	 	        MOV     DI,OFFSET BUFFERS+EBOFF
+1571	 10C9  8B 16 0117 R	 	        MOV     DX,[LEFT]
+1572	 10CD  03 16 0121 R	 	        ADD     DX,[W]
+1573	 10D1  03 D7	 	 	        ADD     DX,DI           ; DX: n
 	 	 	 	o more is needed
-1552	 1090  8B 36 0140 R	 	        MOV     SI,[P1]
-1553	 1094  8B 0E 0142 R	 	        MOV     CX,[N1]
-1554	 1098  E8 10E7 R	 	        CALL    EXPAND
-1555	 109B  8B 36 0144 R	 	        MOV     SI,[P2]
-1556	 109F  8B 0E 0146 R	 	        MOV     CX,[N2]
-1557	 10A3  E8 10E7 R	 	        CALL    EXPAND
-1558	 10A6  3B FA	 	 	        CMP     DI,DX
-1559	 10A8  76 02	 	 	        JBE     RO1
-1560	 10AA  8B FA	 	 	        MOV     DI,DX
-1561	 10AC  8B 1E 0139 R	 	RO1:    MOV     BX,[DRROW]
-1562	 10B0  8A 87 015A R	 	        MOV     AL,DIRTY[BX]
-1563	 10B4  C6 87 015A R FF	 	        MOV     DIRTY[BX],0FFH
-1564	 10B9  8A E3	 	 	        MOV     AH,BL
-1565	 10BB  FE C4	 	 	        INC     AH
-1566	 10BD  50	 	 	        PUSH    AX
-1567	 10BE  E8 129B R	 	        CALL    PUTPOS
-1568	 10C1  58	 	 	        POP     AX
-1569	 10C2  32 E4	 	 	        XOR     AH,AH
-1570	 10C4  BE 172D R	 	        MOV     SI,OFFSET BUFFERS+EBOFF
-1571	 10C7  03 36 0117 R	 	        ADD     SI,[LEFT]
-1572	 10CB  03 F0	 	 	        ADD     SI,AX
-1573	 10CD  8B CF	 	 	        MOV     CX,DI
-1574	 10CF  2B CE	 	 	        SUB     CX,SI
-1575	 10D1  76 0A	 	 	        JBE     PUTEOL
-1576	 10D3  8B 3E 0137 R	 	        MOV     DI,[OPTR]
-1577	 10D7  F3/ A4	 	 	        REP     MOVSB
-1578	 10D9  89 3E 0137 R	 	        MOV     [OPTR],DI
-1579	 10DD  B0 1B	 	 	PUTEOL: MOV     AL,KESC
-1580	 10DF  E8 12B2 R	 	        CALL    PUTC
-1581	 10E2  B0 4B	 	 	        MOV     AL,"K"
-1582	 10E4  E9 12B2 R	 	        JMP     PUTC
-1583	 	 	 	 	
-1584	 	 	 	 	; EXPAND: CX bytes at SI to DI, tabs as
+1574	 10D3  8B 36 0140 R	 	        MOV     SI,[P1]
+1575	 10D7  8B 0E 0142 R	 	        MOV     CX,[N1]
+1576	 10DB  E8 112A R	 	        CALL    EXPAND
+1577	 10DE  8B 36 0144 R	 	        MOV     SI,[P2]
+1578	 10E2  8B 0E 0146 R	 	        MOV     CX,[N2]
+1579	 10E6  E8 112A R	 	        CALL    EXPAND
+1580	 10E9  3B FA	 	 	        CMP     DI,DX
+1581	 10EB  76 02	 	 	        JBE     RO1
+1582	 10ED  8B FA	 	 	        MOV     DI,DX
+1583	 10EF  8B 1E 0139 R	 	RO1:    MOV     BX,[DRROW]
+1584	 10F3  8A 87 015A R	 	        MOV     AL,DIRTY[BX]
+1585	 10F7  C6 87 015A R FF	 	        MOV     DIRTY[BX],0FFH
+1586	 10FC  8A E3	 	 	        MOV     AH,BL
+1587	 10FE  FE C4	 	 	        INC     AH
+1588	 1100  50	 	 	        PUSH    AX
+1589	 1101  E8 12DE R	 	        CALL    PUTPOS
+1590	 1104  58	 	 	        POP     AX
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-35
+
+
+
+1591	 1105  32 E4	 	 	        XOR     AH,AH
+1592	 1107  BE 1770 R	 	        MOV     SI,OFFSET BUFFERS+EBOFF
+1593	 110A  03 36 0117 R	 	        ADD     SI,[LEFT]
+1594	 110E  03 F0	 	 	        ADD     SI,AX
+1595	 1110  8B CF	 	 	        MOV     CX,DI
+1596	 1112  2B CE	 	 	        SUB     CX,SI
+1597	 1114  76 0A	 	 	        JBE     PUTEOL
+1598	 1116  8B 3E 0137 R	 	        MOV     DI,[OPTR]
+1599	 111A  F3/ A4	 	 	        REP     MOVSB
+1600	 111C  89 3E 0137 R	 	        MOV     [OPTR],DI
+1601	 1120  B0 1B	 	 	PUTEOL: MOV     AL,KESC
+1602	 1122  E8 12F5 R	 	        CALL    PUTC
+1603	 1125  B0 4B	 	 	        MOV     AL,"K"
+1604	 1127  E9 12F5 R	 	        JMP     PUTC
+1605	 	 	 	 	
+1606	 	 	 	 	; EXPAND: CX bytes at SI to DI, tabs as
 	 	 	 	 spaces to the next column that is
-1585	 	 	 	 	; a multiple of 8, other control bytes 
+1607	 	 	 	 	; a multiple of 8, other control bytes 
 	 	 	 	as "?"; up to DX at most (a tab
-1586	 	 	 	 	; can go 7 past it)
-1587	 10E7  E3 18	 	 	EXPAND: JCXZ    EXX
-1588	 10E9  8B C2	 	 	        MOV     AX,DX
-1589	 10EB  2B C7	 	 	        SUB     AX,DI
-1590	 10ED  76 12	 	 	        JBE     EXX
-1591	 10EF  3B C8	 	 	        CMP     CX,AX           ; a byt
+1608	 	 	 	 	; can go 7 past it)
+1609	 112A  E3 18	 	 	EXPAND: JCXZ    EXX
+1610	 112C  8B C2	 	 	        MOV     AX,DX
+1611	 112E  2B C7	 	 	        SUB     AX,DI
+1612	 1130  76 12	 	 	        JBE     EXX
+1613	 1132  3B C8	 	 	        CMP     CX,AX           ; a byt
 	 	 	 	e is a column, but for tabs
-1592	 10F1  76 02	 	 	        JBE     EX1
-1593	 10F3  8B C8	 	 	        MOV     CX,AX
-1594	 10F5  AC	 	 	EX1:    LODSB
-1595	 10F6  3C 20	 	 	        CMP     AL," "
-1596	 10F8  72 0C	 	 	        JB      EXC
-1597	 10FA  3C 7F	 	 	        CMP     AL,7FH
-1598	 10FC  73 04	 	 	        JAE     EXQ
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-35
+1614	 1134  76 02	 	 	        JBE     EX1
+1615	 1136  8B C8	 	 	        MOV     CX,AX
+1616	 1138  AC	 	 	EX1:    LODSB
+1617	 1139  3C 20	 	 	        CMP     AL," "
+1618	 113B  72 0C	 	 	        JB      EXC
+1619	 113D  3C 7F	 	 	        CMP     AL,7FH
+1620	 113F  73 04	 	 	        JAE     EXQ
+1621	 1141  AA	 	 	EX2:    STOSB
+1622	 1142  E2 F4	 	 	        LOOP    EX1
+1623	 1144  C3	 	 	EXX:    RET
+1624	 1145  B0 3F	 	 	EXQ:    MOV     AL,"?"
+1625	 1147  EB F8	 	 	        JMP     EX2
+1626	 1149  3C 09	 	 	EXC:    CMP     AL,TAB
+1627	 114B  75 F8	 	 	        JNZ     EXQ
+1628	 114D  51	 	 	        PUSH    CX
+1629	 114E  8B CF	 	 	        MOV     CX,DI
+1630	 1150  81 E9 1770 R	 	        SUB     CX,OFFSET BUFFERS+EBOFF
+1631	 1154  81 C9 0007	 	        OR      CX,7
+1632	 1158  41	 	 	        INC     CX
+1633	 1159  81 C1 1770 R	 	        ADD     CX,OFFSET BUFFERS+EBOFF
+1634	 115D  2B CF	 	 	        SUB     CX,DI
+1635	 115F  B0 20	 	 	        MOV     AL," "
+1636	 1161  F3/ AA	 	 	        REP     STOSB
+1637	 1163  59	 	 	        POP     CX
+1638	 1164  49	 	 	        DEC     CX
+1639	 1165  74 DD	 	 	        JZ      EXX
+1640	 1167  8B C2	 	 	        MOV     AX,DX
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-36
 
 
 
-1599	 10FE  AA	 	 	EX2:    STOSB
-1600	 10FF  E2 F4	 	 	        LOOP    EX1
-1601	 1101  C3	 	 	EXX:    RET
-1602	 1102  B0 3F	 	 	EXQ:    MOV     AL,"?"
-1603	 1104  EB F8	 	 	        JMP     EX2
-1604	 1106  3C 09	 	 	EXC:    CMP     AL,TAB
-1605	 1108  75 F8	 	 	        JNZ     EXQ
-1606	 110A  51	 	 	        PUSH    CX
-1607	 110B  8B CF	 	 	        MOV     CX,DI
-1608	 110D  81 E9 172D R	 	        SUB     CX,OFFSET BUFFERS+EBOFF
-1609	 1111  81 C9 0007	 	        OR      CX,7
-1610	 1115  41	 	 	        INC     CX
-1611	 1116  81 C1 172D R	 	        ADD     CX,OFFSET BUFFERS+EBOFF
-1612	 111A  2B CF	 	 	        SUB     CX,DI
-1613	 111C  B0 20	 	 	        MOV     AL," "
-1614	 111E  F3/ AA	 	 	        REP     STOSB
-1615	 1120  59	 	 	        POP     CX
-1616	 1121  49	 	 	        DEC     CX
-1617	 1122  74 DD	 	 	        JZ      EXX
-1618	 1124  8B C2	 	 	        MOV     AX,DX
-1619	 1126  2B C7	 	 	        SUB     AX,DI
-1620	 1128  76 D7	 	 	        JBE     EXX
-1621	 112A  3B C8	 	 	        CMP     CX,AX
-1622	 112C  76 C7	 	 	        JBE     EX1
-1623	 112E  8B C8	 	 	        MOV     CX,AX
-1624	 1130  EB C3	 	 	        JMP     EX1
-1625	 	 	 	 	
-1626	 	 	 	 	;
-1627	 	 	 	 	; STATUS: the status line, row 0: the w
+1641	 1169  2B C7	 	 	        SUB     AX,DI
+1642	 116B  76 D7	 	 	        JBE     EXX
+1643	 116D  3B C8	 	 	        CMP     CX,AX
+1644	 116F  76 C7	 	 	        JBE     EX1
+1645	 1171  8B C8	 	 	        MOV     CX,AX
+1646	 1173  EB C3	 	 	        JMP     EX1
+1647	 	 	 	 	
+1648	 	 	 	 	;
+1649	 	 	 	 	; STATUS: the status line, row 0: the w
 	 	 	 	hole of it, or the fields that
-1628	 	 	 	 	; changed
-1629	 	 	 	 	;
-1630	 1132  E8 12C9 R	 	STATUS: CALL    FLUSHQ
-1631	 1135  80 3E 012B R 00	 	        CMP     [STFULL],0
-1632	 113A  75 52	 	 	        JNZ     SFULL
-1633	 113C  A0 0123 R	 	        MOV     AL,[MODIF]
-1634	 113F  3A 06 0134 R	 	        CMP     AL,[SHMOD]
-1635	 1143  74 11	 	 	        JZ      SS1
-1636	 1145  A0 0135 R	 	        MOV     AL,[MODC]
-1637	 1148  32 E4	 	 	        XOR     AH,AH
-1638	 114A  E8 129B R	 	        CALL    PUTPOS
-1639	 114D  E8 126F R	 	        CALL    INVON
-1640	 1150  E8 120A R	 	        CALL    PUTMOD
-1641	 1153  E8 1279 R	 	        CALL    INVOFF
-1642	 1156  A1 0115 R	 	SS1:    MOV     AX,[LINE]
-1643	 1159  3B 06 0130 R	 	        CMP     AX,[SHLINE]
-1644	 115D  74 09	 	 	        JZ      SS2
-1645	 115F  B8 0017	 	 	        MOV     AX,LNUMC
-1646	 1162  E8 129B R	 	        CALL    PUTPOS
-1647	 1165  E8 121B R	 	        CALL    PUTLN
-1648	 1168  A1 0119 R	 	SS2:    MOV     AX,[CCOL]
-1649	 116B  40	 	 	        INC     AX
-1650	 116C  3B 06 0132 R	 	        CMP     AX,[SHCOL]
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-36
-
-
-
-1651	 1170  74 09	 	 	        JZ      SS3
-1652	 1172  B8 0021	 	 	        MOV     AX,CNUMC
-1653	 1175  E8 129B R	 	        CALL    PUTPOS
-1654	 1178  E8 1223 R	 	        CALL    PUTCN
-1655	 117B  A1 012C R	 	SS3:    MOV     AX,[MSG]
-1656	 117E  3B 06 012E R	 	        CMP     AX,[SHMSG]
-1657	 1182  74 09	 	 	        JZ      SS4
-1658	 1184  B8 0027	 	 	        MOV     AX,MSGC
-1659	 1187  E8 129B R	 	        CALL    PUTPOS
-1660	 118A  E8 1252 R	 	        CALL    PUTMSG
-1661	 118D  C3	 	 	SS4:    RET
-1662	 	 	 	 	
-1663	 118E  C6 06 012B R 00	 	SFULL:  MOV     [STFULL],0
-1664	 1193  33 C0	 	 	        XOR     AX,AX
-1665	 1195  E8 129B R	 	        CALL    PUTPOS
-1666	 1198  E8 126F R	 	        CALL    INVON
-1667	 119B  B0 20	 	 	        MOV     AL," "          ; " A:N
+1650	 	 	 	 	; changed
+1651	 	 	 	 	;
+1652	 1175  E8 130C R	 	STATUS: CALL    FLUSHQ
+1653	 1178  80 3E 012B R 00	 	        CMP     [STFULL],0
+1654	 117D  75 52	 	 	        JNZ     SFULL
+1655	 117F  A0 0123 R	 	        MOV     AL,[MODIF]
+1656	 1182  3A 06 0134 R	 	        CMP     AL,[SHMOD]
+1657	 1186  74 11	 	 	        JZ      SS1
+1658	 1188  A0 0135 R	 	        MOV     AL,[MODC]
+1659	 118B  32 E4	 	 	        XOR     AH,AH
+1660	 118D  E8 12DE R	 	        CALL    PUTPOS
+1661	 1190  E8 12B2 R	 	        CALL    INVON
+1662	 1193  E8 124D R	 	        CALL    PUTMOD
+1663	 1196  E8 12BC R	 	        CALL    INVOFF
+1664	 1199  A1 0115 R	 	SS1:    MOV     AX,[LINE]
+1665	 119C  3B 06 0130 R	 	        CMP     AX,[SHLINE]
+1666	 11A0  74 09	 	 	        JZ      SS2
+1667	 11A2  B8 0017	 	 	        MOV     AX,LNUMC
+1668	 11A5  E8 12DE R	 	        CALL    PUTPOS
+1669	 11A8  E8 125E R	 	        CALL    PUTLN
+1670	 11AB  A1 0119 R	 	SS2:    MOV     AX,[CCOL]
+1671	 11AE  40	 	 	        INC     AX
+1672	 11AF  3B 06 0132 R	 	        CMP     AX,[SHCOL]
+1673	 11B3  74 09	 	 	        JZ      SS3
+1674	 11B5  B8 0021	 	 	        MOV     AX,CNUMC
+1675	 11B8  E8 12DE R	 	        CALL    PUTPOS
+1676	 11BB  E8 1266 R	 	        CALL    PUTCN
+1677	 11BE  A1 012C R	 	SS3:    MOV     AX,[MSG]
+1678	 11C1  3B 06 012E R	 	        CMP     AX,[SHMSG]
+1679	 11C5  74 09	 	 	        JZ      SS4
+1680	 11C7  B8 0027	 	 	        MOV     AX,MSGC
+1681	 11CA  E8 12DE R	 	        CALL    PUTPOS
+1682	 11CD  E8 1295 R	 	        CALL    PUTMSG
+1683	 11D0  C3	 	 	SS4:    RET
+1684	 	 	 	 	
+1685	 11D1  C6 06 012B R 00	 	SFULL:  MOV     [STFULL],0
+1686	 11D6  33 C0	 	 	        XOR     AX,AX
+1687	 11D8  E8 12DE R	 	        CALL    PUTPOS
+1688	 11DB  E8 12B2 R	 	        CALL    INVON
+1689	 11DE  B0 20	 	 	        MOV     AL," "          ; " A:N
 	 	 	 	AME.EXT*" in inverse, 17 columns
-1668	 119D  E8 12B2 R	 	        CALL    PUTC
-1669	 11A0  A0 0136 R	 	        MOV     AL,[DRVL]
-1670	 11A3  E8 12B2 R	 	        CALL    PUTC
-1671	 11A6  B0 3A	 	 	        MOV     AL,":"
-1672	 11A8  E8 12B2 R	 	        CALL    PUTC
-1673	 11AB  BE 0193 R	 	        MOV     SI,OFFSET FCB+1
-1674	 11AE  B9 0008	 	 	        MOV     CX,8
-1675	 11B1  E8 1264 R	 	        CALL    PUTNM
-1676	 11B4  BE 019B R	 	        MOV     SI,OFFSET FCB+9
-1677	 11B7  80 3C 20	 	 	        CMP     BYTE PTR [SI]," "
-1678	 11BA  74 0B	 	 	        JZ      SF1
-1679	 11BC  B0 2E	 	 	        MOV     AL,"."
-1680	 11BE  E8 12B2 R	 	        CALL    PUTC
-1681	 11C1  B9 0003	 	 	        MOV     CX,3
-1682	 11C4  E8 1264 R	 	        CALL    PUTNM
-1683	 11C7  A1 0137 R	 	SF1:    MOV     AX,[OPTR]       ; the c
+1690	 11E0  E8 12F5 R	 	        CALL    PUTC
+1691	 11E3  A0 0136 R	 	        MOV     AL,[DRVL]
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-37
+
+
+
+1692	 11E6  E8 12F5 R	 	        CALL    PUTC
+1693	 11E9  B0 3A	 	 	        MOV     AL,":"
+1694	 11EB  E8 12F5 R	 	        CALL    PUTC
+1695	 11EE  BE 0193 R	 	        MOV     SI,OFFSET FCB+1
+1696	 11F1  B9 0008	 	 	        MOV     CX,8
+1697	 11F4  E8 12A7 R	 	        CALL    PUTNM
+1698	 11F7  BE 019B R	 	        MOV     SI,OFFSET FCB+9
+1699	 11FA  80 3C 20	 	 	        CMP     BYTE PTR [SI]," "
+1700	 11FD  74 0B	 	 	        JZ      SF1
+1701	 11FF  B0 2E	 	 	        MOV     AL,"."
+1702	 1201  E8 12F5 R	 	        CALL    PUTC
+1703	 1204  B9 0003	 	 	        MOV     CX,3
+1704	 1207  E8 12A7 R	 	        CALL    PUTNM
+1705	 120A  A1 0137 R	 	SF1:    MOV     AX,[OPTR]       ; the c
 	 	 	 	olumn of the mark
-1684	 11CA  2D 1333 R	 	        SUB     AX,OFFSET BUFFERS+OBOFF
+1706	 120D  2D 1376 R	 	        SUB     AX,OFFSET BUFFERS+OBOFF
 	 	 	 	+6
-1685	 11CD  2B 06 1208 R	 	        SUB     AX,[STCUT]
-1686	 11D1  A2 0135 R	 	        MOV     [MODC],AL
-1687	 11D4  E8 120A R	 	        CALL    PUTMOD
-1688	 11D7  B1 11	 	 	        MOV     CL,17
-1689	 11D9  2A 0E 0135 R	 	        SUB     CL,[MODC]
-1690	 11DD  FE C9	 	 	        DEC     CL
-1691	 11DF  32 ED	 	 	        XOR     CH,CH
-1692	 11E1  B0 20	 	 	        MOV     AL," "
-1693	 11E3  E8 12B2 R	 	SF2:    CALL    PUTC
-1694	 11E6  E2 FB	 	 	        LOOP    SF2
-1695	 11E8  E8 1279 R	 	        CALL    INVOFF
-1696	 11EB  BE 02CA R	 	        MOV     SI,OFFSET MLINE
-1697	 11EE  E8 12BE R	 	        CALL    PUTS
-1698	 11F1  E8 121B R	 	        CALL    PUTLN
-1699	 11F4  BE 02D1 R	 	        MOV     SI,OFFSET MCOL
-1700	 11F7  E8 12BE R	 	        CALL    PUTS
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-37
-
-
-
-1701	 11FA  A1 0119 R	 	        MOV     AX,[CCOL]
-1702	 11FD  40	 	 	        INC     AX
-1703	 11FE  E8 1223 R	 	        CALL    PUTCN
-1704	 1201  B0 20	 	 	        MOV     AL," "
-1705	 1203  E8 12B2 R	 	        CALL    PUTC
-1706	 1206  EB 4A	 	 	        JMP     SHORT PUTMSG
-1707	 	 	 	 	
-1708	 1208  0000	 	 	STCUT   DW      0               ; bytes
+1707	 1210  2B 06 124B R	 	        SUB     AX,[STCUT]
+1708	 1214  A2 0135 R	 	        MOV     [MODC],AL
+1709	 1217  E8 124D R	 	        CALL    PUTMOD
+1710	 121A  B1 11	 	 	        MOV     CL,17
+1711	 121C  2A 0E 0135 R	 	        SUB     CL,[MODC]
+1712	 1220  FE C9	 	 	        DEC     CL
+1713	 1222  32 ED	 	 	        XOR     CH,CH
+1714	 1224  B0 20	 	 	        MOV     AL," "
+1715	 1226  E8 12F5 R	 	SF2:    CALL    PUTC
+1716	 1229  E2 FB	 	 	        LOOP    SF2
+1717	 122B  E8 12BC R	 	        CALL    INVOFF
+1718	 122E  BE 02E4 R	 	        MOV     SI,OFFSET MLINE
+1719	 1231  E8 1301 R	 	        CALL    PUTS
+1720	 1234  E8 125E R	 	        CALL    PUTLN
+1721	 1237  BE 02EB R	 	        MOV     SI,OFFSET MCOL
+1722	 123A  E8 1301 R	 	        CALL    PUTS
+1723	 123D  A1 0119 R	 	        MOV     AX,[CCOL]
+1724	 1240  40	 	 	        INC     AX
+1725	 1241  E8 1266 R	 	        CALL    PUTCN
+1726	 1244  B0 20	 	 	        MOV     AL," "
+1727	 1246  E8 12F5 R	 	        CALL    PUTC
+1728	 1249  EB 4A	 	 	        JMP     SHORT PUTMSG
+1729	 	 	 	 	
+1730	 124B  0000	 	 	STCUT   DW      0               ; bytes
 	 	 	 	 in OBUF before this status line
-1709	 	 	 	 	
-1710	 120A  A0 0123 R	 	PUTMOD: MOV     AL,[MODIF]
-1711	 120D  A2 0134 R	 	        MOV     [SHMOD],AL
-1712	 1210  0A C0	 	 	        OR      AL,AL
-1713	 1212  B0 20	 	 	        MOV     AL," "
-1714	 1214  74 02	 	 	        JZ      PM1
-1715	 1216  B0 2A	 	 	        MOV     AL,"*"
-1716	 1218  E9 12B2 R	 	PM1:    JMP     PUTC
-1717	 	 	 	 	
-1718	 121B  A1 0115 R	 	PUTLN:  MOV     AX,[LINE]
-1719	 121E  A3 0130 R	 	        MOV     [SHLINE],AX
-1720	 1221  EB 07	 	 	        JMP     SHORT PUTNUM
-1721	 1223  A1 0119 R	 	PUTCN:  MOV     AX,[CCOL]
-1722	 1226  40	 	 	        INC     AX
-1723	 1227  A3 0132 R	 	        MOV     [SHCOL],AX
-1724	 	 	 	 	
-1725	 	 	 	 	; PUTNUM: AX in decimal, 5 columns
-1726	 122A  BB 000A	 	 	PUTNUM: MOV     BX,10
-1727	 122D  33 C9	 	 	        XOR     CX,CX
-1728	 122F  33 D2	 	 	PN1:    XOR     DX,DX
-1729	 1231  F7 F3	 	 	        DIV     BX
-1730	 1233  52	 	 	        PUSH    DX
-1731	 1234  41	 	 	        INC     CX
-1732	 1235  0B C0	 	 	        OR      AX,AX
-1733	 1237  75 F6	 	 	        JNZ     PN1
-1734	 1239  BA 0005	 	 	        MOV     DX,5
-1735	 123C  2B D1	 	 	        SUB     DX,CX
-1736	 123E  58	 	 	PN2:    POP     AX
-1737	 123F  04 30	 	 	        ADD     AL,"0"
-1738	 1241  E8 12B2 R	 	        CALL    PUTC
-1739	 1244  E2 F8	 	 	        LOOP    PN2
-1740	 1246  8B CA	 	 	        MOV     CX,DX
-1741	 1248  B0 20	 	 	        MOV     AL," "
-1742	 124A  E3 05	 	 	PN3:    JCXZ    PNX
-1743	 124C  E8 12B2 R	 	        CALL    PUTC
-1744	 124F  E2 F9	 	 	        LOOP    PN3
-1745	 1251  C3	 	 	PNX:    RET
+1731	 	 	 	 	
+1732	 124D  A0 0123 R	 	PUTMOD: MOV     AL,[MODIF]
+1733	 1250  A2 0134 R	 	        MOV     [SHMOD],AL
+1734	 1253  0A C0	 	 	        OR      AL,AL
+1735	 1255  B0 20	 	 	        MOV     AL," "
+1736	 1257  74 02	 	 	        JZ      PM1
+1737	 1259  B0 2A	 	 	        MOV     AL,"*"
+1738	 125B  E9 12F5 R	 	PM1:    JMP     PUTC
+1739	 	 	 	 	
+1740	 125E  A1 0115 R	 	PUTLN:  MOV     AX,[LINE]
+1741	 1261  A3 0130 R	 	        MOV     [SHLINE],AX
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-38
+
+
+
+1742	 1264  EB 07	 	 	        JMP     SHORT PUTNUM
+1743	 1266  A1 0119 R	 	PUTCN:  MOV     AX,[CCOL]
+1744	 1269  40	 	 	        INC     AX
+1745	 126A  A3 0132 R	 	        MOV     [SHCOL],AX
 1746	 	 	 	 	
-1747	 	 	 	 	; PUTMSG: the message (or nothing), the
+1747	 	 	 	 	; PUTNUM: AX in decimal, 5 columns
+1748	 126D  BB 000A	 	 	PUTNUM: MOV     BX,10
+1749	 1270  33 C9	 	 	        XOR     CX,CX
+1750	 1272  33 D2	 	 	PN1:    XOR     DX,DX
+1751	 1274  F7 F3	 	 	        DIV     BX
+1752	 1276  52	 	 	        PUSH    DX
+1753	 1277  41	 	 	        INC     CX
+1754	 1278  0B C0	 	 	        OR      AX,AX
+1755	 127A  75 F6	 	 	        JNZ     PN1
+1756	 127C  BA 0005	 	 	        MOV     DX,5
+1757	 127F  2B D1	 	 	        SUB     DX,CX
+1758	 1281  58	 	 	PN2:    POP     AX
+1759	 1282  04 30	 	 	        ADD     AL,"0"
+1760	 1284  E8 12F5 R	 	        CALL    PUTC
+1761	 1287  E2 F8	 	 	        LOOP    PN2
+1762	 1289  8B CA	 	 	        MOV     CX,DX
+1763	 128B  B0 20	 	 	        MOV     AL," "
+1764	 128D  E3 05	 	 	PN3:    JCXZ    PNX
+1765	 128F  E8 12F5 R	 	        CALL    PUTC
+1766	 1292  E2 F9	 	 	        LOOP    PN3
+1767	 1294  C3	 	 	PNX:    RET
+1768	 	 	 	 	
+1769	 	 	 	 	; PUTMSG: the message (or nothing), the
 	 	 	 	n ESC K
-1748	 1252  8B 36 012C R	 	PUTMSG: MOV     SI,[MSG]
-1749	 1256  89 36 012E R	 	        MOV     [SHMSG],SI
-1750	 125A  0B F6	 	 	        OR      SI,SI
-1751	 125C  74 03	 	 	        JZ      PMS1
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-38
-
-
-
-1752	 125E  E8 12BE R	 	        CALL    PUTS
-1753	 1261  E9 10DD R	 	PMS1:   JMP     PUTEOL
-1754	 	 	 	 	
-1755	 	 	 	 	; PUTNM: up to CX characters of a name 
+1770	 1295  8B 36 012C R	 	PUTMSG: MOV     SI,[MSG]
+1771	 1299  89 36 012E R	 	        MOV     [SHMSG],SI
+1772	 129D  0B F6	 	 	        OR      SI,SI
+1773	 129F  74 03	 	 	        JZ      PMS1
+1774	 12A1  E8 1301 R	 	        CALL    PUTS
+1775	 12A4  E9 1120 R	 	PMS1:   JMP     PUTEOL
+1776	 	 	 	 	
+1777	 	 	 	 	; PUTNM: up to CX characters of a name 
 	 	 	 	at SI, to the first space
-1756	 1264  AC	 	 	PUTNM:  LODSB
-1757	 1265  3C 20	 	 	        CMP     AL," "
-1758	 1267  74 E8	 	 	        JZ      PNX
-1759	 1269  E8 12B2 R	 	        CALL    PUTC
-1760	 126C  E2 F6	 	 	        LOOP    PUTNM
-1761	 126E  C3	 	 	        RET
-1762	 	 	 	 	
-1763	 126F  B0 1B	 	 	INVON:  MOV     AL,KESC
-1764	 1271  E8 12B2 R	 	        CALL    PUTC
-1765	 1274  B0 4C	 	 	        MOV     AL,"L"
-1766	 1276  EB 3A 90	 	 	        JMP     PUTC
-1767	 1279  B0 1B	 	 	INVOFF: MOV     AL,KESC
-1768	 127B  E8 12B2 R	 	        CALL    PUTC
-1769	 127E  B0 4D	 	 	        MOV     AL,"M"
-1770	 1280  EB 30 90	 	 	        JMP     PUTC
-1771	 	 	 	 	
-1772	 	 	 	 	; PLACE: the terminal's cursor on the e
+1778	 12A7  AC	 	 	PUTNM:  LODSB
+1779	 12A8  3C 20	 	 	        CMP     AL," "
+1780	 12AA  74 E8	 	 	        JZ      PNX
+1781	 12AC  E8 12F5 R	 	        CALL    PUTC
+1782	 12AF  E2 F6	 	 	        LOOP    PUTNM
+1783	 12B1  C3	 	 	        RET
+1784	 	 	 	 	
+1785	 12B2  B0 1B	 	 	INVON:  MOV     AL,KESC
+1786	 12B4  E8 12F5 R	 	        CALL    PUTC
+1787	 12B7  B0 4C	 	 	        MOV     AL,"L"
+1788	 12B9  EB 3A 90	 	 	        JMP     PUTC
+1789	 12BC  B0 1B	 	 	INVOFF: MOV     AL,KESC
+1790	 12BE  E8 12F5 R	 	        CALL    PUTC
+1791	 12C1  B0 4D	 	 	        MOV     AL,"M"
+1792	 12C3  EB 30 90	 	 	        JMP     PUTC
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-39
+
+
+
+1793	 	 	 	 	
+1794	 	 	 	 	; PLACE: the terminal's cursor on the e
 	 	 	 	ditor's
-1773	 1283  A1 0119 R	 	PLACE:  MOV     AX,[CCOL]
-1774	 1286  2B 06 0117 R	 	        SUB     AX,[LEFT]
-1775	 128A  8B 1E 0121 R	 	        MOV     BX,[W]
-1776	 128E  4B	 	 	        DEC     BX
-1777	 128F  3B C3	 	 	        CMP     AX,BX
-1778	 1291  76 02	 	 	        JBE     PL1
-1779	 1293  8B C3	 	 	        MOV     AX,BX
-1780	 1295  8A 26 011B R	 	PL1:    MOV     AH,BYTE PTR [CROW]
-1781	 1299  FE C4	 	 	        INC     AH
-1782	 	 	 	 	; PUTPOS: ESC Y, row AH, column AL
-1783	 129B  50	 	 	PUTPOS: PUSH    AX
-1784	 129C  B0 1B	 	 	        MOV     AL,KESC
-1785	 129E  E8 12B2 R	 	        CALL    PUTC
-1786	 12A1  B0 59	 	 	        MOV     AL,"Y"
-1787	 12A3  E8 12B2 R	 	        CALL    PUTC
-1788	 12A6  58	 	 	        POP     AX
-1789	 12A7  50	 	 	        PUSH    AX
-1790	 12A8  8A C4	 	 	        MOV     AL,AH
-1791	 12AA  04 20	 	 	        ADD     AL,32
-1792	 12AC  E8 12B2 R	 	        CALL    PUTC
-1793	 12AF  58	 	 	        POP     AX
-1794	 12B0  04 20	 	 	        ADD     AL,32
-1795	 	 	 	 	; PUTC: AL to the output buffer
-1796	 12B2  57	 	 	PUTC:   PUSH    DI
-1797	 12B3  8B 3E 0137 R	 	        MOV     DI,[OPTR]
-1798	 12B7  AA	 	 	        STOSB
-1799	 12B8  89 3E 0137 R	 	        MOV     [OPTR],DI
-1800	 12BC  5F	 	 	        POP     DI
-1801	 12BD  C3	 	 	        RET
-1802	 	 	 	 	
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-39
-
-
-
-1803	 	 	 	 	; PUTS: the string at SI, to its 0
-1804	 12BE  AC	 	 	PUTS:   LODSB
-1805	 12BF  0A C0	 	 	        OR      AL,AL
-1806	 12C1  74 05	 	 	        JZ      PSX
-1807	 12C3  E8 12B2 R	 	        CALL    PUTC
-1808	 12C6  EB F6	 	 	        JMP     PUTS
-1809	 12C8  C3	 	 	PSX:    RET
-1810	 	 	 	 	
-1811	 	 	 	 	; FLUSHQ: send the output buffer if it 
+1795	 12C6  A1 0119 R	 	PLACE:  MOV     AX,[CCOL]
+1796	 12C9  2B 06 0117 R	 	        SUB     AX,[LEFT]
+1797	 12CD  8B 1E 0121 R	 	        MOV     BX,[W]
+1798	 12D1  4B	 	 	        DEC     BX
+1799	 12D2  3B C3	 	 	        CMP     AX,BX
+1800	 12D4  76 02	 	 	        JBE     PL1
+1801	 12D6  8B C3	 	 	        MOV     AX,BX
+1802	 12D8  8A 26 011B R	 	PL1:    MOV     AH,BYTE PTR [CROW]
+1803	 12DC  FE C4	 	 	        INC     AH
+1804	 	 	 	 	; PUTPOS: ESC Y, row AH, column AL
+1805	 12DE  50	 	 	PUTPOS: PUSH    AX
+1806	 12DF  B0 1B	 	 	        MOV     AL,KESC
+1807	 12E1  E8 12F5 R	 	        CALL    PUTC
+1808	 12E4  B0 59	 	 	        MOV     AL,"Y"
+1809	 12E6  E8 12F5 R	 	        CALL    PUTC
+1810	 12E9  58	 	 	        POP     AX
+1811	 12EA  50	 	 	        PUSH    AX
+1812	 12EB  8A C4	 	 	        MOV     AL,AH
+1813	 12ED  04 20	 	 	        ADD     AL,32
+1814	 12EF  E8 12F5 R	 	        CALL    PUTC
+1815	 12F2  58	 	 	        POP     AX
+1816	 12F3  04 20	 	 	        ADD     AL,32
+1817	 	 	 	 	; PUTC: AL to the output buffer
+1818	 12F5  57	 	 	PUTC:   PUSH    DI
+1819	 12F6  8B 3E 0137 R	 	        MOV     DI,[OPTR]
+1820	 12FA  AA	 	 	        STOSB
+1821	 12FB  89 3E 0137 R	 	        MOV     [OPTR],DI
+1822	 12FF  5F	 	 	        POP     DI
+1823	 1300  C3	 	 	        RET
+1824	 	 	 	 	
+1825	 	 	 	 	; PUTS: the string at SI, to its 0
+1826	 1301  AC	 	 	PUTS:   LODSB
+1827	 1302  0A C0	 	 	        OR      AL,AL
+1828	 1304  74 05	 	 	        JZ      PSX
+1829	 1306  E8 12F5 R	 	        CALL    PUTC
+1830	 1309  EB F6	 	 	        JMP     PUTS
+1831	 130B  C3	 	 	PSX:    RET
+1832	 	 	 	 	
+1833	 	 	 	 	; FLUSHQ: send the output buffer if it 
 	 	 	 	is getting full; STCUT = what is
-1812	 	 	 	 	; left in it
-1813	 12C9  A1 0137 R	 	FLUSHQ: MOV     AX,[OPTR]
-1814	 12CC  2D 132D R	 	        SUB     AX,OFFSET BUFFERS+OBOFF
-1815	 12CF  3D 0380	 	 	        CMP     AX,OBSZ-128
-1816	 12D2  72 05	 	 	        JB      FQ1
-1817	 12D4  E8 12DD R	 	        CALL    FLUSH
-1818	 12D7  33 C0	 	 	        XOR     AX,AX
-1819	 12D9  A3 1208 R	 	FQ1:    MOV     [STCUT],AX
-1820	 12DC  C3	 	 	        RET
-1821	 	 	 	 	
-1822	 	 	 	 	; FLUSH: the output buffer to the termi
+1834	 	 	 	 	; left in it
+1835	 130C  A1 0137 R	 	FLUSHQ: MOV     AX,[OPTR]
+1836	 130F  2D 1370 R	 	        SUB     AX,OFFSET BUFFERS+OBOFF
+1837	 1312  3D 0380	 	 	        CMP     AX,OBSZ-128
+1838	 1315  72 05	 	 	        JB      FQ1
+1839	 1317  E8 1320 R	 	        CALL    FLUSH
+1840	 131A  33 C0	 	 	        XOR     AX,AX
+1841	 131C  A3 124B R	 	FQ1:    MOV     [STCUT],AX
+1842	 131F  C3	 	 	        RET
+1843	 	 	 	 	
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	1-40
+
+
+
+1844	 	 	 	 	; FLUSH: the output buffer to the termi
 	 	 	 	nal
-1823	 12DD  BE 132D R	 	FLUSH:  MOV     SI,OFFSET BUFFERS+OBOFF
-1824	 12E0  8B 0E 0137 R	 	        MOV     CX,[OPTR]
-1825	 12E4  89 36 0137 R	 	        MOV     [OPTR],SI
-1826	 12E8  2B CE	 	 	        SUB     CX,SI
-1827	 12EA  E3 07	 	 	        JCXZ    FLX
-1828	 12EC  B4 0E	 	 	        MOV     AH,14
-1829	 12EE  AC	 	 	FL1:    LODSB
-1830	 12EF  CD 10	 	 	        INT     16
-1831	 12F1  E2 FB	 	 	        LOOP    FL1
-1832	 12F3  C3	 	 	FLX:    RET
-1833	 	 	 	 	
-1834	 12F4  B0 1B	 	 	CLS:    MOV     AL,KESC
-1835	 12F6  E8 12B2 R	 	        CALL    PUTC
-1836	 12F9  B0 48	 	 	        MOV     AL,"H"
-1837	 12FB  E8 12B2 R	 	        CALL    PUTC
-1838	 12FE  B0 1B	 	 	        MOV     AL,KESC
-1839	 1300  E8 12B2 R	 	        CALL    PUTC
-1840	 1303  B0 4A	 	 	        MOV     AL,"J"
-1841	 1305  EB AB	 	 	        JMP     PUTC
-1842	 	 	 	 	
-1843	 	 	 	 	; KEYRDY: ZF=0 if a key is waiting; GET
+1845	 1320  BE 1370 R	 	FLUSH:  MOV     SI,OFFSET BUFFERS+OBOFF
+1846	 1323  8B 0E 0137 R	 	        MOV     CX,[OPTR]
+1847	 1327  89 36 0137 R	 	        MOV     [OPTR],SI
+1848	 132B  2B CE	 	 	        SUB     CX,SI
+1849	 132D  E3 07	 	 	        JCXZ    FLX
+1850	 132F  B4 0E	 	 	        MOV     AH,14
+1851	 1331  AC	 	 	FL1:    LODSB
+1852	 1332  CD 10	 	 	        INT     16
+1853	 1334  E2 FB	 	 	        LOOP    FL1
+1854	 1336  C3	 	 	FLX:    RET
+1855	 	 	 	 	
+1856	 1337  B0 1B	 	 	CLS:    MOV     AL,KESC
+1857	 1339  E8 12F5 R	 	        CALL    PUTC
+1858	 133C  B0 48	 	 	        MOV     AL,"H"
+1859	 133E  E8 12F5 R	 	        CALL    PUTC
+1860	 1341  B0 1B	 	 	        MOV     AL,KESC
+1861	 1343  E8 12F5 R	 	        CALL    PUTC
+1862	 1346  B0 4A	 	 	        MOV     AL,"J"
+1863	 1348  EB AB	 	 	        JMP     PUTC
+1864	 	 	 	 	
+1865	 	 	 	 	; KEYRDY: ZF=0 if a key is waiting; GET
 	 	 	 	KEY: AL = the next key
-1844	 1307  B4 01	 	 	KEYRDY: MOV     AH,1
-1845	 1309  CD 16	 	 	        INT     22
-1846	 130B  C3	 	 	        RET
-1847	 130C  B4 00	 	 	GETKEY: MOV     AH,0
-1848	 130E  CD 16	 	 	        INT     22
-1849	 1310  C3	 	 	        RET
-1850	 	 	 	 	
-1851	 	 	 	 	; HELP: the keys, until a key is presse
+1866	 134A  B4 01	 	 	KEYRDY: MOV     AH,1
+1867	 134C  CD 16	 	 	        INT     22
+1868	 134E  C3	 	 	        RET
+1869	 134F  B4 00	 	 	GETKEY: MOV     AH,0
+1870	 1351  CD 16	 	 	        INT     22
+1871	 1353  C3	 	 	        RET
+1872	 	 	 	 	
+1873	 	 	 	 	; HELP: the keys, until a key is presse
 	 	 	 	d
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	1-40
+1874	 1354  E8 1337 R	 	HELP:   CALL    CLS
+1875	 1357  BE 02F1 R	 	        MOV     SI,OFFSET MHELP
+1876	 135A  E8 130C R	 	HE1:    CALL    FLUSHQ
+1877	 135D  AC	 	 	        LODSB
+1878	 135E  0A C0	 	 	        OR      AL,AL
+1879	 1360  74 05	 	 	        JZ      HE2
+1880	 1362  E8 12F5 R	 	        CALL    PUTC
+1881	 1365  EB F3	 	 	        JMP     HE1
+1882	 1367  E8 1320 R	 	HE2:    CALL    FLUSH
+1883	 136A  E8 134F R	 	        CALL    GETKEY
+1884	 136D  E9 0E0A R	 	        JMP     REDRAW
+1885	 	 	 	 	
+1886	 1370	 	 	 	BUFFERS LABEL   BYTE
+1887	 	 	 	 	
+1888	 1370	 	 	 	CODE    ENDS
+1889	 	 	 	 	        END     BEGIN
 
-
-
-1852	 1311  E8 12F4 R	 	HELP:   CALL    CLS
-1853	 1314  BE 02D7 R	 	        MOV     SI,OFFSET MHELP
-1854	 1317  E8 12C9 R	 	HE1:    CALL    FLUSHQ
-1855	 131A  AC	 	 	        LODSB
-1856	 131B  0A C0	 	 	        OR      AL,AL
-1857	 131D  74 05	 	 	        JZ      HE2
-1858	 131F  E8 12B2 R	 	        CALL    PUTC
-1859	 1322  EB F3	 	 	        JMP     HE1
-1860	 1324  E8 12DD R	 	HE2:    CALL    FLUSH
-1861	 1327  E8 130C R	 	        CALL    GETKEY
-1862	 132A  E9 0DC7 R	 	        JMP     REDRAW
-1863	 	 	 	 	
-1864	 132D	 	 	 	BUFFERS LABEL   BYTE
-1865	 	 	 	 	
-1866	 132D	 	 	 	CODE    ENDS
-1867	 	 	 	 	        END     BEGIN
-
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	Symbols
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols
 	 	 	 	-1
 
 
@@ -2251,370 +2284,375 @@ Segments and groups:
 
 	 	N a m e	 	 	Size	align	combine	class
 
-CODE . . . . . . . . . . . . . .	132D	PARA  	NONE	
+CODE . . . . . . . . . . . . . .	1370	PARA  	NONE	
 
 Symbols:            
 
 	 	N a m e	 	 	Type	Value	Attr         
 
-AFTDOS . . . . . . . . . . . . .	L NEAR 	0876	CODE
-AFX. . . . . . . . . . . . . . .	L NEAR 	0880	CODE
-ALLD . . . . . . . . . . . . . .	L NEAR 	0DBC	CODE
-BAKEXT . . . . . . . . . . . . .	L NEAR 	086C	CODE
+AFTDOS . . . . . . . . . . . . .	L NEAR 	08B6	CODE
+AFX. . . . . . . . . . . . . . .	L NEAR 	08C0	CODE
+ALLD . . . . . . . . . . . . . .	L NEAR 	0DFF	CODE
+BAKEXT . . . . . . . . . . . . .	L NEAR 	08AC	CODE
 BEGIN. . . . . . . . . . . . . .	L NEAR 	0100	CODE
 BIGMSG . . . . . . . . . . . . .	L BYTE 	0242	CODE
-BUFFERS. . . . . . . . . . . . .	L BYTE 	132D	CODE
+BUFFERS. . . . . . . . . . . . .	L BYTE 	1370	CODE
 BUFS . . . . . . . . . . . . . .	L WORD 	0109	CODE
 CCOL . . . . . . . . . . . . . .	L WORD 	0119	CODE
-CLS. . . . . . . . . . . . . . .	L NEAR 	12F4	CODE
+CLS. . . . . . . . . . . . . . .	L NEAR 	1337	CODE
 CLS_ . . . . . . . . . . . . . .	L WORD 	0124	CODE
-CN1. . . . . . . . . . . . . . .	L NEAR 	0990	CODE
-CNTLF. . . . . . . . . . . . . .	L NEAR 	098C	CODE
+CN1. . . . . . . . . . . . . . .	L NEAR 	09D0	CODE
+CNTLF. . . . . . . . . . . . . .	L NEAR 	09CC	CODE
 CNUMC. . . . . . . . . . . . . .	Number	0021	
-CNX. . . . . . . . . . . . . . .	L NEAR 	0999	CODE
+CNX. . . . . . . . . . . . . . .	L NEAR 	09D9	CODE
 COLS . . . . . . . . . . . . . .	L WORD 	011D	CODE
 CR . . . . . . . . . . . . . . .	Number	000D	
-CRIT . . . . . . . . . . . . . .	L NEAR 	0881	CODE
+CRIT . . . . . . . . . . . . . .	L NEAR 	08C1	CODE
 CROW . . . . . . . . . . . . . .	L WORD 	011B	CODE
-CTAB . . . . . . . . . . . . . .	L WORD 	04C7	CODE
+CTAB . . . . . . . . . . . . . .	L WORD 	04E1	CODE
 CTLZ . . . . . . . . . . . . . .	Number	001A	
-DBX. . . . . . . . . . . . . . .	L NEAR 	0BA4	CODE
-DELB . . . . . . . . . . . . . .	L NEAR 	0B7C	CODE
-DELEOL . . . . . . . . . . . . .	L NEAR 	0BC8	CODE
-DELF . . . . . . . . . . . . . .	L NEAR 	0BA5	CODE
-DELLN. . . . . . . . . . . . . .	L NEAR 	0BE8	CODE
-DELWD. . . . . . . . . . . . . .	L NEAR 	0C11	CODE
+DBX. . . . . . . . . . . . . . .	L NEAR 	0BE4	CODE
+DELB . . . . . . . . . . . . . .	L NEAR 	0BBC	CODE
+DELEOL . . . . . . . . . . . . .	L NEAR 	0C08	CODE
+DELF . . . . . . . . . . . . . .	L NEAR 	0BE5	CODE
+DELLN. . . . . . . . . . . . . .	L NEAR 	0C28	CODE
+DELWD. . . . . . . . . . . . . .	L NEAR 	0C51	CODE
 DFULL. . . . . . . . . . . . . .	L BYTE 	0154	CODE
-DFX. . . . . . . . . . . . . . .	L NEAR 	0BC7	CODE
+DFX. . . . . . . . . . . . . . .	L NEAR 	0C07	CODE
 DIRTY. . . . . . . . . . . . . .	L BYTE 	015A	CODE	Length =0018
-DK1. . . . . . . . . . . . . . .	L NEAR 	05BA	CODE
-DK2. . . . . . . . . . . . . . .	L NEAR 	05C1	CODE
-DL1. . . . . . . . . . . . . . .	L NEAR 	0BFC	CODE
-DNX. . . . . . . . . . . . . . .	L NEAR 	0A86	CODE
-DOKEY. . . . . . . . . . . . . .	L NEAR 	05B3	CODE
-DOSMSG . . . . . . . . . . . . .	L NEAR 	050A	CODE
-DOWN . . . . . . . . . . . . . .	L NEAR 	0A5D	CODE
-DR0. . . . . . . . . . . . . . .	L NEAR 	0F4F	CODE
-DR1. . . . . . . . . . . . . . .	L NEAR 	0F8C	CODE
-DR1A . . . . . . . . . . . . . .	L NEAR 	0FC8	CODE
-DR2. . . . . . . . . . . . . . .	L NEAR 	0FCE	CODE
-DR3. . . . . . . . . . . . . . .	L NEAR 	1005	CODE
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	Symbols
+DK1. . . . . . . . . . . . . . .	L NEAR 	05D4	CODE
+DK2. . . . . . . . . . . . . . .	L NEAR 	05DB	CODE
+DL1. . . . . . . . . . . . . . .	L NEAR 	0C3C	CODE
+DNX. . . . . . . . . . . . . . .	L NEAR 	0AC6	CODE
+DOKEY. . . . . . . . . . . . . .	L NEAR 	05CD	CODE
+DOSMSG . . . . . . . . . . . . .	L NEAR 	0524	CODE
+DOWN . . . . . . . . . . . . . .	L NEAR 	0A9D	CODE
+DR0. . . . . . . . . . . . . . .	L NEAR 	0F92	CODE
+DR1. . . . . . . . . . . . . . .	L NEAR 	0FCF	CODE
+DR1A . . . . . . . . . . . . . .	L NEAR 	100B	CODE
+DR2. . . . . . . . . . . . . . .	L NEAR 	1011	CODE
+DR3. . . . . . . . . . . . . . .	L NEAR 	1048	CODE
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols
 	 	 	 	-2
 
 
 
-DR4. . . . . . . . . . . . . . .	L NEAR 	1018	CODE
-DR5. . . . . . . . . . . . . . .	L NEAR 	105D	CODE
-DR6. . . . . . . . . . . . . . .	L NEAR 	104F	CODE
-DRAW . . . . . . . . . . . . . .	L NEAR 	0F3F	CODE
-DRAWR. . . . . . . . . . . . . .	L NEAR 	106A	CODE
-DRDN0. . . . . . . . . . . . . .	L NEAR 	0F85	CODE
-DRDONE . . . . . . . . . . . . .	L NEAR 	1063	CODE
+DR4. . . . . . . . . . . . . . .	L NEAR 	105B	CODE
+DR5. . . . . . . . . . . . . . .	L NEAR 	10A0	CODE
+DR6. . . . . . . . . . . . . . .	L NEAR 	1092	CODE
+DRAW . . . . . . . . . . . . . .	L NEAR 	0F82	CODE
+DRAWR. . . . . . . . . . . . . .	L NEAR 	10AD	CODE
+DRDN0. . . . . . . . . . . . . .	L NEAR 	0FC8	CODE
+DRDONE . . . . . . . . . . . . .	L NEAR 	10A6	CODE
 DREOT. . . . . . . . . . . . . .	L BYTE 	013F	CODE
 DRLAST . . . . . . . . . . . . .	L WORD 	013B	CODE
 DRP. . . . . . . . . . . . . . .	L WORD 	013D	CODE
 DRROW. . . . . . . . . . . . . .	L WORD 	0139	CODE
-DRV1 . . . . . . . . . . . . . .	L NEAR 	0542	CODE
+DRV1 . . . . . . . . . . . . . .	L NEAR 	055C	CODE
 DRVL . . . . . . . . . . . . . .	L BYTE 	0136	CODE
-DRX. . . . . . . . . . . . . . .	L NEAR 	1062	CODE
-DW0. . . . . . . . . . . . . . .	L NEAR 	0C22	CODE
-DW1. . . . . . . . . . . . . . .	L NEAR 	0C27	CODE
-DW2. . . . . . . . . . . . . . .	L NEAR 	0C34	CODE
-DW3. . . . . . . . . . . . . . .	L NEAR 	0C44	CODE
-DWR. . . . . . . . . . . . . . .	L NEAR 	107F	CODE
-DWX. . . . . . . . . . . . . . .	L NEAR 	107E	CODE
+DRX. . . . . . . . . . . . . . .	L NEAR 	10A5	CODE
+DW0. . . . . . . . . . . . . . .	L NEAR 	0C62	CODE
+DW1. . . . . . . . . . . . . . .	L NEAR 	0C67	CODE
+DW2. . . . . . . . . . . . . . .	L NEAR 	0C74	CODE
+DW3. . . . . . . . . . . . . . .	L NEAR 	0C84	CODE
+DWR. . . . . . . . . . . . . . .	L NEAR 	10C2	CODE
+DWX. . . . . . . . . . . . . . .	L NEAR 	10C1	CODE
 EBOFF. . . . . . . . . . . . . .	Number	0400	
-EK1. . . . . . . . . . . . . . .	L NEAR 	05D6	CODE
-EK2. . . . . . . . . . . . . . .	L NEAR 	05DD	CODE
-EK3. . . . . . . . . . . . . . .	L NEAR 	05E4	CODE
+EK1. . . . . . . . . . . . . . .	L NEAR 	05F0	CODE
+EK2. . . . . . . . . . . . . . .	L NEAR 	05F7	CODE
+EK3. . . . . . . . . . . . . . .	L NEAR 	05FE	CODE
 ERRF . . . . . . . . . . . . . .	L BYTE 	0155	CODE
-ESCK . . . . . . . . . . . . . .	L NEAR 	05CC	CODE
-EX1. . . . . . . . . . . . . . .	L NEAR 	10F5	CODE
-EX2. . . . . . . . . . . . . . .	L NEAR 	10FE	CODE
-EXC. . . . . . . . . . . . . . .	L NEAR 	1106	CODE
-EXIT . . . . . . . . . . . . . .	L NEAR 	061D	CODE
-EXPAND . . . . . . . . . . . . .	L NEAR 	10E7	CODE
-EXQ. . . . . . . . . . . . . . .	L NEAR 	1102	CODE
-EXX. . . . . . . . . . . . . . .	L NEAR 	1101	CODE
+ESCK . . . . . . . . . . . . . .	L NEAR 	05E6	CODE
+EX1. . . . . . . . . . . . . . .	L NEAR 	1138	CODE
+EX2. . . . . . . . . . . . . . .	L NEAR 	1141	CODE
+EXC. . . . . . . . . . . . . . .	L NEAR 	1149	CODE
+EXIT . . . . . . . . . . . . . .	L NEAR 	063D	CODE
+EXPAND . . . . . . . . . . . . .	L NEAR 	112A	CODE
+EXQ. . . . . . . . . . . . . . .	L NEAR 	1145	CODE
+EXX. . . . . . . . . . . . . . .	L NEAR 	1144	CODE
 FC1. . . . . . . . . . . . . . .	L BYTE 	014C	CODE
 FC2. . . . . . . . . . . . . . .	L BYTE 	014D	CODE
 FCB. . . . . . . . . . . . . . .	L BYTE 	0192	CODE	Length =0025
-FEND . . . . . . . . . . . . . .	L NEAR 	0B1F	CODE
-FI0. . . . . . . . . . . . . . .	L NEAR 	0C59	CODE
-FI1. . . . . . . . . . . . . . .	L NEAR 	0C69	CODE
-FIND . . . . . . . . . . . . . .	L NEAR 	0C53	CODE
-FIXSCR . . . . . . . . . . . . .	L NEAR 	0DD3	CODE
-FL1. . . . . . . . . . . . . . .	L NEAR 	12EE	CODE
+FEND . . . . . . . . . . . . . .	L NEAR 	0B5F	CODE
+FI0. . . . . . . . . . . . . . .	L NEAR 	0C99	CODE
+FI1. . . . . . . . . . . . . . .	L NEAR 	0CA9	CODE
+FIND . . . . . . . . . . . . . .	L NEAR 	0C93	CODE
+FIXSCR . . . . . . . . . . . . .	L NEAR 	0E16	CODE
+FL1. . . . . . . . . . . . . . .	L NEAR 	1331	CODE
 FLEN . . . . . . . . . . . . . .	L WORD 	014A	CODE
-FLUSH. . . . . . . . . . . . . .	L NEAR 	12DD	CODE
-FLUSHQ . . . . . . . . . . . . .	L NEAR 	12C9	CODE
-FLX. . . . . . . . . . . . . . .	L NEAR 	12F3	CODE
+FLUSH. . . . . . . . . . . . . .	L NEAR 	1320	CODE
+FLUSHQ . . . . . . . . . . . . .	L NEAR 	130C	CODE
+FLX. . . . . . . . . . . . . . .	L NEAR 	1336	CODE
 FMAX . . . . . . . . . . . . . .	Number	0010	
-FN0. . . . . . . . . . . . . . .	L NEAR 	0C95	CODE
-FN1. . . . . . . . . . . . . . .	L NEAR 	0CA8	CODE
-FN2. . . . . . . . . . . . . . .	L NEAR 	0CB4	CODE
-FN3. . . . . . . . . . . . . . .	L NEAR 	0CD4	CODE
-FNEXT. . . . . . . . . . . . . .	L NEAR 	0C70	CODE
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	Symbols
+FN0. . . . . . . . . . . . . . .	L NEAR 	0CD5	CODE
+FN1. . . . . . . . . . . . . . .	L NEAR 	0CE8	CODE
+FN2. . . . . . . . . . . . . . .	L NEAR 	0CF4	CODE
+FN3. . . . . . . . . . . . . . .	L NEAR 	0D14	CODE
+FNEXT. . . . . . . . . . . . . .	L NEAR 	0CB0	CODE
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols
 	 	 	 	-3
 
 
 
-FOUND. . . . . . . . . . . . . .	L NEAR 	0CE5	CODE
+FOUND. . . . . . . . . . . . . .	L NEAR 	0D25	CODE
 FP1. . . . . . . . . . . . . . .	L WORD 	014E	CODE
 FP2. . . . . . . . . . . . . . .	L WORD 	0150	CODE
-FQ1. . . . . . . . . . . . . . .	L NEAR 	12D9	CODE
-FS2. . . . . . . . . . . . . . .	L NEAR 	0DF2	CODE
-FS2A . . . . . . . . . . . . . .	L NEAR 	0DFB	CODE
-FS3. . . . . . . . . . . . . . .	L NEAR 	0E00	CODE
-FS4. . . . . . . . . . . . . . .	L NEAR 	0E0F	CODE
-FS5. . . . . . . . . . . . . . .	L NEAR 	0E3E	CODE
-FS6. . . . . . . . . . . . . . .	L NEAR 	0E5D	CODE
-FSCEN. . . . . . . . . . . . . .	L NEAR 	0E61	CODE
-FSH. . . . . . . . . . . . . . .	L NEAR 	0E89	CODE
-FSH1 . . . . . . . . . . . . . .	L NEAR 	0E95	CODE
-FSH2 . . . . . . . . . . . . . .	L NEAR 	0EA5	CODE
-FSM. . . . . . . . . . . . . . .	L NEAR 	0EB1	CODE
-FSROW. . . . . . . . . . . . . .	L NEAR 	0E70	CODE
+FQ1. . . . . . . . . . . . . . .	L NEAR 	131C	CODE
+FS2. . . . . . . . . . . . . . .	L NEAR 	0E35	CODE
+FS2A . . . . . . . . . . . . . .	L NEAR 	0E3E	CODE
+FS3. . . . . . . . . . . . . . .	L NEAR 	0E43	CODE
+FS4. . . . . . . . . . . . . . .	L NEAR 	0E52	CODE
+FS5. . . . . . . . . . . . . . .	L NEAR 	0E81	CODE
+FS6. . . . . . . . . . . . . . .	L NEAR 	0EA0	CODE
+FSCEN. . . . . . . . . . . . . .	L NEAR 	0EA4	CODE
+FSH. . . . . . . . . . . . . . .	L NEAR 	0ECC	CODE
+FSH1 . . . . . . . . . . . . . .	L NEAR 	0ED8	CODE
+FSH2 . . . . . . . . . . . . . .	L NEAR 	0EE8	CODE
+FSM. . . . . . . . . . . . . . .	L NEAR 	0EF4	CODE
+FSROW. . . . . . . . . . . . . .	L NEAR 	0EB3	CODE
 FSTR . . . . . . . . . . . . . .	L BYTE 	0182	CODE	Length =0010
-FSUP . . . . . . . . . . . . . .	L NEAR 	0E44	CODE
-FSX. . . . . . . . . . . . . . .	L NEAR 	0EC0	CODE
-FTOP . . . . . . . . . . . . . .	L NEAR 	0B19	CODE
+FSUP . . . . . . . . . . . . . .	L NEAR 	0E87	CODE
+FSX. . . . . . . . . . . . . . .	L NEAR 	0F03	CODE
+FTOP . . . . . . . . . . . . . .	L NEAR 	0B59	CODE
 FULL . . . . . . . . . . . . . .	L BYTE 	012A	CODE
-FX . . . . . . . . . . . . . . .	L NEAR 	0CEE	CODE
+FX . . . . . . . . . . . . . . .	L NEAR 	0D2E	CODE
 GAPE . . . . . . . . . . . . . .	L WORD 	010D	CODE
-GAPMV. . . . . . . . . . . . . .	L NEAR 	0923	CODE
+GAPMV. . . . . . . . . . . . . .	L NEAR 	0963	CODE
 GAPS . . . . . . . . . . . . . .	L WORD 	010B	CODE
-GETKEY . . . . . . . . . . . . .	L NEAR 	130C	CODE
-GM2. . . . . . . . . . . . . . .	L NEAR 	0948	CODE
-GMX. . . . . . . . . . . . . . .	L NEAR 	0947	CODE
+GETKEY . . . . . . . . . . . . .	L NEAR 	134F	CODE
+GM2. . . . . . . . . . . . . . .	L NEAR 	0988	CODE
+GMX. . . . . . . . . . . . . . .	L NEAR 	0987	CODE
 GOAL . . . . . . . . . . . . . .	L WORD 	0126	CODE
-HE1. . . . . . . . . . . . . . .	L NEAR 	1317	CODE
-HE2. . . . . . . . . . . . . . .	L NEAR 	1324	CODE
-HELP . . . . . . . . . . . . . .	L NEAR 	1311	CODE
-INSCH. . . . . . . . . . . . . .	L NEAR 	0B2B	CODE
-INVOFF . . . . . . . . . . . . .	L NEAR 	1279	CODE
-INVON. . . . . . . . . . . . . .	L NEAR 	126F	CODE
-INX. . . . . . . . . . . . . . .	L NEAR 	0B53	CODE
-ISWD . . . . . . . . . . . . . .	L NEAR 	09FC	CODE
-IWN. . . . . . . . . . . . . . .	L NEAR 	0A13	CODE
-IWX. . . . . . . . . . . . . . .	L NEAR 	0A12	CODE
-KEEPRW . . . . . . . . . . . . .	L NEAR 	0AA5	CODE
+HE1. . . . . . . . . . . . . . .	L NEAR 	135A	CODE
+HE2. . . . . . . . . . . . . . .	L NEAR 	1367	CODE
+HELP . . . . . . . . . . . . . .	L NEAR 	1354	CODE
+INSCH. . . . . . . . . . . . . .	L NEAR 	0B6B	CODE
+INVOFF . . . . . . . . . . . . .	L NEAR 	12BC	CODE
+INVON. . . . . . . . . . . . . .	L NEAR 	12B2	CODE
+INX. . . . . . . . . . . . . . .	L NEAR 	0B93	CODE
+ISWD . . . . . . . . . . . . . .	L NEAR 	0A3C	CODE
+IWN. . . . . . . . . . . . . . .	L NEAR 	0A53	CODE
+IWX. . . . . . . . . . . . . . .	L NEAR 	0A52	CODE
+KEEPRW . . . . . . . . . . . . .	L NEAR 	0AE5	CODE
 KESC . . . . . . . . . . . . . .	Number	001B	
-KEYRDY . . . . . . . . . . . . .	L NEAR 	1307	CODE
-KP1. . . . . . . . . . . . . . .	L NEAR 	05F8	CODE
-KPRE . . . . . . . . . . . . . .	L NEAR 	05EB	CODE
-LBEG . . . . . . . . . . . . . .	L NEAR 	0B00	CODE
-LD1. . . . . . . . . . . . . . .	L NEAR 	06D9	CODE
-LD2. . . . . . . . . . . . . . .	L NEAR 	06F5	CODE
-LD2A . . . . . . . . . . . . . .	L NEAR 	0733	CODE
-LD3. . . . . . . . . . . . . . .	L NEAR 	073C	CODE
-LD4. . . . . . . . . . . . . . .	L NEAR 	0746	CODE
-LD5. . . . . . . . . . . . . . .	L NEAR 	0755	CODE
-LD6. . . . . . . . . . . . . . .	L NEAR 	0763	CODE
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	Symbols
+KEYRDY . . . . . . . . . . . . .	L NEAR 	134A	CODE
+KP1. . . . . . . . . . . . . . .	L NEAR 	0612	CODE
+KPRE . . . . . . . . . . . . . .	L NEAR 	0605	CODE
+LBEG . . . . . . . . . . . . . .	L NEAR 	0B40	CODE
+LD1. . . . . . . . . . . . . . .	L NEAR 	0704	CODE
+LD2. . . . . . . . . . . . . . .	L NEAR 	0720	CODE
+LD2A . . . . . . . . . . . . . .	L NEAR 	075E	CODE
+LD3. . . . . . . . . . . . . . .	L NEAR 	0767	CODE
+LD4. . . . . . . . . . . . . . .	L NEAR 	0771	CODE
+LD5. . . . . . . . . . . . . . .	L NEAR 	0780	CODE
+LD6. . . . . . . . . . . . . . .	L NEAR 	078E	CODE
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols
 	 	 	 	-4
 
 
 
-LDX. . . . . . . . . . . . . . .	L NEAR 	076D	CODE
+LDX. . . . . . . . . . . . . . .	L NEAR 	0798	CODE
 LEFT . . . . . . . . . . . . . .	L WORD 	0117	CODE
-LEFTK. . . . . . . . . . . . . .	L NEAR 	0A15	CODE
-LEND . . . . . . . . . . . . . .	L NEAR 	0B09	CODE
+LEFTK. . . . . . . . . . . . . .	L NEAR 	0A55	CODE
+LEND . . . . . . . . . . . . . .	L NEAR 	0B49	CODE
 LF . . . . . . . . . . . . . . .	Number	000A	
 LINE . . . . . . . . . . . . . .	L WORD 	0115	CODE
 LMAX . . . . . . . . . . . . . .	Number	0400	
 LNUMC. . . . . . . . . . . . . .	Number	0017	
-LOADF. . . . . . . . . . . . . .	L NEAR 	06B8	CODE
-LS1. . . . . . . . . . . . . . .	L NEAR 	09B1	CODE
-LSOF . . . . . . . . . . . . . .	L NEAR 	099A	CODE
-LSX. . . . . . . . . . . . . . .	L NEAR 	09B4	CODE
-MA1. . . . . . . . . . . . . . .	L NEAR 	0D10	CODE
-MABAN. . . . . . . . . . . . . .	L BYTE 	02AB	CODE
-MAIN . . . . . . . . . . . . . .	L NEAR 	058A	CODE
-MAIN1. . . . . . . . . . . . . .	L NEAR 	059D	CODE
-MARKB. . . . . . . . . . . . . .	L NEAR 	0D9F	CODE
-MARKC. . . . . . . . . . . . . .	L NEAR 	0D89	CODE
+LOADF. . . . . . . . . . . . . .	L NEAR 	06E3	CODE
+LS1. . . . . . . . . . . . . . .	L NEAR 	09F1	CODE
+LSOF . . . . . . . . . . . . . .	L NEAR 	09DA	CODE
+LSX. . . . . . . . . . . . . . .	L NEAR 	09F4	CODE
+MA1. . . . . . . . . . . . . . .	L NEAR 	0D50	CODE
+MABAN. . . . . . . . . . . . . .	L BYTE 	02C5	CODE
+MAIN . . . . . . . . . . . . . .	L NEAR 	05A4	CODE
+MAIN1. . . . . . . . . . . . . .	L NEAR 	05B7	CODE
+MARKB. . . . . . . . . . . . . .	L NEAR 	0DE2	CODE
+MARKC. . . . . . . . . . . . . .	L NEAR 	0DCC	CODE
 MARKF. . . . . . . . . . . . . .	L BYTE 	0129	CODE
-MARKR. . . . . . . . . . . . . .	L NEAR 	0DA3	CODE
-MATCH. . . . . . . . . . . . . .	L NEAR 	0D03	CODE
-MAX. . . . . . . . . . . . . . .	L NEAR 	0D1D	CODE
-MCOL . . . . . . . . . . . . . .	L BYTE 	02D1	CODE
-MCX. . . . . . . . . . . . . . .	L NEAR 	0D9E	CODE
+MARKR. . . . . . . . . . . . . .	L NEAR 	0DE6	CODE
+MATCH. . . . . . . . . . . . . .	L NEAR 	0D43	CODE
+MAX. . . . . . . . . . . . . . .	L NEAR 	0D5D	CODE
+MCOL . . . . . . . . . . . . . .	L BYTE 	02EB	CODE
+MCX. . . . . . . . . . . . . . .	L NEAR 	0DE1	CODE
 MDFULL . . . . . . . . . . . . .	L BYTE 	0287	CODE
-MDIR . . . . . . . . . . . . . .	L BYTE 	029C	CODE
-MEM1 . . . . . . . . . . . . . .	L NEAR 	055C	CODE
-MFIND. . . . . . . . . . . . . .	L BYTE 	02C3	CODE
-MFULL. . . . . . . . . . . . . .	L NEAR 	0B54	CODE
-MHELP. . . . . . . . . . . . . .	L BYTE 	02D7	CODE
+MDIR . . . . . . . . . . . . . .	L BYTE 	02B6	CODE
+MEM1 . . . . . . . . . . . . . .	L NEAR 	0576	CODE
+MFIND. . . . . . . . . . . . . .	L BYTE 	02DD	CODE
+MFULL. . . . . . . . . . . . . .	L NEAR 	0B94	CODE
+MHELP. . . . . . . . . . . . . .	L BYTE 	02F1	CODE
 MKPRE. . . . . . . . . . . . . .	L BYTE 	025C	CODE
-MLINE. . . . . . . . . . . . . .	L BYTE 	02CA	CODE
+MLINE. . . . . . . . . . . . . .	L BYTE 	02E4	CODE
 MMEM . . . . . . . . . . . . . .	L BYTE 	027B	CODE
 MNEW . . . . . . . . . . . . . .	L BYTE 	0262	CODE
 MNOTF. . . . . . . . . . . . . .	L BYTE 	0271	CODE
 MODC . . . . . . . . . . . . . .	L BYTE 	0135	CODE
 MODIF. . . . . . . . . . . . . .	L BYTE 	0123	CODE
-MOVETO . . . . . . . . . . . . .	L NEAR 	0962	CODE
+MOVETO . . . . . . . . . . . . .	L NEAR 	09A2	CODE
 MQPRE. . . . . . . . . . . . . .	L BYTE 	025F	CODE
-MR1. . . . . . . . . . . . . . .	L NEAR 	0DA9	CODE
+MR1. . . . . . . . . . . . . . .	L NEAR 	0DEC	CODE
+MREN . . . . . . . . . . . . . .	L BYTE 	029C	CODE
 MSAVED . . . . . . . . . . . . .	L BYTE 	026B	CODE
 MSG. . . . . . . . . . . . . . .	L WORD 	012C	CODE
 MSGC . . . . . . . . . . . . . .	Number	0027	
-MT1. . . . . . . . . . . . . . .	L NEAR 	097A	CODE
-MT2. . . . . . . . . . . . . . .	L NEAR 	0989	CODE
-MVX. . . . . . . . . . . . . . .	L NEAR 	0A2F	CODE
+MT1. . . . . . . . . . . . . . .	L NEAR 	09BA	CODE
+MT2. . . . . . . . . . . . . . .	L NEAR 	09C9	CODE
+MVX. . . . . . . . . . . . . . .	L NEAR 	0A6F	CODE
 N1 . . . . . . . . . . . . . . .	L WORD 	0142	CODE
 N2 . . . . . . . . . . . . . . .	L WORD 	0146	CODE
-NEWLN. . . . . . . . . . . . . .	L NEAR 	0B25	CODE
-NEXTLF . . . . . . . . . . . . .	L NEAR 	09B5	CODE
-NLN. . . . . . . . . . . . . . .	L NEAR 	09C4	CODE
-NOKEY. . . . . . . . . . . . . .	L NEAR 	05CB	CODE
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	Symbols
+NEWLN. . . . . . . . . . . . . .	L NEAR 	0B65	CODE
+NEXTLF . . . . . . . . . . . . .	L NEAR 	09F5	CODE
+NLN. . . . . . . . . . . . . . .	L NEAR 	0A04	CODE
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols
 	 	 	 	-5
 
 
 
-NOTF . . . . . . . . . . . . . .	L NEAR 	0CE8	CODE
+NOKEY. . . . . . . . . . . . . .	L NEAR 	05E5	CODE
+NOTF . . . . . . . . . . . . . .	L NEAR 	0D28	CODE
 NR . . . . . . . . . . . . . . .	L WORD 	011F	CODE
 NRMAX. . . . . . . . . . . . . .	Number	0018	
 OBOFF. . . . . . . . . . . . . .	Number	0000	
 OBSZ . . . . . . . . . . . . . .	Number	0400	
 OLD24. . . . . . . . . . . . . .	L WORD 	0156	CODE
-OP1. . . . . . . . . . . . . . .	L NEAR 	068F	CODE
-OP2. . . . . . . . . . . . . . .	L NEAR 	06A4	CODE
+OP1. . . . . . . . . . . . . . .	L NEAR 	06BA	CODE
+OP2. . . . . . . . . . . . . . .	L NEAR 	06CF	CODE
 OPTR . . . . . . . . . . . . . .	L WORD 	0137	CODE
-OPTS . . . . . . . . . . . . . .	L NEAR 	067A	CODE
-OPX. . . . . . . . . . . . . . .	L NEAR 	06B7	CODE
+OPTS . . . . . . . . . . . . . .	L NEAR 	06A5	CODE
+OPX. . . . . . . . . . . . . . .	L NEAR 	06E2	CODE
 P1 . . . . . . . . . . . . . . .	L WORD 	0140	CODE
 P2 . . . . . . . . . . . . . . .	L WORD 	0144	CODE
-PD1. . . . . . . . . . . . . . .	L NEAR 	0A8C	CODE
-PGDN . . . . . . . . . . . . . .	L NEAR 	0A87	CODE
-PGUP . . . . . . . . . . . . . .	L NEAR 	0A97	CODE
-PL1. . . . . . . . . . . . . . .	L NEAR 	1295	CODE
-PLACE. . . . . . . . . . . . . .	L NEAR 	1283	CODE
-PM1. . . . . . . . . . . . . . .	L NEAR 	1218	CODE
-PMS1 . . . . . . . . . . . . . .	L NEAR 	1261	CODE
-PN1. . . . . . . . . . . . . . .	L NEAR 	122F	CODE
-PN2. . . . . . . . . . . . . . .	L NEAR 	123E	CODE
-PN3. . . . . . . . . . . . . . .	L NEAR 	124A	CODE
-PNX. . . . . . . . . . . . . . .	L NEAR 	1251	CODE
-PR1. . . . . . . . . . . . . . .	L NEAR 	0D3A	CODE
-PRDEL. . . . . . . . . . . . . .	L NEAR 	0D6E	CODE
-PREFIX . . . . . . . . . . . . .	L NEAR 	0656	CODE
-PROMPT . . . . . . . . . . . . .	L NEAR 	0D1E	CODE
-PRQ. . . . . . . . . . . . . . .	L NEAR 	0D87	CODE
-PRX. . . . . . . . . . . . . . .	L NEAR 	0D85	CODE
-PSX. . . . . . . . . . . . . . .	L NEAR 	12C8	CODE
-PU1. . . . . . . . . . . . . . .	L NEAR 	0A9C	CODE
-PUTC . . . . . . . . . . . . . .	L NEAR 	12B2	CODE
-PUTCN. . . . . . . . . . . . . .	L NEAR 	1223	CODE
-PUTEOL . . . . . . . . . . . . .	L NEAR 	10DD	CODE
-PUTLN. . . . . . . . . . . . . .	L NEAR 	121B	CODE
-PUTMOD . . . . . . . . . . . . .	L NEAR 	120A	CODE
-PUTMSG . . . . . . . . . . . . .	L NEAR 	1252	CODE
-PUTNM. . . . . . . . . . . . . .	L NEAR 	1264	CODE
-PUTNUM . . . . . . . . . . . . .	L NEAR 	122A	CODE
-PUTPOS . . . . . . . . . . . . .	L NEAR 	129B	CODE
-PUTS . . . . . . . . . . . . . .	L NEAR 	12BE	CODE
-QP1. . . . . . . . . . . . . . .	L NEAR 	0632	CODE
-QP2. . . . . . . . . . . . . . .	L NEAR 	0639	CODE
-QP3. . . . . . . . . . . . . . .	L NEAR 	0640	CODE
-QP4. . . . . . . . . . . . . . .	L NEAR 	0647	CODE
-QP5. . . . . . . . . . . . . . .	L NEAR 	064E	CODE
-QP6. . . . . . . . . . . . . . .	L NEAR 	0655	CODE
-QPRE . . . . . . . . . . . . . .	L NEAR 	0625	CODE
-QUIT . . . . . . . . . . . . . .	L NEAR 	060B	CODE
-REDRAW . . . . . . . . . . . . .	L NEAR 	0DC7	CODE
-RFCB . . . . . . . . . . . . . .	L BYTE 	01DC	CODE	Length =0025
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	Symbols
+PD1. . . . . . . . . . . . . . .	L NEAR 	0ACC	CODE
+PFX1 . . . . . . . . . . . . . .	L NEAR 	068C	CODE
+PGDN . . . . . . . . . . . . . .	L NEAR 	0AC7	CODE
+PGUP . . . . . . . . . . . . . .	L NEAR 	0AD7	CODE
+PL1. . . . . . . . . . . . . . .	L NEAR 	12D8	CODE
+PLACE. . . . . . . . . . . . . .	L NEAR 	12C6	CODE
+PM1. . . . . . . . . . . . . . .	L NEAR 	125B	CODE
+PMS1 . . . . . . . . . . . . . .	L NEAR 	12A4	CODE
+PN1. . . . . . . . . . . . . . .	L NEAR 	1272	CODE
+PN2. . . . . . . . . . . . . . .	L NEAR 	1281	CODE
+PN3. . . . . . . . . . . . . . .	L NEAR 	128D	CODE
+PNX. . . . . . . . . . . . . . .	L NEAR 	1294	CODE
+PR1. . . . . . . . . . . . . . .	L NEAR 	0D7A	CODE
+PRDEL. . . . . . . . . . . . . .	L NEAR 	0DAE	CODE
+PREFIX . . . . . . . . . . . . .	L NEAR 	0676	CODE
+PRESC. . . . . . . . . . . . . .	L NEAR 	0DC7	CODE
+PROMPT . . . . . . . . . . . . .	L NEAR 	0D5E	CODE
+PRQ. . . . . . . . . . . . . . .	L NEAR 	0DCA	CODE
+PRX. . . . . . . . . . . . . . .	L NEAR 	0DC5	CODE
+PSX. . . . . . . . . . . . . . .	L NEAR 	130B	CODE
+PU1. . . . . . . . . . . . . . .	L NEAR 	0ADC	CODE
+PUTC . . . . . . . . . . . . . .	L NEAR 	12F5	CODE
+PUTCN. . . . . . . . . . . . . .	L NEAR 	1266	CODE
+PUTEOL . . . . . . . . . . . . .	L NEAR 	1120	CODE
+PUTLN. . . . . . . . . . . . . .	L NEAR 	125E	CODE
+PUTMOD . . . . . . . . . . . . .	L NEAR 	124D	CODE
+PUTMSG . . . . . . . . . . . . .	L NEAR 	1295	CODE
+PUTNM. . . . . . . . . . . . . .	L NEAR 	12A7	CODE
+PUTNUM . . . . . . . . . . . . .	L NEAR 	126D	CODE
+PUTPOS . . . . . . . . . . . . .	L NEAR 	12DE	CODE
+PUTS . . . . . . . . . . . . . .	L NEAR 	1301	CODE
+QP1. . . . . . . . . . . . . . .	L NEAR 	0652	CODE
+QP2. . . . . . . . . . . . . . .	L NEAR 	0659	CODE
+QP3. . . . . . . . . . . . . . .	L NEAR 	0660	CODE
+QP4. . . . . . . . . . . . . . .	L NEAR 	0667	CODE
+QP5. . . . . . . . . . . . . . .	L NEAR 	066E	CODE
+QP6. . . . . . . . . . . . . . .	L NEAR 	0675	CODE
+QPRE . . . . . . . . . . . . . .	L NEAR 	0645	CODE
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols
 	 	 	 	-6
 
 
 
-RIGHT. . . . . . . . . . . . . .	L NEAR 	0A22	CODE
-RO1. . . . . . . . . . . . . . .	L NEAR 	10AC	CODE
-ROWOUT . . . . . . . . . . . . .	L NEAR 	1080	CODE
-SAVE . . . . . . . . . . . . . .	L NEAR 	076E	CODE
-SAVEX. . . . . . . . . . . . . .	L NEAR 	0605	CODE
-SCANF. . . . . . . . . . . . . .	L NEAR 	0CEF	CODE
-SCRDN. . . . . . . . . . . . . .	L NEAR 	0F15	CODE
-SCRUP. . . . . . . . . . . . . .	L NEAR 	0EF0	CODE
-SETTOP . . . . . . . . . . . . .	L NEAR 	0EC1	CODE
-SF1. . . . . . . . . . . . . . .	L NEAR 	11C7	CODE
-SF2. . . . . . . . . . . . . . .	L NEAR 	11E3	CODE
-SFN. . . . . . . . . . . . . . .	L NEAR 	0CFF	CODE
-SFULL. . . . . . . . . . . . . .	L NEAR 	118E	CODE
+QUIT . . . . . . . . . . . . . .	L NEAR 	0625	CODE
+REDRAW . . . . . . . . . . . . .	L NEAR 	0E0A	CODE
+RFCB . . . . . . . . . . . . . .	L BYTE 	01DC	CODE	Length =0025
+RIGHT. . . . . . . . . . . . . .	L NEAR 	0A62	CODE
+RO1. . . . . . . . . . . . . . .	L NEAR 	10EF	CODE
+ROWOUT . . . . . . . . . . . . .	L NEAR 	10C3	CODE
+SAVE . . . . . . . . . . . . . .	L NEAR 	0799	CODE
+SAVEX. . . . . . . . . . . . . .	L NEAR 	061F	CODE
+SCANF. . . . . . . . . . . . . .	L NEAR 	0D2F	CODE
+SCRDN. . . . . . . . . . . . . .	L NEAR 	0F58	CODE
+SCRUP. . . . . . . . . . . . . .	L NEAR 	0F33	CODE
+SETTOP . . . . . . . . . . . . .	L NEAR 	0F04	CODE
+SF1. . . . . . . . . . . . . . .	L NEAR 	120A	CODE
+SF2. . . . . . . . . . . . . . .	L NEAR 	1226	CODE
+SFN. . . . . . . . . . . . . . .	L NEAR 	0D3F	CODE
+SFULL. . . . . . . . . . . . . .	L NEAR 	11D1	CODE
 SHCOL. . . . . . . . . . . . . .	L WORD 	0132	CODE
 SHLINE . . . . . . . . . . . . .	L WORD 	0130	CODE
 SHMOD. . . . . . . . . . . . . .	L BYTE 	0134	CODE
 SHMSG. . . . . . . . . . . . . .	L WORD 	012E	CODE
 SIG. . . . . . . . . . . . . . .	L BYTE 	0103	CODE
-SPLIT. . . . . . . . . . . . . .	L NEAR 	0B5B	CODE
-SS1. . . . . . . . . . . . . . .	L NEAR 	1156	CODE
-SS2. . . . . . . . . . . . . . .	L NEAR 	1168	CODE
-SS3. . . . . . . . . . . . . . .	L NEAR 	117B	CODE
-SS4. . . . . . . . . . . . . . .	L NEAR 	118D	CODE
-ST1. . . . . . . . . . . . . . .	L NEAR 	0EC3	CODE
-ST2. . . . . . . . . . . . . . .	L NEAR 	0ED7	CODE
-ST3. . . . . . . . . . . . . . .	L NEAR 	0EEF	CODE
-START. . . . . . . . . . . . . .	L NEAR 	0510	CODE
-STATUS . . . . . . . . . . . . .	L NEAR 	1132	CODE
-STCUT. . . . . . . . . . . . . .	L WORD 	1208	CODE
+SPLIT. . . . . . . . . . . . . .	L NEAR 	0B9B	CODE
+SS1. . . . . . . . . . . . . . .	L NEAR 	1199	CODE
+SS2. . . . . . . . . . . . . . .	L NEAR 	11AB	CODE
+SS3. . . . . . . . . . . . . . .	L NEAR 	11BE	CODE
+SS4. . . . . . . . . . . . . . .	L NEAR 	11D0	CODE
+ST1. . . . . . . . . . . . . . .	L NEAR 	0F06	CODE
+ST2. . . . . . . . . . . . . . .	L NEAR 	0F1A	CODE
+ST3. . . . . . . . . . . . . . .	L NEAR 	0F32	CODE
+START. . . . . . . . . . . . . .	L NEAR 	052A	CODE
+STATUS . . . . . . . . . . . . .	L NEAR 	1175	CODE
+STCUT. . . . . . . . . . . . . .	L WORD 	124B	CODE
 STFULL . . . . . . . . . . . . .	L BYTE 	012B	CODE
 STKOFF . . . . . . . . . . . . .	Number	1110	
-SV1. . . . . . . . . . . . . . .	L NEAR 	07B3	CODE
-SV2. . . . . . . . . . . . . . .	L NEAR 	07FF	CODE
-SVFAIL . . . . . . . . . . . . .	L NEAR 	0867	CODE
+SV1. . . . . . . . . . . . . . .	L NEAR 	07DE	CODE
+SV2. . . . . . . . . . . . . . .	L NEAR 	0833	CODE
+SVCL . . . . . . . . . . . . . .	L NEAR 	081D	CODE
+SVFAIL . . . . . . . . . . . . .	L NEAR 	08A7	CODE
+SVOK . . . . . . . . . . . . . .	L NEAR 	0897	CODE
 TAB. . . . . . . . . . . . . . .	Number	0009	
-TABK . . . . . . . . . . . . . .	L NEAR 	0B29	CODE
+TABK . . . . . . . . . . . . . .	L NEAR 	0B69	CODE
 TBUF . . . . . . . . . . . . . .	L BYTE 	0172	CODE	Length =0010
 TEND . . . . . . . . . . . . . .	L WORD 	010F	CODE
 TFCB . . . . . . . . . . . . . .	L BYTE 	01B7	CODE	Length =0025
 TLEN . . . . . . . . . . . . . .	L WORD 	0148	CODE
-TOOBIG . . . . . . . . . . . . .	L NEAR 	06EF	CODE
+TOOBIG . . . . . . . . . . . . .	L NEAR 	071A	CODE
 TOP. . . . . . . . . . . . . . .	L WORD 	0111	CODE
 TOPLN. . . . . . . . . . . . . .	L WORD 	0113	CODE
 TXOFF. . . . . . . . . . . . . .	Alias	STKOFF	 	
-UP . . . . . . . . . . . . . . .	L NEAR 	0A30	CODE
-UPN. . . . . . . . . . . . . . .	L NEAR 	0A5B	CODE
-UPPER. . . . . . . . . . . . . .	L NEAR 	066F	CODE
-UPX. . . . . . . . . . . . . . .	L NEAR 	0679	CODE
-USAGE. . . . . . . . . . . . . .	L NEAR 	0507	CODE
-USEMSG . . . . . . . . . . . . .	L BYTE 	0201	CODE
-VERT . . . . . . . . . . . . . .	L BYTE 	0128	CODE
-W. . . . . . . . . . . . . . . .	L WORD 	0121	CODE
- The Microsoft MACRO Assembler             11-07-<6    	PAGE	Symbols
+UP . . . . . . . . . . . . . . .	L NEAR 	0A70	CODE
+UPN. . . . . . . . . . . . . . .	L NEAR 	0A9B	CODE
+UPPER. . . . . . . . . . . . . .	L NEAR 	069A	CODE
+ The Microsoft MACRO Assembler             11-08-<6    	PAGE	Symbols
 	 	 	 	-7
 
 
 
-WALK . . . . . . . . . . . . . .	L NEAR 	09C8	CODE
+UPX. . . . . . . . . . . . . . .	L NEAR 	06A4	CODE
+USAGE. . . . . . . . . . . . . .	L NEAR 	0521	CODE
+USEMSG . . . . . . . . . . . . .	L BYTE 	0201	CODE
+VERT . . . . . . . . . . . . . .	L BYTE 	0128	CODE
+W. . . . . . . . . . . . . . . .	L WORD 	0121	CODE
+WALK . . . . . . . . . . . . . .	L NEAR 	0A08	CODE
 WBOFF. . . . . . . . . . . . . .	Number	0810	
 WBSZ . . . . . . . . . . . . . .	Number	0800	
-WBYTE. . . . . . . . . . . . . .	L NEAR 	08E8	CODE
-WC1. . . . . . . . . . . . . . .	L NEAR 	08D1	CODE
-WC2. . . . . . . . . . . . . . .	L NEAR 	08E4	CODE
+WBYTE. . . . . . . . . . . . . .	L NEAR 	0928	CODE
+WC1. . . . . . . . . . . . . . .	L NEAR 	0911	CODE
+WC2. . . . . . . . . . . . . . .	L NEAR 	0924	CODE
 WCNT . . . . . . . . . . . . . .	L WORD 	0152	CODE
-WCOPY. . . . . . . . . . . . . .	L NEAR 	08BA	CODE
-WFLUSH . . . . . . . . . . . . .	L NEAR 	08FB	CODE
-WK1. . . . . . . . . . . . . . .	L NEAR 	09D2	CODE
-WK2. . . . . . . . . . . . . . .	L NEAR 	09E1	CODE
-WK3. . . . . . . . . . . . . . .	L NEAR 	09E3	CODE
-WK4. . . . . . . . . . . . . . .	L NEAR 	09F2	CODE
-WKX. . . . . . . . . . . . . . .	L NEAR 	09E0	CODE
-WL1. . . . . . . . . . . . . . .	L NEAR 	0AD9	CODE
-WL2. . . . . . . . . . . . . . .	L NEAR 	0AEA	CODE
-WL3. . . . . . . . . . . . . . .	L NEAR 	0AFB	CODE
-WORDL. . . . . . . . . . . . . .	L NEAR 	0AD5	CODE
-WORDR. . . . . . . . . . . . . .	L NEAR 	0AB2	CODE
-WR1. . . . . . . . . . . . . . .	L NEAR 	0AB6	CODE
-WR2. . . . . . . . . . . . . . .	L NEAR 	0AC3	CODE
-WR3. . . . . . . . . . . . . . .	L NEAR 	0AD0	CODE
-WT1. . . . . . . . . . . . . . .	L NEAR 	089F	CODE
-WT2. . . . . . . . . . . . . . .	L NEAR 	08B6	CODE
-WTEXT. . . . . . . . . . . . . .	L NEAR 	088C	CODE
-WTX. . . . . . . . . . . . . . .	L NEAR 	08B9	CODE
+WCOPY. . . . . . . . . . . . . .	L NEAR 	08FA	CODE
+WFLUSH . . . . . . . . . . . . .	L NEAR 	093B	CODE
+WK1. . . . . . . . . . . . . . .	L NEAR 	0A12	CODE
+WK2. . . . . . . . . . . . . . .	L NEAR 	0A21	CODE
+WK3. . . . . . . . . . . . . . .	L NEAR 	0A23	CODE
+WK4. . . . . . . . . . . . . . .	L NEAR 	0A32	CODE
+WKX. . . . . . . . . . . . . . .	L NEAR 	0A20	CODE
+WL1. . . . . . . . . . . . . . .	L NEAR 	0B19	CODE
+WL2. . . . . . . . . . . . . . .	L NEAR 	0B2A	CODE
+WL3. . . . . . . . . . . . . . .	L NEAR 	0B3B	CODE
+WORDL. . . . . . . . . . . . . .	L NEAR 	0B15	CODE
+WORDR. . . . . . . . . . . . . .	L NEAR 	0AF2	CODE
+WR1. . . . . . . . . . . . . . .	L NEAR 	0AF6	CODE
+WR2. . . . . . . . . . . . . . .	L NEAR 	0B03	CODE
+WR3. . . . . . . . . . . . . . .	L NEAR 	0B10	CODE
+WT1. . . . . . . . . . . . . . .	L NEAR 	08DF	CODE
+WT2. . . . . . . . . . . . . . .	L NEAR 	08F6	CODE
+WTEXT. . . . . . . . . . . . . .	L NEAR 	08CC	CODE
+WTX. . . . . . . . . . . . . . .	L NEAR 	08F9	CODE
 
 Warning Severe
 Errors	Errors 

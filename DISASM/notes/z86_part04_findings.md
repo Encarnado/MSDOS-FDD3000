@@ -132,3 +132,9 @@ Numbered locals, all referenced only inside this part (checked in Z86.SYS.lst
 and CPMZ80.lst): NSI1 NDI1 NSI2 NDI2 CMPSB1 CMPSW1 SCASB1 SCASW1 REP1-3 RMB1-3
 RMW1-3 RSB1-3 RSW1-3 RLB1 RLW1 REPGO1 RCB1 RCW1 RSC0 RSCF RSCF1 RSCD RSCE RSCE1
 RSCX RSC1 RSCW1. See dict/z86_part04.md.
+
+## Fixed 2026-11-08
+- Finding 1 (REP MOVSW one-byte overlap): FIXED. MWCHK (EAHI page end) sends
+  DI = SI + 1 / DF = 0 and DI = SI - 1 / DF = 1 to MWSLOW (EALO page end),
+  which runs O_MOVSW CX times. fuzz_z86.py --overlap: 814 mismatches on the
+  old build, 0 now. RADVS (dead code) left in place.

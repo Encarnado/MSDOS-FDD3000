@@ -144,3 +144,17 @@ bearable"); they stay emulator figures.
   z86sys.asm's T_I10 / T_I16. No conflict found.
 - OVERVIEW 2.7 / README say "only rows between first and last mark are
   looked at": see item 3 for the precise rule.
+
+## Fixed 2026-11-08
+- 14 (arrow keys at prompts insert a letter): FIXED - ESC at PREFIX and at
+  "Find:" takes the following key, as ESCK does.
+- 15 (^Y answers Y at the abandon question): FIXED - PREFIX returns the key
+  as typed in AH; QUIT accepts only Y / y.
+- 17 (CLOSE and the last RENAME unchecked): FIXED - a failed close takes the
+  "not saved" path; a failed last rename says "Not renamed: text in .$$$"
+  and keeps MODIF. (The rename/close failure paths are code-reviewed, not
+  provoked by a test.)
+- test_edit.py group 7 covers 14 and 15: it fails on the old EDIT.COM
+  ("xACD" inserted; ^Y abandons) and passes now.
+- Not changed: 13 (CRs dropped on load: EDIT's line model), 16 (DOS's Abort
+  ends the program), 18-21.

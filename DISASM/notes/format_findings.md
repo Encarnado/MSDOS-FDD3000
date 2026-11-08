@@ -66,3 +66,9 @@ Cross-volume: z86sys T_FMT accepts drives 0-3 (its NDRIVE = 4), FORMAT
 restricts to 0-1 (IO.SYS's two drives) — consistent, not a bug.  Trap 1Bh is named
 TRAP_FMTTRK, per the 8086-volume TRAP_* set (iosys.md; 1Ch TRAP_CPM, 1Dh
 TRAP_DOSRET); z86sys.asm names only the handler, T_FMT.
+
+## Fixed 2026-11-08
+- 5 (/S never checks the system files are contiguous): FIXED - PUTSYS
+  checks that the clusters of Z86.SYS, IO.SYS and MSDOS.SYS from cluster 2
+  are free in the new FAT and otherwise prints "Bad track in the system
+  area: system not transferred". test_fdd86.py group 5: track 1 bad -> refused.

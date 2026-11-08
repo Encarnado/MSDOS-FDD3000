@@ -40,9 +40,9 @@ disk rotation.
 | I/O system | `IOFDD.ASM` = `IO.SYS` | 8086 | 332 bytes | 0040:0000 (linear 0400h) |
 | DOS kernel | Microsoft `MSDOS.ASM` + `STDDOS.ASM` = `MSDOS.SYS` | 8086 | 6 190 bytes | 0060:0000 |
 | Command processor | Microsoft `COMMAND.ASM` = `COMMAND.COM` | 8086 | 4 879 bytes | DOS loads it |
-| Disk formatter | `FORMAT.ASM` = `FORMAT.COM` | 8086 + trap | 1 628 bytes | .COM |
-| CP/M program runner | `CPM.ASM` = `CPM.COM`, with `CPMZ80.ASM` inside | 8086 + Z80 | 3 286 bytes | .COM; Z80 part at F12Ch |
-| Text editor | `EDIT.ASM` = `EDIT.COM` | 8086 | 4 653 bytes | .COM |
+| Disk formatter | `FORMAT.ASM` = `FORMAT.COM` | 8086 + trap | 1 735 bytes | .COM |
+| CP/M program runner | `CPM.ASM` = `CPM.COM`, with `CPMZ80.ASM` inside | 8086 + Z80 | 3 316 bytes | .COM; Z80 part at F12Ch |
+| Text editor | `EDIT.ASM` = `EDIT.COM` | 8086 | 4 720 bytes | .COM |
 
 ### 2.1 Memory map of the FDD3000 while DOS runs
 

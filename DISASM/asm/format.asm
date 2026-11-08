@@ -71,9 +71,9 @@
 ;  instructions in MASM's encoding (direction bit set, opcode +2): same
 ;  operation as the plain mnemonic, different bytes.
 ;
-;  FILE:    FORMAT.COM, 1 628 bytes
-;  MD5:     5defa452c475a2482a9d8ef67af1957e
-;  SHA256:  b8351e19d30c58d1ff5f6bbdea5e6016a26c5cfd60351202c11fb405cd552508
+;  FILE:    FORMAT.COM, 1 735 bytes (2026-11-08 build; the shipped one was 1 628)
+;  MD5:     56dc23994176689dac4614d6f5920edb
+;  SHA256:  143e799d7fab636ac28b979df1fd80b1a9b8b4bebf00d6b820ef345a866e5fe6
 ;  SOURCE:  project/MSDOS/poc/FORMAT.ASM (MASM, EXE2BIN)
 ;
 ;  CREDITS.  Original code: the FDD3000-MSDOS project (2026).  The Write
@@ -280,6 +280,8 @@ NOBMSG:
 	db "Cannot read the boot sector of the default drive",13,10,"$"
 SWEMSG:
 	db 13,10,"Disk error writing system",13,10,"$"
+SBDMSG:
+	db 13,10,"Bad track in the system area: system not transferred",13,10,"$"	; PUTSYS's check (2026-11-08)
 
 ; =====================================================================
 ; START - check the arguments and memory, collect the source material
@@ -774,14 +776,39 @@ GSNO:
 ; DOS:    AH=0Dh disk reset, AH=16h create, AH=1Ah DMA, AH=28h random
 ;         block write, AH=10h close, AH=09h print.
 ; DOS gives the files directory entries 0-3 and the first free clusters.
-; Z86.SYS ends up at cluster 2 only because the disk is empty; nothing
-; checks that each file is contiguous, which boot.asm and COLD assume -
+; Z86.SYS ends up at cluster 2 only because the disk is empty.  Since
+; 2026-11-08 PUTSYS first checks that the clusters Z86.SYS, IO.SYS and
+; MSDOS.SYS need from cluster 2 on are all free (PUTSYS_CHECK), because
+; boot.asm and COLD read them without the FAT - before that,
 ; a bad track among clusters 2-~23 yields an unbootable system disk.
 ; =====================================================================
 PUTSYS:
 	mov word [SYSCL],0x0	; nothing used yet (also for REPORT without /S)
 	cmp byte [SYSFLG],0x0	; /S asked for?
-	jz short PSX	; no /S: done
+	jnz short PUTSYS_CHECK	; yes
+	jmp PSX		; no /S: done (out of short range now)
+PUTSYS_CHECK:				; (src: PSC0)
+	mov bx,SYSTAB	; Z86.SYS, IO.SYS, MSDOS.SYS: the boot sector and
+	xor_d dx,dx	;   COLD read them from cluster 2 on without the
+PUTSYS_COUNT:				; (src: PSC1)
+	mov ax,[bx+12]	;   FAT, so the clusters they need (DX) must all be
+	add ax,1023	;   free in the new FAT - DOS would step over a bad
+	mov cl,10	;   one, the files would fragment, and the disk would
+	shr ax,cl	;   not boot (it used to say "System transferred")
+	add_d dx,ax	; + this file's clusters, rounded up
+	add bx,byte SYSENT
+	cmp bx,SYSTAB+3*SYSENT	; the first three entries only
+	jb short PUTSYS_COUNT	; (COMMAND.COM may fragment)
+	mov bx,0x2	; cluster 2 ...
+PUTSYS_FREE:				; (src: PSC2)
+	push dx
+	call GETFAT	; ... AX = its entry
+	pop dx
+	or_d ax,ax	; anything but 0 (FF7h: bad): refuse
+	jnz short PSBAD
+	inc bx
+	dec dx
+	jnz short PUTSYS_FREE	; ... up to cluster DX+1
 	mov ah,0xd	; disk reset: DOS reads the new FAT
 	int byte 0x21	; (DOS re-reads the FAT on next access)
 	mov bx,SYSTAB	; the first entry
@@ -830,10 +857,14 @@ PUTSYS_NEXT:				; (src: PS1)
 PSX:
 	clc	; CF=0: success
 	ret	; (to ASK)
+PSBAD:
+	mov dx,SBDMSG	; "Bad track in the system area ..."
+	jmp short PSERR_PRINT
 PSERRP:
 	pop bx		; (the entry pushed before the write)
 PSERR:
 	mov dx,SWEMSG	; "Disk error writing system"
+PSERR_PRINT:				; (src: PSERR1)
 	mov ah,0x9	; AH=09h print
 	int byte 0x21	; (ends with CR LF)
 	stc	; CF=1: failure

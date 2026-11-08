@@ -39,6 +39,7 @@ TAIL    DB      128 DUP (0)
 USEMSG  DB      "Usage: CPM program [arguments]",13,10,"$"
 NFMSG   DB      "Program not found",13,10,"$"
 BIGMSG  DB      "Program too big",13,10,"$"
+RDMSG   DB      "Program read error",13,10,"$"
 VERMSG  DB      "CPM.COM does not match Z86.SYS",13,10,"$"
 
 START:  MOV     SP,OFFSET STKTOP
@@ -121,6 +122,11 @@ CHKSZ:  CMP     WORD PTR [PFCB+18],0
         MOV     DX,OFFSET PFCB
         MOV     AH,39           ; random block read
         INT     33
+        OR      AL,AL           ; not all of it read (a disk error answered
+        JZ      RDOK            ; with Ignore): do not run half a program
+        MOV     DX,OFFSET RDMSG
+        JMP     MSG
+RDOK:
 ;
 ; the command tail: what follows the program's name, in upper case
 ;
