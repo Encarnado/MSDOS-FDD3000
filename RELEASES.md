@@ -7,13 +7,12 @@ boot it.
 
 | Release | Tag | Disk image SHA-256 | Real hardware |
 |---|---|---|---|
-| v1.1-rc1 | `v1.1-rc1` | `2d0c2e75bf923015a1dc6b1d670b90d7c4ae786e78e3e6446671dbf6e826fc5b` | not yet: emulators only |
-| v1.0 | `v1.0` | `2d063b9364277d6313829dcb4721c449814d569221c2b57ff261c8d86a213078` | **booted and ran on a real FDD3000, 2026-11-07** |
+| v1.0-rc1 | `v1.0-rc1` | `2d0c2e75bf923015a1dc6b1d670b90d7c4ae786e78e3e6446671dbf6e826fc5b` | not yet: emulators only |
 
-## v1.1-rc1 (2026-11-08): release candidate
+## v1.0-rc1 (2026-11-08): release candidate
 
-A release candidate until it has booted on a real FDD3000; then it becomes
-v1.1. Everything below passed the emulator test suites (lockstep 8086 test,
+The first release. A release candidate until it has booted on a real
+FDD3000; then it becomes v1.0. Everything below passed the emulator test suites (lockstep 8086 test,
 fuzzers, the whole-machine tests, EDIT and TERM tests).
 
 **New programs (by João Encarnado)**
@@ -62,13 +61,17 @@ the motor running still hangs it); EDIT keeps lines as LF and drops bare
 CRs; open findings in TERM for its author are listed in
 `DISASM/notes/term_findings.md` and `termz80_findings.md`.
 
-## v1.0 (2026-11-07)
+## Before the first release: the 2026-11-07 internal build
 
-MS-DOS 1.25 on the Timex FDD3000: the 8086 interpreter and Z80 BIOS
-(`Z86.SYS`), the boot sector, the I/O system, Microsoft's MS-DOS 1.25 kernel
-and COMMAND 1.17, and FORMAT, CPM (CP/M 2.2 programs natively on the Z80)
-and EDIT.
+Not a release (nothing was published before v1.0-rc1); recorded because it is
+the build that ran on real hardware. Git `eeadb54`: MS-DOS 1.25 on the Timex
+FDD3000 - the 8086 interpreter and Z80 BIOS (`Z86.SYS`), the boot sector, the
+I/O system, Microsoft's MS-DOS 1.25 kernel and COMMAND 1.17, and FORMAT, CPM
+(CP/M 2.2 programs natively on the Z80) and EDIT, with the first version of
+`DISASM/`.
 
-**Tried on a real FDD3000** (2026-11-07, TT3000 terminal, this disk image):
-it booted, and the DOS console tools, EDIT, CPM with a CP/M program, and
-the printer and AUX serial ports worked. FORMAT was not tried.
+**Tried on a real FDD3000** (2026-11-07, TT3000 terminal, that build's disk
+image, SHA-256 `2d063b9364277d6313829dcb4721c449814d569221c2b57ff261c8d86a213078`):
+it booted, and the DOS console tools, EDIT, CPM with a CP/M program, and the
+printer and AUX serial ports worked. FORMAT was not tried. v1.0-rc1 is that
+build plus everything listed above.
