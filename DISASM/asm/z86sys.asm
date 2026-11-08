@@ -83,7 +83,7 @@
 ;  everything from SECTIO to the BIOS data moved, SKEW / variables /
 ;  ENDBIOS did not (padding before SKEW), so CPMZ80 and CPM.COM are
 ;  unchanged.  The new code is in the free ends of the EALO and EAHI pages
-;  (z86.py ;@SLACK).  Baseline volume: git eeadb54.
+;  (z86.py ;@SLACK).  Baseline volume: git f9e9ae1.
 ;
 ;  HARDWARE.  The 2026-11-07 BUILD ran on a real FDD3000 (emulator-written
 ;  disk, TT3000 terminal): boot, DOS console tools, EDIT, CPM.COM and
