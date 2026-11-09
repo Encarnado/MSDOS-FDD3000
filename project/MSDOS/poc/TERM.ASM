@@ -68,6 +68,7 @@ BLK     DB      0               ; the block number expected / sent
 CRCM    DB      0               ; 1: CRC-16, 0: checksum
 TRIES   DB      0
 GOT     DB      0               ; 1: a block has come
+XRCV    DB      0               ; 1: receiving (a failed one deletes the file)
 XREPLY  DB      0               ; what to send before the next byte
 XLEN    DW      0
 XCNT    DW      0               ; bytes in the block being sent
@@ -540,16 +541,21 @@ XR0:    MOV     BX,OFFSET XFCB
         CALL    RECSZ1
         MOV     DX,OFFSET XRMSG
         CALL    XSTART
+        MOV     [XRCV],1
         MOV     [BLK],1
         MOV     [CRCM],1
         MOV     [GOT],0
         MOV     [XREPLY],"C"
 XR1:    MOV     BL,[XREPLY]     ; the answer, then a block, its first
-        MOV     BH,BL           ;   byte within 3 s, the others 1 s apart
-        MOV     CX,132
-        ADD     CL,[CRCM]
+        MOV     BH,BL           ;   byte within 10 s (3 s while the 'C'
+        MOV     CX,132          ;   or NAK asks for the first), the
+        ADD     CL,[CRCM]       ;   others 1 s apart
         MOV     [XLEN],CX
         MOV     DX,300
+        CMP     [GOT],0
+        JZ      XR11
+        MOV     DX,1000
+XR11:
         CALL    XGET
         JB      XRUSR
         JCXZ    XRTO
@@ -656,6 +662,7 @@ XS0:    MOV     BX,OFFSET XFCB
         CALL    RECSZ1
         MOV     DX,OFFSET XSMSG
         CALL    XSTART
+        MOV     [XRCV],0
 XS1:    XOR     BX,BX           ; the receiver's 'C' or NAK, a minute
         MOV     CX,1
         MOV     DX,6000
@@ -670,6 +677,9 @@ XS1:    XOR     BX,BX           ; the receiver's 'C' or NAK, a minute
         CMP     AL,NAK
         JZ      XS2
         CMP     AL,CAN
+        JNZ     XS1
+        CALL    CAN2            ; a cancel is two CANs
+        JB      XSUSR
         JNZ     XS1
         JMP     XRCAN
 XSUSR:  JMP     XUSER
@@ -717,6 +727,10 @@ XS5:    MOV     SI,OFFSET XBUF
         JZ      XS6
         CMP     AL,CAN
         JNZ     XS51
+        CALL    CAN2            ; one CAN alone: a line hit, sent again
+        JNB     XS52
+        JMP     XUSER
+XS52:   JNZ     XS51
         JMP     XRCAN
 XS51:   CALL    PURGE           ; not ACK: the line quiet first, so no
         INC     [TRIES]         ;   late answer is taken for the next
@@ -777,6 +791,19 @@ XANS:   XOR     BX,BX
         MOV     AL,[ANSB]
 XANS1:  RET
 
+; CAN2: a CAN came; ZF=1 if a second one follows within 1 s; CF=1 a key
+CAN2:   MOV     CX,1
+        MOV     DX,100
+        XOR     BX,BX
+        MOV     DI,OFFSET ANSB
+        CALL    XGETDI
+        JB      CAN21
+        MOV     AL,1            ; nothing: NZ, NC
+        JCXZ    CAN20
+        MOV     AL,[ANSB]
+CAN20:  XOR     AL,CAN          ; ZF=1 if CAN, CF=0
+CAN21:  RET
+
 ; XGET / XGETDI: send BL if BH <> 0, then up to CX bytes to XBUF / DI,
 ; DX x 10 ms each; CX = bytes received, CF=1 if a key was pressed
 XGET:   MOV     DI,OFFSET XBUF
@@ -834,7 +861,12 @@ XEND:   PUSH    DX
         MOV     DX,OFFSET XFCB
         MOV     AH,16
         INT     33
-        POP     DX
+        CMP     [XRCV],0        ; a failed receive: no partial file
+        JZ      XEND1
+        MOV     DX,OFFSET XFCB
+        MOV     AH,19           ; delete
+        INT     33
+XEND1:  POP     DX
 ;
 ; SHOW: the message DX on the bottom line until a key is pressed
 ;
