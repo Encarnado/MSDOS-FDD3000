@@ -29,6 +29,9 @@ VT100 / VT52 that TERM shows the host: every cell but the bottom right one
    A key cancels a transfer; a line hit on a block's SOH (into EOT or CAN)
    is a bad block, two CANs cancel; a stale answer while sending; the
    host's output after a transfer kept (/R).
+   A failed or cancelled receive leaves no partial file; a receive waits
+   10 s for a block once one has come; a lone CAN while sending is a line
+   hit (the block goes again), two cancel.
 8. /52 (a VT52 host) and /80 (80 columns).
 9. Quit lets the host go (XON with /X, RTS on with /R).
 
@@ -808,6 +811,9 @@ def xkey():
             break
     check(ok, 'XMODEM receive: a key did not cancel it within 1 s')
     print('  x typed after 10 s: %s' % ('CAN sent' if ok else 'NOT CANCELLED'))
+    r.run(20_000_000)
+    check(r.file('IN.BIN') is None, 'XMODEM receive cancelled by a key: IN.BIN left behind')
+    print('  the partial IN.BIN: %s' % ('deleted' if r.file('IN.BIN') is None else 'LEFT'))
 
 
 def hitsender(data, first):
@@ -843,7 +849,34 @@ def hitsender(data, first):
     return 'sender: done'
 
 
-def staleget(extra_c, nak_block):
+def slowsender(data, pause):
+    """XMODEM sender (CRC) that waits pause steps of drive() (0.125 s
+    each) before block 3, as a slow disk or a busy host does. Returns
+    what TERM sent meanwhile (a NAK or C: it gave up on the block)."""
+    got = b''
+    while b'C' not in got:
+        got += yield None
+    blocks = [data[i:i + 128].ljust(128, b'\x1a') for i in range(0, len(data), 128)]
+    n, early = 0, b''
+    while n < len(blocks):
+        if n == 2 and not early:
+            for _ in range(pause):
+                early += yield None
+            early = early or b'-'
+        yield xblock(n + 1, blocks[n], True)
+        got = b''
+        while not got:
+            got += yield None
+        if got[-1:] == b'\x06':
+            n += 1
+    yield b'\x04'
+    got = b''
+    while b'\x06' not in got:
+        got += yield None
+    return early
+
+
+def staleget(extra_c, nak_block, nak=b'\x15'):
     """XMODEM receiver (CRC) that sends a second 'C' as block 1 starts
     (its start-up poll crossing the block) and NAKs block nak_block once.
     Block numbers are checked as a receiver does: one behind is ACKed and
@@ -869,7 +902,7 @@ def staleget(extra_c, nak_block):
                 yield b'\x15'
             elif n == want == nak_block and not naked:
                 naked = True
-                yield b'\x15'
+                yield nak
             elif n == want:
                 out += blk[3:131]
                 want += 1
@@ -915,6 +948,54 @@ def xfaults():
     check(got == padded, 'send, a stale C and a NAK: %s' % (got if isinstance(got, str) else len(got)))
     print('  send, a second C crossing block 1, block 4 NAKed once: %s' % (
         'the same bytes' if got == padded else got))
+
+
+def xmore():
+    print('7e. XMODEM: no partial file, 10 s for a block, one CAN is noise')
+    data = bytes(random.Random(5).randrange(256) for _ in range(1280))
+    padded = data + b'\x1a' * (-len(data) % 128)
+    r = start('TERM AUX:9600')
+    r.keys('\x01R', 8_000_000)
+    r.keys('IN.BIN\r', 4_000_000)
+    r.tx()
+    r.h.flow = None
+    drive(r, hitsender(data, b'\x18\x18'), 400_000_000)
+    r.run(20_000_000)
+    check('Cancelled' in r.term.row(23) and r.file('IN.BIN') is None,
+          'receive cancelled by the sender: %r, IN.BIN %s' % (r.term.row(23).strip(), r.file('IN.BIN') and 'LEFT'))
+    print('  receive cancelled after 2 blocks: IN.BIN %s' % ('deleted' if r.file('IN.BIN') is None else 'LEFT'))
+    r = start('TERM AUX:9600')
+    r.keys('\x01R', 8_000_000)
+    r.keys('IN.BIN\r', 4_000_000)
+    r.tx()
+    r.h.flow = None
+    early = drive(r, slowsender(data, 56), 400_000_000)
+    got = r.file('IN.BIN')
+    check(got == padded and early == b'-', 'receive, the sender 7 s late with block 3: TERM sent %r, %s bytes'
+          % (early, got and len(got)))
+    print('  receive, block 3 sent 7 s late: %s, %s' % (
+        'TERM waited' if early == b'-' else 'TERM sent %r' % early, 'the same bytes' if got == padded else 'DIFFERENT'))
+    r.keys('x', 8_000_000)
+    r = start('TERM AUX:9600', files=[('OUT.BIN', data)])
+    r.keys('\x01S', 8_000_000)
+    r.keys('OUT.BIN\r', 4_000_000)
+    r.tx()
+    r.h.flow = None
+    got = drive(r, staleget(False, 3, b'\x18'))
+    check(got == padded, 'send, block 3 answered with one CAN: %s' % (got if isinstance(got, str) else len(got)))
+    print('  send, block 3 answered with one CAN (a line hit): %s' % (
+        'the same bytes' if got == padded else got))
+    r = start('TERM AUX:9600', files=[('OUT.BIN', data)])
+    r.keys('\x01S', 8_000_000)
+    r.keys('OUT.BIN\r', 4_000_000)
+    r.tx()
+    r.h.flow = None
+    drive(r, staleget(False, 3, b'\x18\x18'), 100_000_000)
+    r.run(20_000_000)
+    check('Cancelled' in r.term.row(23) and r.file('OUT.BIN') == data,
+          'send, two CANs: %r, OUT.BIN %s' % (r.term.row(23).strip(), 'kept' if r.file('OUT.BIN') == data else 'CHANGED'))
+    print('  send, block 3 answered with two CANs: %s; OUT.BIN %s' % (
+        r.term.row(23).strip(), 'kept' if r.file('OUT.BIN') == data else 'CHANGED'))
 
 
 def after():
@@ -985,6 +1066,7 @@ def main():
     xmodem()
     xkey()
     xfaults()
+    xmore()
     after()
     other()
     quits()

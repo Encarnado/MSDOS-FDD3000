@@ -175,11 +175,11 @@ test in test_term.py that fails on the old build and passes on the new one.
 | # | Class | Outcome |
 |---|---|---|
 | 1 QUIT leaves the host stopped | BUG | FIXED: QUIT1 does `XOR CX,CX / CALL SEND` (TERMZ80's ENSURE: XON, RTS on) after LOGOFF. Worse than reported: a new TERM did not free an XOFFed host either. Test: section 9 |
-| 2 One CAN cancels | DESIGN | receive side FIXED with N3 (two CANs needed); send side LEFT FOR THE AUTHOR |
+| 2 One CAN cancels | DESIGN | receive side FIXED with N3 (two CANs needed); send side FIXED 2026-11-09 (below) |
 | 3 Wait for 'C' restarts on noise | NOTE | as Christensen's one-minute rule; nothing to do |
 | 4 BLK-1 ACKed and dropped | NOTE | standard duplicate rule; nothing to do |
-| 5 Partial file kept | DESIGN | LEFT FOR THE AUTHOR |
-| 6 Retry limits / timeouts | DESIGN | LEFT FOR THE AUTHOR (3 s for a block vs the usual 10 s) |
+| 5 Partial file kept | DESIGN | FIXED 2026-11-09 (below) |
+| 6 Retry limits / timeouts | DESIGN | 10 s for a block FIXED 2026-11-09 (below); retry counts left as they are |
 | 7 Whole blocks | NOTE | nothing to do |
 | 8 /64 not documented | DOC | FIXED: header comment, USEMSG (`[/80|/64]`, "/64 64 columns"), README, OVERVIEW |
 | 9 LFCB closed twice | NOTE | harmless (MSDOS.ASM CLOSE rewrites the same entry) |
@@ -192,3 +192,16 @@ test in test_term.py that fails on the old build and passes on the new one.
 | N3 Line hit on SOH ends the receive | BUG | FIXED: EOT only with CX = 1, CAN only doubled, otherwise XRBAD. Test: section 7c (SOH into EOT, into CAN; two CANs still cancel) |
 | N4 Arrow key at the menu | NOTE | LEFT FOR THE AUTHOR |
 | N5 TERMZ80 "at a quarter" | DOC | FIXED in TERMZ80.ASM (comment) |
+
+## Fixed 2026-11-09 (after v1.0-rc1)
+
+TERM.ASM only; TERM.COM is now 6799 bytes (the 8086 part ends at 0E06h, Z80IMG at 0E07h;
+the MASM NOPs of finding 10 are now at 07CF, 0ABE, 0C2D). TERMZ80 is unchanged. Each fix
+has a test in test_term.py (section 7e, and 7b for the key) that fails on the v1.0-rc1
+TERM.COM and passes on the new one.
+
+| # | Fix |
+|---|---|
+| 5 Partial file kept | New byte XRCV: 1 in XRECV, 0 in XSEND. XEND (reached by XUSER, XFAIL and XRCAN) closes the file and, when XRCV = 1, deletes it (AH=13h). A send's file is never touched. Tests: 7b (a key), 7e (the sender's two CANs) |
+| 2 One CAN cancels a send | New CAN2: after a CAN, wait up to 1 s for one more byte; only a second CAN cancels. In XS_WAITC a lone CAN is passed over; as an answer to a block it is taken as a NAK (PURGE, send again). Tests: 7e (block 3 answered with one CAN: the file arrives; with two: "Cancelled by the other side", OUT.BIN unchanged) |
+| 6 3 s for a block | XR_WAIT waits 10 s for a block's first byte once a block has come (GOT = 1); before that 3 s, so the 'C' tries and the fallback to checksums keep their pace. A sender with no data for 10 s x 11 tries now takes 110 s to fail instead of 33 s. Test: 7e (block 3 sent 7 s late: no NAK, the file whole) |
