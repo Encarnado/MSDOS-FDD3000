@@ -9,6 +9,16 @@ boot it.
 |---|---|---|---|
 | v1.0-rc1 | `v1.0-rc1` | `a0eb02f1605446beaaaa15a163416136c3d3c3d5295ccd2f0aa031a43313b6b5` | not yet: emulators only |
 
+## Unreleased (after v1.0-rc1)
+
+**Fixes**
+- TERM XMODEM: a receive that fails or is cancelled deletes its partial
+  file (it was kept, and looked whole).
+- TERM XMODEM: sending, one CAN alone no longer cancels; it takes two
+  (as for receiving). A lone CAN answering a block is taken as a NAK.
+- TERM XMODEM: receiving, TERM waits 10 s for each block once the
+  transfer has started (it was 3 s; the 'C' / NAK start-up keeps 3 s).
+
 ## v1.0-rc1 (2026-11-08): release candidate
 
 The first release. A release candidate until it has booted on a real

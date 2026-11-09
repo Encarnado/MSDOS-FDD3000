@@ -778,14 +778,17 @@ Z80 part does everything that has to be quick:
   nearly full TERM stops the host, writes it (DOS random block write, so
   the file is exact) and goes on.
 - **XMODEM** (CRC-16 or checksums, 128-byte blocks; receive tries `C`
-  three times, then NAK): the protocol is in the 8086 part, the bytes in
-  the Z80 part (RECV takes a whole block in one call, sending the answer
-  to the last one first; CRC in Z80 code). A received EOT counts only
-  when nothing follows it, a cancel only as two CANs (a line hit on a
-  block's SOH is a bad block); sending, any answer but ACK waits for a
-  quiet line before the block goes again (a late answer is not taken for
-  the next block's). A key cancels a transfer. While "done - a key" is
-  shown the host is stopped (HOLD), so what it sends then is not lost.
+  three times, 3 s apart, then NAK; then 10 s for each block): the
+  protocol is in the 8086 part, the bytes in the Z80 part (RECV takes a
+  whole block in one call, sending the answer to the last one first; CRC
+  in Z80 code). A received EOT counts only when nothing follows it, a
+  cancel, both ways, only as two CANs (a line hit on a block's SOH is a
+  bad block; a lone CAN answering a block sent is taken as a NAK);
+  sending, any answer but ACK waits for a quiet line before the block
+  goes again (a late answer is not taken for the next block's). A key
+  cancels a transfer. A receive that fails or is cancelled deletes its
+  partial file. While "done - a key" is shown the host is stopped
+  (HOLD), so what it sends then is not lost.
 
 **The test** (`test_term.py`) runs TERM on the FDD3000 model with a host
 on channel B that sends at the real rate (`fdd86.WD2123`: a byte the
@@ -798,7 +801,9 @@ through the 8 KB buffer); XMODEM receive (CRC with a corrupted block
 sent again, at 9 600 and 19 200; checksums) and send (CRC; checksums):
 the files are the same bytes; a key cancels a transfer; a line hit on a
 block's SOH (into EOT or CAN) is taken as a bad block, two CANs cancel;
-a stale 'C' while sending, then a NAK, still gives the same bytes; the
+a stale 'C' while sending, then a NAK, still gives the same bytes; a
+cancelled receive leaves no file; a block 7 s late is waited for; a
+lone CAN answering a block sent is a NAK, two cancel; the
 host's prompt after a transfer is kept (`/R`); `Q` lets the host go
 (XON, RTS on). With a terminal model that takes 2 ms a character and 20 ms a
 scroll (a guess: the real terminal's speed isn't known), 6 KB of text:

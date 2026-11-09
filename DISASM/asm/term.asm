@@ -1,7 +1,7 @@
 ;==============================================================================
 ;  MS-DOS 1.25 ON THE TIMEX FDD3000  --  THE DISASSEMBLIES  --  9/10
 ;  TERM.COM - a serial terminal on the WD2123, with XMODEM and a log
-;  (8086 .COM, 6720 bytes, runs at CS:0100h; carries volume 10 inside)
+;  (8086 .COM, 6799 bytes, runs at CS:0100h; carries volume 10 inside)
 ;==============================================================================
 ;
 ;  ROLE.  `TERM [port[:] [settings]] [/opts]` turns the Timex terminal
@@ -9,9 +9,9 @@
 ;  serial channels: what the host sends is drawn, what is typed goes to
 ;  the host.  Ctrl-A brings a menu on the bottom line: quit, log to a
 ;  file, local echo, implicit LF, XMODEM receive / send, break.  Like
-;  CPM.COM (volume 6) it is two programs in one: 3256 bytes of 8086 code
-;  and data (0100h-0DB7h), run by Z86.SYS's interpreter like any .COM,
-;  and from 0DB8h the Z80 part, TERMZ80 (volume 10), behind a 16-byte
+;  CPM.COM (volume 6) it is two programs in one: 3335 bytes of 8086 code
+;  and data (0100h-0E06h), run by Z86.SYS's interpreter like any .COM,
+;  and from 0E07h the Z80 part, TERMZ80 (volume 10), behind a 16-byte
 ;  header.  The division of labour follows speed: everything that must
 ;  keep up with the line (the WD2123 holds one received byte; at 19 200
 ;  baud the next one overwrites it about 2 100 T-states later) is Z80
@@ -26,7 +26,7 @@
 ;       ->  options, port and settings parsed; INT 14h AH=F1h sets the
 ;           channel (only when settings were given)
 ;       ->  TRAP 1Ch, BP = linear address of the header at Z80IMG
-;           (0DB8h): Z86.SYS's T_CPML (volume 2) checks the header's 7
+;           (0E07h): Z86.SYS's T_CPML (volume 2) checks the header's 7
 ;           addresses and copies the 3448-byte image to ENDBIOS (F12Ch,
 ;           over COLD); the image's place here becomes the buffers
 ;       ->  TRAP 1Ch, BP = 0, AH = function: JP ENDBIOS = TERMZ80's
@@ -56,12 +56,12 @@
 ;  Z80's 0000h-CFFFh, so a linear address is a Z80 address.
 ;
 ;  MEMORY OF THIS PROGRAM ONCE TERMZ80 IS LOADED (offsets in our segment)
-;     0100h-0DB7h  8086 code, variables, tables, messages, 128-byte stack
-;     0DB8h        SCRBUF   shadow of the host's screen, 24 x 80 at most
-;     1538h        RINGBUF  the receive ring, RINGSZ = 2048
-;     1D38h        LOGBUF   the log buffer, LOGSZ = 8192
-;     3D38h-3DBCh  XBUF     one XMODEM block, 133 bytes
-;  The file ends at 1B3Fh; the buffers cover the dead image and run on
+;     0100h-0E06h  8086 code, variables, tables, messages, 128-byte stack
+;     0E07h        SCRBUF   shadow of the host's screen, 24 x 80 at most
+;     1587h        RINGBUF  the receive ring, RINGSZ = 2048
+;     1D87h        LOGBUF   the log buffer, LOGSZ = 8192
+;     3D87h-3E0Bh  XBUF     one XMODEM block, 133 bytes
+;  The file ends at 1B8Eh; the buffers cover the dead image and run on
 ;  past it (the .COM owns the whole segment; nothing checks the size).
 ;
 ;  KEY FINDINGS OF THIS DISASSEMBLY (notes/term_findings.md)
@@ -85,17 +85,22 @@
 ;     it first with TERMZ80's new HOLD function (AH = 10).
 ;   - FIXED 2026-11-08 (this build): /64 (64 columns, the default) is in
 ;     the usage now.
-;   - XMODEM, left as they are: one CAN still cancels a send (as an
-;     answer, or in the wait for 'C'); the sender's wait for 'C' / NAK
+;   - FIXED 2026-11-09: a failed or cancelled receive kept the partial
+;     file, which looked whole; XEND now deletes it (XRCV = 1).  One CAN
+;     cancelled a send (as an answer, or in the wait for 'C'); now CAN2
+;     wants a second within 1 s, and a lone CAN is a NAK.  Receive
+;     waited 3 s for each block; now 10 s once a block has come (3 s
+;     stays for the 'C' / NAK start-up, so the checksum fallback is not
+;     slowed).
+;   - XMODEM, left as they are: the sender's wait for 'C' / NAK
 ;     restarts its 60 s on every other byte (only a key or silence ends
 ;     it); a block numbered BLK-1 is ACKed and dropped, which also
-;     quietly skips a YMODEM block 0; a failed or cancelled receive
-;     keeps the partial file; retries: 10 on receive (JA), 9 re-sends on
-;     send (JB); receive waits 3 s for a block (the convention: 10 s).
+;     quietly skips a YMODEM block 0; retries: 10 on receive (JA), 9
+;     re-sends on send (JB).
 ;     The received file is whole blocks: ^Z padding included
 ;     (test_term.py compares against `padded`).
 ;   - Three MASM 1.10 forward-reference NOPs: `JMP LOGSW` (EB 69 90),
-;     `JMP SHOW1` (EB 27 90), and `MOV [XBUF],SOH` (C6 06 38 3D 01 90):
+;     `JMP SHOW1` (EB 35 90), and `MOV [XBUF],SOH` (C6 06 87 3D 01 90):
 ;     XBUF is an EQU defined after the code, so pass 1 sized the move
 ;     before knowing it was a BYTE location.
 ;   - The header carries the same 7 Z86.SYS addresses as CPM.COM's
@@ -109,7 +114,7 @@
 ;  VERIFICATION.  Reassembles BYTE-IDENTICAL to bin/TERM.COM with NASM
 ;  (nasm -O0 -f bin, tools/roundtrip.sh term).  Every instruction
 ;  matches the MASM listing ../symbols/x86/TERM.LST; every label is at
-;  the address TERM.COM.sym gives.  The header at 0DB8h was checked
+;  the address TERM.COM.sym gives.  The header at 0E07h was checked
 ;  against ../symbols/z80/Z86.SYS.sym, and the 3448 bytes after it are
 ;  bin/TERMZ80.BIN byte for byte (volume 10), included with incbin.
 ;  On the emulated FDD3000 (fdd86.py, a host on channel B sending in
@@ -137,9 +142,9 @@
 ;  timing figure are emulator results (test_term.py).  To be confirmed
 ;  with João.
 ;
-;  FILE:    TERM.COM, 6720 bytes
-;  MD5:     e90007ca84fbc6f8b53da643c9d17e12
-;  SHA256:  38af8d79fcf965599ea4f939c98a383cc387e2d95fb5755f2b74e227649423d7
+;  FILE:    TERM.COM, 6799 bytes
+;  MD5:     7ec77eaa40aa1ad81e44192ecb82ce1e
+;  SHA256:  f7161092ebf6c34b51106ed5cee54a572cb3c4559b01babcc9ed77ab0ffbd761
 ;  SOURCE:  ../project/MSDOS/poc/TERM.ASM (MASM 1.10), with TERMZ80.INC
 ;           (z86.py termz80(): header + TERMZ80.ASM's code) by build.py
 ;
@@ -356,6 +361,8 @@ TRIES:
 	db 0	; timeouts / bad blocks / re-sends so far
 GOT:
 	db 0	; receive: 1 once a good block has come
+XRCV:
+	db 0	; 1: receiving (XEND then deletes the partial file)
 XREPLY:
 	db 0	; receive: the byte to send before the next wait
 			;   ('C', NAK, ACK; 0 none)
@@ -746,7 +753,7 @@ SETX:
 ; =====================================================================
 LOAD:
 	mov bp,[BASE]	; BP = linear address of the header
-	add bp,Z80IMG	;   = BASE + 0DB8h
+	add bp,Z80IMG	;   = BASE + 0E07h
 	TRAP TRAP_CPM	; T_CPML: check the 7 addresses, copy to ENDBIOS
 	jnc short LOAD_OK	; CF=0: in place
 	mov dx,VERMSG	; CF=1: built against another Z86.SYS
@@ -880,7 +887,7 @@ MENU_CMD:				; (src: MENU2A)
 	jnz short MENU_R	; no
 	jmp short LOGSW	; yes
 	nop		; MASM's padding: the forward JMP was given 3 bytes
-			;   (TERM.LST 07CE: EB 69 90)
+			;   (TERM.LST 07CF: EB 69 90)
 MENU_R:					; (src: MENU3)
 	cmp al,'R'	; R: XMODEM receive
 	jnz short MENU_S	; no
@@ -1086,17 +1093,22 @@ XR_CREATED:				; (src: XR0)
 	call RECSZ1
 	mov dx,XRMSG	; "Receiving: ", ring flushed
 	call XSTART
+	mov byte [XRCV],0x1	; a receive: a failure deletes the file
 	mov byte [BLK],0x1	; XMODEM starts at block 1
 	mov byte [CRCM],0x1	; try CRC first
 	mov byte [GOT],0x0	; no block yet
 	mov byte [XREPLY],'C'	; 'C': "CRC please"
 XR_WAIT:				; (src: XR1)
 	mov bl,[XREPLY]	; the answer, then a block, its first
-	mov_d bh,bl	; byte within 3 s, the others 1 s apart
-	mov cx,132	;   (BH <> 0: send BL)
-	add cl,[CRCM]	; 133 with the CRC's second byte
-	mov [XLEN],cx	; what a whole block is
-	mov dx,300	; 300 x 10 ms for the first byte
+	mov_d bh,bl	; byte within 10 s (3 s while 'C' or NAK
+	mov cx,132	;   asks for the first), the others 1 s
+	add cl,[CRCM]	;   apart (BH <> 0: send BL); 133 with
+	mov [XLEN],cx	;   the CRC's second byte: a whole block
+	mov dx,300	; 3 s for the first byte ...
+	cmp byte [GOT],0x0	; ... until a block has come,
+	jz short XR_WAIT2
+	mov dx,1000	; then 10 s, as XMODEM's senders expect
+XR_WAIT2:				; (src: XR11)
 	call XGET	; CX = bytes, CF=1 a key
 	jc short XRUSR	; the user gave up
 	jcxz short XRTO	; nothing came
@@ -1137,7 +1149,7 @@ XRNAK:
 	jmp short XR_WAIT
 XRC:
 	mov byte [XREPLY],'C'	; CRC please, once more
-	jmp short XR_WAIT
+	jmp XR_WAIT	; (near: 3 bytes past short's reach)
 XRFL:
 	jmp XFAIL	; out of retries
 XRSOH:
@@ -1237,6 +1249,7 @@ XS_OPENED:				; (src: XS0)
 	call RECSZ1
 	mov dx,XSMSG	; "Sending: ", ring flushed
 	call XSTART
+	mov byte [XRCV],0x0	; a send: the file is never deleted
 XS_WAITC:				; (src: XS1)
 	xor_d bx,bx	; the receiver's 'C' or NAK, a minute
 	mov cx,0x1	;   (send nothing first, take 1 byte)
@@ -1251,8 +1264,11 @@ XS_WAITC:				; (src: XS1)
 	mov byte [CRCM],0x0	; NAK: checksums
 	cmp al,NAK	; NAK?
 	jz short XS_START	; yes: checksums
-	cmp al,CAN	; CAN: the receiver gave up
+	cmp al,CAN	; CAN: the receiver gives up?
 	jnz short XS_WAITC	; else wait again (no retry count)
+	call CAN2	; only if a second CAN follows
+	jc short XSUSR	; a key
+	jnz short XS_WAITC	; one alone: noise, wait on
 	jmp short XRCAN	; ("Cancelled by the other side")
 XSUSR:
 	jmp XUSER	; a key: cancel
@@ -1280,7 +1296,7 @@ XS_FILL:				; (src: XS31)
 	mov al,0x1a	; the last block filled with ^Z
 	rep stosb	; pad
 	mov byte [XBUF],SOH	; the header: SOH, number, complement
-	nop		; MASM's padding (TERM.LST 0AA1: C6 06 3D38 01 90):
+	nop		; MASM's padding (TERM.LST 0ABE: C6 06 3D87 01 90):
 			;   XBUF is a forward EQU, sized before its type was known
 	mov al,[BLK]	; block number
 	mov [XBUF+1],al
@@ -1306,9 +1322,14 @@ XS_SENDBLK:				; (src: XS5)
 	jc short XSUSR	; a key
 	cmp al,ACK	; taken
 	jz short XS_ACKED	; yes: next block
-	cmp al,CAN	; the receiver gave up
+	cmp al,CAN	; the receiver gives up?
 	jnz short XS_RETRY	; no
-	jmp XRCAN
+	call CAN2	; one CAN alone: a line hit, send again
+	jnc short XS_CAN2	; no key
+	jmp XUSER	; a key
+XS_CAN2:				; (src: XS52)
+	jnz short XS_RETRY	; one alone: as a NAK
+	jmp XRCAN	; two: cancelled
 XS_RETRY:				; (src: XS51)
 	call PURGE	; not ACK: the line quiet first, so no
 				;   late answer is taken for the next
@@ -1393,6 +1414,28 @@ XANS_RET:				; (src: XANS1)
 	ret
 
 ; ---------------------------------------------------------------------
+; CAN2 - a CAN came while sending: is it a cancel?  The receiver cancels
+; with two CANs or more; one alone is a line hit on its answer.  Waits
+; up to 1 s for one more byte (into ANSB).  Exit: CF=1 a key; else ZF=1
+; if it was a CAN (cancelled), ZF=0 for anything else or nothing.
+; Corrupts AL, BX, CX, DX, DI.  Callers: XS_WAITC, XS_SENDBLK.
+; ---------------------------------------------------------------------
+CAN2:
+	mov cx,0x1	; one byte
+	mov dx,100	; within 1 s
+	xor_d bx,bx	; send nothing
+	mov di,ANSB	; into ANSB
+	call XGETDI	; RECV
+	jc short CAN2_RET	; a key: CF=1
+	mov al,0x1	; nothing: not CAN
+	jcxz short CAN2_TEST
+	mov al,[ANSB]	; the byte
+CAN2_TEST:				; (src: CAN20)
+	xor al,CAN	; ZF=1 if CAN; CF=0
+CAN2_RET:				; (src: CAN21)
+	ret
+
+; ---------------------------------------------------------------------
 ; XGET / XGETDI - TERMZ80's RECV.  Entry: BH <> 0: send BL first; CX =
 ; bytes wanted, to XBUF (XGET) or DI (XGETDI); DX x 10 ms for the first
 ; byte (1 s for each other).  Exit: CX = bytes received; CF=1 if a key
@@ -1450,7 +1493,9 @@ SEND:
 ; ---------------------------------------------------------------------
 ; XDONE - the transfer ended well: the file closed, "n bytes: done".
 ; XUSER / XFAIL - give up: three CANs to the other side, then XEND.
-; XEND - the file closed (a partial file is kept), the message DX.
+; XEND - the file closed, the message DX; a failed or cancelled
+; receive deletes it (XRCV = 1), so no partial file is left to look
+; whole.  (FIXED 2026-11-09: the partial file was kept.)
 ; Both first stop the host with TERMZ80's HOLD (function 10): SHOW's
 ; wait for a key polls nothing, and what the host sent meanwhile (its
 ; prompt after sx / rx) was lost; the next SESS lets it go.  (FIXED
@@ -1469,7 +1514,7 @@ XDONE:
 	call PUTNB	; "Receiving: n" / "Sending: n"
 	mov dx,DONEM	; ... " bytes: done - a key"
 	jmp short SHOW1	; then wait for a key
-	nop		; MASM's padding (TERM.LST 0BEC: EB 27 90)
+	nop		; MASM's padding (TERM.LST 0C2D: EB 35 90)
 XUSER:
 	mov dx,CANM	; "Cancelled"
 	jmp short XCAN
@@ -1485,9 +1530,15 @@ XEND:
 	push dx
 	mov ah,TZ_HOLD	; HOLD
 	call Z80
-	mov dx,XFCB	; AH=10h close FCB: what came is kept
+	mov dx,XFCB	; AH=10h close FCB
 	mov ah,0x10
 	int 21h
+	cmp byte [XRCV],0x0	; receiving?
+	jz short XEND_MSG	; no: a send's file is the user's
+	mov dx,XFCB	; AH=13h delete FCB: the partial file
+	mov ah,0x13
+	int 21h
+XEND_MSG:				; (src: XEND1)
 	pop dx	; the message
 ;
 ; SHOW: the message DX on the bottom line until a key is pressed
@@ -1729,7 +1780,7 @@ SAME6:
 	pop si
 	ret	; ZF = equal
 
-; ---- the stack: 64 words, 0D38h-0DB7h ----
+; ---- the stack: 64 words, 0D87h-0E06h ----
 	times 64 dw 0
 STKTOP:
 
@@ -1745,10 +1796,10 @@ STKTOP:
 ; (Z86.SYS.sym) - the same as CPM.COM's header (volume 6).
 ; =====================================================================
 Z80IMG:
-SCRBUF equ Z80IMG	; 0DB8h the host's screen, 24 x 80 at most
-RINGBUF equ SCRBUF+ROWS*80	; 1538h the receive ring, 2048
-LOGBUF equ RINGBUF+RINGSZ	; 1D38h the log buffer, 8192
-XBUF equ LOGBUF+LOGSZ	; 3D38h an XMODEM block (133 bytes)
+SCRBUF equ Z80IMG	; 0E07h the host's screen, 24 x 80 at most
+RINGBUF equ SCRBUF+ROWS*80	; 1587h the receive ring, 2048
+LOGBUF equ RINGBUF+RINGSZ	; 1D87h the log buffer, 8192
+XBUF equ LOGBUF+LOGSZ	; 3D87h an XMODEM block (133 bytes)
 Z80_LEN:
 	dw Z80_CODE_END-Z80_CODE	; 0D78h = 3448 bytes of code to copy
 Z80_SYMS:
@@ -1761,7 +1812,7 @@ Z80_SYMS:
 	dw ENDBIOS	; F12Ch  must equal Z86.SYS ENDBIOS (the copy target)
 
 ; The code, assembled to run at ENDBIOS (F12Ch-FEA3h): TERMZ80.BIN,
-; narrated in asm/termz80.asm (volume 10).  File offset 0CC8h to the
+; narrated in asm/termz80.asm (volume 10).  File offset 0D17h to the
 ; end of TERM.COM; nothing follows it.  (Path relative to DISASM/,
 ; where tools/roundtrip.sh assembles.)
 Z80_CODE:
