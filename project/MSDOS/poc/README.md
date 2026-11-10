@@ -2,7 +2,7 @@
 
 MS-DOS 1.25 boots and runs on the FDD3000's Z80, through an 8086 interpreter
 written in Z80 assembly (`I86.ASM`), on an emulated Z80. The TT3000 / TC3256 /
-TC2068 stays the terminal.
+TC2048 / TC2068 are used as a console terminal.
 
 **Status:**
 - **Step 1 (Python model):** DOS boots to `A:` and runs DIR, COPY, REN, DEL,
@@ -920,8 +920,11 @@ routine):
 1. ~~Z80 8086 interpreter, checked against `cpu86.py` instruction by instruction.~~ Done (step 2).
 2. ~~Z80 trap handlers taken from CBIOS A1.1, run on `cpm80ds/machine.py`.~~ Done (step 3).
 3. ~~Boot: the boot ROM reads sector 0 to 3F00h. An IPL there loads the interpreter, then IO.SYS and MSDOS.SYS.~~ Done (step 4).
-4. Real hardware with a TT3000 / TC3256: write `build/MSDOS.DSK` to a
-   40-track disk (or an HxC image) and boot the FDD3000 from it.
+4. Real hardware: write `build/MSDOS.DSK` to a 40-track disk (or an HxC
+   image) and boot the FDD3000 from it. Tried with a TC2048 and a TC2068
+   as the terminal, and with an emulated Terminal 3000; not yet with a
+   real TT3000. The TC3256 is a proof of concept: no real machine exists
+   yet.
 5. ~~MBASIC~~: done, under CPM.COM. An 8086 BASIC for DOS would also
    run, but much slower (about 17 000 8086 instructions a second). Tim
    Paterson's listings (`../ext/Paterson-Listings`, from

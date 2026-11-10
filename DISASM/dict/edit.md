@@ -1187,56 +1187,56 @@ and the image is byte-identical (tools/roundtrip.sh edit).
 - class: constant (VT52 code)
 - addresses: value 'Y'
 - aliases: none (the source writes the literal or the number)
-- status: verified (code + OVERVIEW 2.7 + test_edit.py terminal model; worked on a real FDD3000 + TT3000, notes/hardware_run.md)
+- status: verified (code + OVERVIEW 2.7 + test_edit.py terminal model; worked on a real FDD3000 + TC2048 / TC2068, notes/hardware_run.md)
 - notes: ESC Y row+32 col+32: cursor address
 
 ### VT_BIAS — the bias on row and column
 - class: constant (VT52 code)
 - addresses: value 32
 - aliases: none (the source writes the literal or the number)
-- status: verified (code + OVERVIEW 2.7 + test_edit.py terminal model; worked on a real FDD3000 + TT3000, notes/hardware_run.md)
+- status: verified (code + OVERVIEW 2.7 + test_edit.py terminal model; worked on a real FDD3000 + TC2048 / TC2068, notes/hardware_run.md)
 - notes: the bias on row and column
 
 ### VT_HOME — ESC H: cursor home
 - class: constant (VT52 code)
 - addresses: value 'H'
 - aliases: none (the source writes the literal or the number)
-- status: verified (code + OVERVIEW 2.7 + test_edit.py terminal model; worked on a real FDD3000 + TT3000, notes/hardware_run.md)
+- status: verified (code + OVERVIEW 2.7 + test_edit.py terminal model; worked on a real FDD3000 + TC2048 / TC2068, notes/hardware_run.md)
 - notes: ESC H: cursor home
 
 ### VT_EOS — ESC J: clear to the end of the screen
 - class: constant (VT52 code)
 - addresses: value 'J'
 - aliases: none (the source writes the literal or the number)
-- status: verified (code + OVERVIEW 2.7 + test_edit.py terminal model; worked on a real FDD3000 + TT3000, notes/hardware_run.md)
+- status: verified (code + OVERVIEW 2.7 + test_edit.py terminal model; worked on a real FDD3000 + TC2048 / TC2068, notes/hardware_run.md)
 - notes: ESC J: clear to the end of the screen
 
 ### VT_EOL — ESC K: clear to the end of the line
 - class: constant (VT52 code)
 - addresses: value 'K'
 - aliases: none (the source writes the literal or the number)
-- status: verified (code + OVERVIEW 2.7 + test_edit.py terminal model; worked on a real FDD3000 + TT3000, notes/hardware_run.md)
+- status: verified (code + OVERVIEW 2.7 + test_edit.py terminal model; worked on a real FDD3000 + TC2048 / TC2068, notes/hardware_run.md)
 - notes: ESC K: clear to the end of the line
 
 ### VT_INVON — ESC L: inverse on (Terminal 3000)
 - class: constant (VT52 code)
 - addresses: value 'L'
 - aliases: none (the source writes the literal or the number)
-- status: verified (code + OVERVIEW 2.7 + test_edit.py terminal model; worked on a real FDD3000 + TT3000, notes/hardware_run.md)
+- status: verified (code + OVERVIEW 2.7 + test_edit.py terminal model; worked on a real FDD3000 + TC2048 / TC2068, notes/hardware_run.md)
 - notes: ESC L: inverse on (Terminal 3000)
 
 ### VT_INVOFF — ESC M: inverse off
 - class: constant (VT52 code)
 - addresses: value 'M'
 - aliases: none (the source writes the literal or the number)
-- status: verified (code + OVERVIEW 2.7 + test_edit.py terminal model; worked on a real FDD3000 + TT3000, notes/hardware_run.md)
+- status: verified (code + OVERVIEW 2.7 + test_edit.py terminal model; worked on a real FDD3000 + TC2048 / TC2068, notes/hardware_run.md)
 - notes: ESC M: inverse off
 
 ### VT_RLF — ESC I: cursor up; on row 0 scroll down
 - class: constant (VT52 code)
 - addresses: value 'I'
 - aliases: none (the source writes the literal or the number)
-- status: verified (code + OVERVIEW 2.7 + test_edit.py terminal model; worked on a real FDD3000 + TT3000, notes/hardware_run.md)
+- status: verified (code + OVERVIEW 2.7 + test_edit.py terminal model; worked on a real FDD3000 + TC2048 / TC2068, notes/hardware_run.md)
 - notes: ESC I: cursor up; on row 0 scroll down
 
 ### KEY_DEL — DEL: delete left (as ^H)

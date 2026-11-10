@@ -65,7 +65,7 @@
 ;  side from z86sys.asm (TRAP, TTAB and the T_* handlers).  Boots to
 ;  COMMAND.COM under the emulator (test_dos.py, test_fdd86.py).  On
 ;  REAL HARDWARE (notes/hardware_run.md, run of 2026-11-07): the
-;  emulator-written disk booted a real FDD3000 with a TT3000 terminal
+;  emulator-written disk booted a real FDD3000 with TC2048 and TC2068 terminals
 ;  through this file's INIT (vectors set, DOSINIT, COMMAND.COM loaded)
 ;  to the prompt, and DOS console tools, EDIT, CPM and PRN / AUX ran -
 ;  so the device entries for console, disk, printer and AUX are

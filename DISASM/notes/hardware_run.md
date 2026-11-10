@@ -5,7 +5,7 @@ The package binaries were run on a **real Timex FDD3000**.
 | Item | Result |
 |---|---|
 | Disk | `binaries/disk/MSDOS-FDD3000.DSK`, written by the emulator tools (not made on the machine) |
-| Terminal | TT3000 (user: "I believe") |
+| Terminal | TC2048 and TC2068, running the Terminal Emulator loaded from a TOS disk (corrected 2026-11-10; first recorded as TT3000) |
 | Boot ROM → BOOT.BIN → Z86.SYS COLD → IO.SYS → MSDOS.SYS → COMMAND.COM | worked |
 | DOS console tools (DIR, COPY, TYPE, CHKDSK…) | worked |
 | EDIT | worked |
@@ -22,7 +22,7 @@ The package binaries were run on a **real Timex FDD3000**.
   RST 38h end-of-transfer: all work on the drive used. Settle and retry risks
   are not seen in practice. A marginal drive could still differ, so "verified on one
   machine", not "proven".
-- **Console link with a real terminal (TT3000):** the CBIOS-derived protocol, PEEKEY/
+- **Console link with a real terminal (TC2048 and TC2068):** the CBIOS-derived protocol, PEEKEY/
   STATUS key handling and the 255-poll timeouts work with a real terminal end. The
   PEEKEY 00h–03h phantom-key edge (z86 part 07) was not reported; it stays a latent
   code finding.
@@ -35,7 +35,8 @@ The package binaries were run on a **real Timex FDD3000**.
   hardware.
 - Latch bit 7 / LED polarity (boot_findings item 7): unobserved.
 - Clock speed (4 MHz assumed everywhere) and real timings.
-- Terminal model: TT3000 by recollection.
+- A real Terminal 3000 (TT3000): not tried; DOS worked with an emulated one. The
+  TC3256 is a proof of concept: no real machine exists yet.
 
 Claims written before this report are tagged `HW-PENDING` in the 8086 notes and are
 resolved against this table.

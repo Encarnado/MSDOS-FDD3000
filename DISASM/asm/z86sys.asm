@@ -87,7 +87,7 @@
 ;  (z86.py ;@SLACK).  Baseline volume: git 868a965.
 ;
 ;  HARDWARE.  The 2026-11-07 BUILD ran on a real FDD3000 (emulator-written
-;  disk, TT3000 terminal): boot, DOS console tools, EDIT, CPM.COM and
+;  disk, TC2048 and TC2068 terminals): boot, DOS console tools, EDIT, CPM.COM and
 ;  PRN/AUX all worked (notes/hardware_run.md).  THIS build has passed the
 ;  emulator suites (lockstep, fuzz, test_fdd86 groups 1-5 and 8, test_edit,
 ;  test_fdtimeout) but has NOT yet run on the real machine; the floppy byte

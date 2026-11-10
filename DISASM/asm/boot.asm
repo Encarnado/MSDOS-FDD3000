@@ -45,7 +45,7 @@
 ;     256-poll echo timeout and TXERR abort removed.
 ;
 ;  HARDWARE.  Booted a real FDD3000 on 2026-11-07 from the emulator-
-;  written disk, TT3000 terminal, through to COMMAND.COM
+;  written disk, TC2048 and TC2068 terminals, through to COMMAND.COM
 ;  (notes/hardware_run.md).  The NOSYS message path was not exercised.
 ;
 ;  VERIFICATION.  Reassembles BYTE-IDENTICAL to bin/BOOT.BIN with Wijnen

@@ -72,7 +72,7 @@
 ;  The four error messages and the CP/M runs are exercised by
 ;  test_fdd86.py groups 6 and 7 on the emulated FDD3000.  On real
 ;  hardware (notes/hardware_run.md, 2026-11-07: a real FDD3000 with a
-;  TT3000 terminal, the emulator-written disk) CPM.COM ran a CP/M
+;  TC2048 and TC2068 terminals, the emulator-written disk) CPM.COM ran a CP/M
 ;  program, its Z80 part running natively with the files on the DOS
 ;  disk: verified on one machine.  Which program, and the error paths,
 ;  are not recorded.

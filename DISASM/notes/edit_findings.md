@@ -12,7 +12,7 @@ instruction lines.
 Evidence tags: *verified* = code and source (or MSDOS.LST / z86sys.asm /
 test_edit.py) agree. *code reading* = follows from the bytes, not exercised
 by test_edit.py. Hardware: notes/hardware_run.md (2026-11-07, real FDD3000 +
-TT3000 by recollection; "EDIT worked"). The `HW-PENDING` tags written before
+TC2048 and TC2068; "EDIT worked"). The `HW-PENDING` tags written before
 that report are resolved below.
 
 ## Design (confirmed)
@@ -56,7 +56,7 @@ that report are resolved below.
 7. **Never the last column.** W = COLS-1; ROWOUT expands only to LEFT+W; PLACE
    clamps to W-1; the longest message ends at column 62 of 64. *verified
    (test_edit.py checks no character in the last column after every step);
-   worked on a real TT3000 - was HW-PENDING, resolved.*
+   worked on a real TC2048 and TC2068 - was HW-PENDING, resolved.*
 8. **VT52 / Terminal 3000 codes** ESC Y row+32 col+32, ESC H ESC J, ESC K,
    ESC L / ESC M inverse, ESC I: named VT_* equates. *verified against
    OVERVIEW 2.7 and the test's terminal model; confirmed on a real

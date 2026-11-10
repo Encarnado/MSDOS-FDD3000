@@ -96,7 +96,7 @@ I/O system, Microsoft's MS-DOS 1.25 kernel and COMMAND 1.17, and FORMAT, CPM
 (CP/M 2.2 programs natively on the Z80) and EDIT, with the first version of
 `DISASM/`.
 
-**Tried on a real FDD3000** (2026-11-07, TT3000 terminal, that build's disk
+**Tried on a real FDD3000** (2026-11-07, TC2048 and TC2068 terminals, that build's disk
 image, SHA-256 `2d063b9364277d6313829dcb4721c449814d569221c2b57ff261c8d86a213078`):
 it booted, and the DOS console tools, EDIT, CPM with a CP/M program, and the
 printer and AUX serial ports worked. FORMAT was not tried. v1.0-rc1 is that

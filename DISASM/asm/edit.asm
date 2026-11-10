@@ -85,8 +85,8 @@
 ;  400 random keys, find, help, abandon, saving (.BAK, a new file, a full
 ;  disk, a write-protected disk with Retry), memory full, usage, /80.
 ;  REAL HARDWARE (notes/hardware_run.md): on 2026-11-07 the emulator-
-;  written disk booted on a real FDD3000 with a TT3000 terminal (model
-;  by the user's recollection) and EDIT worked on it.  The VT52 codes,
+;  written disk booted on a real FDD3000 with TC2048 and TC2068
+;  terminals and EDIT worked on it.  The VT52 codes,
 ;  the row marks, the terminal scrolls and the last-column rule are
 ;  thereby confirmed against a real Terminal-3000-family terminal (one
 ;  machine, no fault report, no step-by-step log).  The per-key timings
@@ -2103,7 +2103,7 @@ SETTOP_X:				; (src: ST3)
 ; shifted one place with the rows and the row brought in is marked
 ; whole.  Terminal behaviour after the Terminal 3000 ROM (OVERVIEW 2.7)
 ; and test_edit.py's terminal model, which demands exactly one scroll
-; per one-line move; confirmed on a real FDD3000 + TT3000
+; per one-line move; confirmed on a real FDD3000 + TC2048 / TC2068
 ; (notes/hardware_run.md).  Corrupts AX, CX, SI, DI.  Callers: FIXSCR.
 ; =====================================================================
 SCRUP:

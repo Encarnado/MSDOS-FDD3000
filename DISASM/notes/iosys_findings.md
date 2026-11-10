@@ -73,6 +73,6 @@ the `db 0FH,n,0CBH` entries and stubs are now spelled `TRAP TRAP_xxx` / `retf` /
     (DOSENT dw 0, DOSSEG; MSDOS.SYS starts with JMP DOSINIT). *verified.*
 
 Real hardware (hardware_run.md, 2026-11-07): boot chain through INIT, DOSINIT and
-the COMMAND.COM load worked on a real FDD3000 + TT3000; console tools, EDIT, CPM,
+the COMMAND.COM load worked on a real FDD3000 + TC2048 / TC2068; console tools, EDIT, CPM,
 PRN/AUX worked. No item above remains HW-PENDING; COMERR and the unserved-vector
 edge are simply untested anywhere.

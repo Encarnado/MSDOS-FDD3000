@@ -10,7 +10,7 @@ bin/CPMZ80.BIN, byte for byte (checked with cmp), and are now `incbin "bin/CPMZ8
 No bytes follow the image. Comment coverage about 93% of instruction lines (119/128). Three
 numbered locals were renamed (SKIP1, TAIL0, TC1).
 
-Hardware: notes/hardware_run.md (2026-11-07, real FDD3000, TT3000 terminal) reports
+Hardware: notes/hardware_run.md (2026-11-07, real FDD3000, TC2048 and TC2068 terminals) reports
 "CPM (a CP/M program under CPM.COM) worked". So CPM.COM and its Z80 part running natively
 are **verified on real hardware** (one machine; which program is not recorded). The error
 paths (usage, not found, too big, mismatch) were exercised only in the emulator

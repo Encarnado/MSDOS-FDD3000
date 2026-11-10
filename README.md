@@ -4,9 +4,11 @@ MS-DOS 1.25, rebuilt from Microsoft's MIT-licensed source, booting and
 running on the **Timex FDD3000** floppy disk unit. The FDD3000 has a Z80, not
 an 8086, so the package's core is an **8086 interpreter written in Z80
 assembly**, with a Z80 BIOS for the FDD3000's console link and WD177x floppy
-controller. The terminal stays a Timex TT3000 / TC3256 / TC2068 (Terminal
-3000, VT52 codes) on the FDD3000's link. On top of that are five DOS
-programs written for it: **FORMAT** for the FDD3000 disk format, **CPM**,
+controller. As with CP/M, the console can be a Timex Computer 2048 or 2068
+running the Terminal Emulator software loaded from a TOS disk, the Timex
+Terminal 3000 keyboard, or a TC3256 in CP/M Terminal mode. All can use VT52
+codes. On top of that are five DOS programs written for it: **FORMAT** for
+the FDD3000 disk format, **CPM**,
 which runs CP/M 2.2 programs natively on the Z80 with their files on the
 DOS disk, **EDIT**, a full-screen text editor, **MODE**, which sets the
 serial ports' speed and format, and **TERM**, a serial terminal (VT100,
@@ -19,7 +21,7 @@ connecting anything.
 Everything was built and tested on emulators (a Python 8086 model, and an
 emulated FDD3000 with its Z80, WD177x and boot ROM), and the disk also boots
 on FUSE. **An earlier internal build booted and ran on a real FDD3000 on
-2026-11-07** (git `868a965`; TT3000 terminal: DOS, EDIT, CPM and the serial
+2026-11-07** (git `868a965`; TC2048 and TC2068 terminals: DOS, EDIT, CPM and the serial
 ports worked; FORMAT was not tried). The current build, release candidate
 v1.0-rc1, has so far been tested on the emulators only; see `RELEASES.md`.
 
@@ -31,9 +33,11 @@ v1.0-rc1, has so far been tested on the emulators only; see `RELEASES.md`.
    one is the current build). It is an Extended CPC DSK image: 40 tracks,
    1 side, 18 sectors of 256 bytes per track, sector IDs 0-17.
 2. **On a real FDD3000:** write the image to a 3" disk with a tool that can
-   write DSK images to a real drive in that format, put it in drive A,
-   connect the Timex terminal (TT3000 / TC3256 / TC2068 running its
-   Terminal 3000 software), and reset the FDD3000. Its boot ROM loads the
+   write DSK images to a real drive in that format, and put it in drive A.
+   Connect the FDD3000 to the system you are going to use: a Terminal 3000
+   just needs to be connected, a TC3256 needs to be in CP/M Terminal mode,
+   and a TC2048 or TC2068 needs the Terminal Emulator software loaded first.
+   Then reset the FDD3000. Its boot ROM loads the
    disk; DOS asks for the date and the time (press RETURN for each), and
    you are at `A:`.
 3. **On the package's emulator** (Python 3.9 or later, nothing else):

@@ -11,8 +11,9 @@ are in `project/MSDOS/poc/README.md`.
 The **Timex FDD3000** is a floppy disk unit for the Timex Sinclair
 computers. It has its own **Z80**, 64 KB of RAM, a **WD177x** floppy
 controller, up to four drives, and a 2 KB boot ROM. It talks to a Timex
-computer acting as its terminal (TT3000 / TC3256 / TC2068, the "Terminal
-3000") over a link on port **2Fh**. Under TOS and Timex's CP/M 2.2 (TMX
+computer acting as its terminal (a TC2048 or TC2068 running the Terminal
+Emulator, a Timex Terminal 3000, or a TC3256 in CP/M Terminal mode) over a
+link on port **2Fh**. Under TOS and Timex's CP/M 2.2 (TMX
 CP/M, CBIOS A1.1) the programs run on the FDD3000's Z80 and the computer
 is only the screen and keyboard.
 
